@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>1 RESTAURANT OWNER MANUAL</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+  body {
+    font-family: 'Outfit', -apple-system, sans-serif;
+    color: #1f2937;
+    background: #fff;
+    max-width: 820px;
+    margin: 40px auto;
+    padding: 0 30px;
+    line-height: 1.6;
+    font-size: 14px;
+  }
+  h1 { color: #ea580c; font-size: 26px; border-bottom: 2px solid #ea580c; padding-bottom: 8px; margin-top: 30px; font-weight: 800; }
+  h2 { color: #1e293b; font-size: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-top: 26px; font-weight: 700; }
+  h3 { color: #334155; font-size: 16px; margin-top: 20px; font-weight: 600; }
+  code { font-family: 'JetBrains Mono', monospace; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 12px; color: #b91c1c; }
+  pre { background: #0f172a; color: #f8fafc; padding: 14px; border-radius: 8px; overflow-x: auto; font-size: 12px; }
+  pre code { background: transparent; color: inherit; padding: 0; }
+  blockquote { border-left: 4px solid #ea580c; margin: 0; padding-left: 14px; color: #475569; font-style: italic; background: #fff7ed; padding: 10px 14px; border-radius: 0 6px 6px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+  th, td { border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; }
+  th { background: #f8fafc; font-weight: 700; }
+  tr:nth-child(even) { background: #f8fafc; }
+  .print-btn {
+    position: fixed;
+    top: 20px;
+    right: 25px;
+    background: #ea580c;
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 25px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(234, 88, 12, 0.4);
+    z-index: 1000;
+  }
+  .print-btn:hover { background: #c2410c; }
+  @media print {
+    .print-btn { display: none; }
+    body { margin: 0; padding: 0; font-size: 11pt; }
+    @page { margin: 15mm; }
+  }
+</style>
+</head>
+<body>
+<button class="print-btn" onclick="window.print()">🖨️ Save as PDF / Print</button>
+<h1>👑 Spot Light Biriyani — Restaurant Owner's Operating Manual</h1>
+
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:20px 0;">
+
+<h2>Welcome, Restaurant Owner!</h2>
+<p>This application was created to eliminate the two biggest financial leaks in restaurant operations:</p>
+<p>1. <strong>Hidden Aggregator Commission Bleed</strong>: Not knowing how much money Swiggy and Zomato actually take from your profits.</p>
+<p>2. <strong>Food Wastage & Raw Material Pilferage</strong>: Cooking too much food on slow days and running out of biriyani on busy days.</p>
+
+<p>With <strong>Spot Light Manager</strong>, you can see your <strong>real cash profit per order</strong> before the bill is even punched, and forecast exactly how many plates to cook tomorrow.</p>
+
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:20px 0;">
+
+<h2>1. Your 30-Second Daily Routine</h2>
+
+<h3>🌅 Morning Routine (11:00 AM – 12:00 PM)</h3>
+<p>1. <strong>Check Prep Forecast</strong>:</p>
+<li>Go to <code>/app/reports</code> on your phone or counter tablet.</li>
+<li>Look at the column titled <strong>"Prep Tomorrow"</strong>.</li>
+<li>It tells you the exact number of plates (Chicken Biriyani, Mutton Biriyani, Kushka) to cook today based on a weighted 4-week average of this same day of the week.</li>
+<li>Hand these numbers to your Head Cook / Dum Master.</li>
+<p>2. <strong>Record Morning Purchases</strong>:</p>
+<li>Go to <code>/app/stock</code>.</li>
+<li>If you bought 25 kg chicken, 50 kg basmati rice, or oil this morning, tap <strong>"+ Record Movement"</strong> -> Select <strong>"Purchase"</strong> -> enter the quantity.</li>
+<li>Your live raw material stock and inventory value update instantly.</li>
+
+<h3>🍱 During Lunch & Dinner Rush</h3>
+<li>Your counter cashier handles all billing under <code>/app/billing</code>.</li>
+<li>Every plate of biriyani billed at the counter or received via Swiggy/Zomato is recorded against the active branch.</li>
+
+<h3>🌙 Night Audit & Closing Routine (10:30 PM)</h3>
+<p>1. <strong>Open <code>/app</code> (Dashboard)</strong>:</p>
+<li>Select <strong>"Today"</strong> in the top-right filter.</li>
+<li>Review your 4 Key Numbers:</li>
+<li><strong>Revenue</strong>: Total money collected from all channels.</li>
+<li><strong>Net Profit</strong>: Your actual take-home operating cash (Gross − Food Cost − Swiggy Cut − Packing).</li>
+<li><strong>Platform Commission</strong>: Exactly how much Swiggy and Zomato deducted from you today.</li>
+<li><strong>Food Cost (COGS)</strong>: What your meat, rice, spices, and oil cost.</li>
+<p>2. <strong>Review Channel Profitability</strong>:</p>
+<li>Scroll down to the <strong>"Channel Profitability"</strong> table.</li>
+<li>Compare Counter vs. Swiggy vs. Zomato margin %. If an online channel has less than 20% margin, adjust your online menu price in <code>/app/items</code>.</li>
+<p>3. <strong>Weekly Sunday Backup</strong>:</p>
+<li>Go to <code>/app/settings</code>.</li>
+<li>Tap <strong>"Download Backup (JSON)"</strong>.</li>
+<li>Save this small file to your WhatsApp or Google Drive. This ensures your sales data is 100% safe forever.</li>
+
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:20px 0;">
+
+<h2>2. Understanding Your Profit Math</h2>
+
+<p>Traditional billing machines only show:</p>
+<p>$$\text{Revenue} = \text{Item Price} \times \text{Quantity}$$</p>
+
+<p><strong>Spot Light Manager calculates the real operating truth</strong>:</p>
+<pre><code>  Customer Pays (Net Revenue)
+<p>− Food Cost (Meat + Rice + Oil + Spices per plate)</p>
+<p>− Aggregator Cut (e.g. Swiggy 22% commission + GST)</p>
+<p>− Packaging Fee (Container, bag, spoon cost)</p>
+<p>==================================================</p>
+<p>= TRUE NET OPERATING PROFIT</p>
+<p></code></pre></p>
+<p><em>Note: Rent, electricity, and staff salaries are fixed monthly costs. To calculate your net monthly take-home, simply subtract your monthly rent and payroll from your monthly Net Profit total on the Dashboard.</em></p>
+
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:20px 0;">
+
+<h2>3. How to Update Prices & Margins (<code>/app/items</code>)</h2>
+<p>When chicken or mutton market rates rise:</p>
+<p>1. Open <code>/app/items</code> on the manager tablet.</p>
+<p>2. Click any dish:</p>
+<li><strong>Counter Price</strong>: What walk-in customers pay.</li>
+<li><strong>Online Price</strong>: What Swiggy/Zomato customers pay (always keep this 15–25% higher to offset platform commission!).</li>
+<li><strong>Plate Cost</strong>: What 1 plate costs you to make (Meat + Rice + Oil + Masala + Egg + Raita).</li>
+<p>3. The margin and margin % recalculate instantly.</p>
+
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:20px 0;">
+
+<h2>4. Multi-Branch Operations</h2>
+<li>If you have multiple branches (e.g., Tharamani, Adyar, Velachery):</li>
+<li>Use the <strong>Branch Dropdown</strong> at the top right of the screen.</li>
+<li>Filter Dashboard and Reports by:</li>
+<li><em>All Branches</em> (Combined business view)</li>
+<li><em>Individual Branch</em> (Audit specific branch manager performance)</li>
+<li>Add new branches anytime in <code>/app/settings</code>.</li>
+
+</body>
+</html>

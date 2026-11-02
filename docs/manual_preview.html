@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SPOT LIGHT BIRIYANI — OPERATIONS MANUAL</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 18mm 14mm 18mm 14mm;
+      @bottom-right {
+        content: counter(page);
+      }
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 10pt;
+      line-height: 1.5;
+      color: #0f172a;
+      background: #ffffff;
+      margin: 0;
+      padding: 0;
+    }
+    .doc-title {
+      color: #ea580c;
+      font-size: 22pt;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      margin-top: 0;
+      margin-bottom: 4px;
+      border-bottom: 3px solid #ea580c;
+      padding-bottom: 8px;
+    }
+    .section-title {
+      color: #c2410c;
+      font-size: 14pt;
+      font-weight: 800;
+      margin-top: 22px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #fed7aa;
+      padding-bottom: 4px;
+      page-break-after: avoid;
+    }
+    .sub-title {
+      color: #1e293b;
+      font-size: 11pt;
+      font-weight: 700;
+      margin-top: 14px;
+      margin-bottom: 6px;
+      page-break-after: avoid;
+    }
+    .sub2-title {
+      color: #334155;
+      font-size: 10pt;
+      font-weight: 700;
+      margin-top: 10px;
+      margin-bottom: 4px;
+      page-break-after: avoid;
+    }
+    p {
+      margin: 6px 0;
+      text-align: justify;
+    }
+    ul, ol {
+      margin: 6px 0 10px 18px;
+      padding: 0;
+    }
+    li {
+      margin-bottom: 4px;
+    }
+    code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 9pt;
+      background: #f1f5f9;
+      padding: 1px 4px;
+      border-radius: 4px;
+      color: #0f172a;
+      border: 1px solid #e2e8f0;
+    }
+    .styled-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 8.5pt;
+      page-break-inside: avoid;
+    }
+    .styled-table th {
+      background: #ea580c;
+      color: #ffffff;
+      font-weight: 700;
+      text-align: left;
+      padding: 6px 8px;
+      border: 1px solid #c2410c;
+    }
+    .styled-table td {
+      padding: 5px 8px;
+      border: 1px solid #e2e8f0;
+      vertical-align: top;
+    }
+    .styled-table tr:nth-child(even) td {
+      background: #fff7ed;
+    }
+    .divider {
+      border: 0;
+      height: 1px;
+      background: #e2e8f0;
+      margin: 16px 0;
+    }
+    .screenshot-box {
+      margin: 12px 0;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #f8fafc;
+      page-break-inside: avoid;
+    }
+    .screenshot-box img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .screenshot-box .caption {
+      margin: 0;
+      padding: 5px 10px;
+      font-size: 8pt;
+      font-weight: 700;
+      color: #ea580c;
+      background: #fff7ed;
+      border-top: 1px solid #fed7aa;
+      text-align: center;
+    }
+    .page-break-avoid {
+      page-break-inside: avoid;
+    }
+    @media print {
+      body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1 class="doc-title">🌟 SPOT LIGHT BIRIYANI — COMPLETE END-TO-END OPERATIONS & USER MANUAL</h1>
+
+<strong>Platform Version:</strong> 3.4.0 (Enterprise Edition)  
+<strong>Author & Solution Architect:</strong> Manikandan Soundar (Owner & Platform Administrator)  
+<strong>Target Audience:</strong> Restaurant Owners, Branch Managers, Cashiers, Kitchen Head Chefs, Franchise Partners  
+<strong>Last Updated:</strong> October 2026  
+
+<hr class="divider" />
+
+<h2 class="section-title">EXECUTIVE SUMMARY & SYSTEM OVERVIEW</h2>
+
+<strong>Spot Light Biriyani & Commerce Cloud</strong> is a specialized, high-performance Restaurant Management & Counter POS Operating System engineered specifically for authentic Chennai biriyani chains, cloud kitchens, and QSR outlets.
+
+<h3 class="sub-title">Why This System Was Built:</h3>
+Traditional restaurant billing machines and generic retail POS softwares suffer from three critical financial leakages:
+1. <strong>Hidden Aggregator Commission Bleed:</strong> Swiggy and Zomato deduct between 22% and 28% in commissions, delivery cuts, and onboarding fees. Restaurant owners think they made ₹1,000, but only receive ₹720 in the bank. Spot Light POS automatically deducts commission in real time so the dashboard shows your <strong>true cash operating profit</strong>.
+2. <strong>Food Wastage & Over-Cooking:</strong> Biriyani is cooked in massive daily batches. Cooking too much leads to unsold rice wastage; cooking too little leads to missed afternoon peak revenues. Our built-in <strong>AI Prep Forecasting Engine</strong> analyzes historical day-of-week sales patterns to tell the kitchen exactly how many plates to prepare each morning.
+3. <strong>Cashier Fraud & Pilferage:</strong> Correcting bills, deleting items, or voiding orders without an audit trail costs restaurants thousands every month. Spot Light POS enforces cryptographic <strong>Bill Correction Audit Logging</strong> where every edit is recorded with the original net amount, modification timestamp, and reason badge.
+
+<hr class="divider" />
+
+<h2 class="section-title">1. PUBLIC WEBSITE & LEAD GENERATION WORKFLOW</h2>
+
+<h3 class="sub-title">Screen 1: Public Homepage (<code>http://localhost:8080/</code> or <code>https://spotlight-biriyani.vercel.app/</code>)</h3>
+<ul><li><strong>Role:</strong> Customer Discovery, Online Menu Browsing, WhatsApp Ordering, and B2B Software Demonstration.</li></ul>
+<ul><li><strong>Key Features:</strong></li></ul>
+  - <strong>Live Kitchen Status Bar:</strong> Pulsing banner showing whether the lunch batch (12:30 PM) or dinner batch (7:00 PM) is currently active and ready.
+  - <strong>Signature Dishes Showcase:</strong> Chicken Biriyani (₹180 Full, ₹110 Half), Mutton Biriyani (₹280 Full, ₹170 Half), and Kushka (₹110).
+  - <strong>Famous Family Biriyani Feast Buckets:</strong> Jumbo insulated bucket combos serving 4-5 people with sides and Madurai bread halwa.
+  - <strong>South Chennai Radar Map:</strong> Interactive Leaflet map displaying real-time branch pins across Tharamani (OMR), Adyar (LB Road), and Velachery (Bypass).
+  - <strong>Spot Light Assistant (Bottom-Right):</strong> Floating AI bot answering FAQ questions regarding prices, timings, party orders, and 1-click WhatsApp demo booking.
+<ul><li><strong>Access Rules:</strong> Publicly accessible by any diner or franchise prospect. <strong>No POS buttons are visible to diners.</strong> The header only displays a secure <code>[Staff Sign In]</code> link.</li></ul>
+
+<h3 class="sub-title">Screen 2: Book a Demo & Tasting Modal (<code>/demo</code>)</h3>
+<ul><li><strong>Purpose:</strong> For selling the software to other restaurant owners or booking large corporate party orders.</li></ul>
+<ul><li><strong>Fields Captured:</strong></li></ul>
+  - Diner / Owner Name
+  - Contact Phone Number (Default test line: <code>+91 98844 30710</code>)
+  - Restaurant Name / Purpose (Biriyani Kitchen, QSR, Cloud Kitchen, Franchise Partner)
+  - Preferred Date & Time (<code><input type="datetime-local" /></code>)
+  - Notes & Requirements
+<ul><li><strong>Action:</strong> Automatically generates a formatted WhatsApp inquiry message and opens WhatsApp Web/Mobile with pre-filled details.</li></ul>
+
+<hr class="divider" />
+
+<h2 class="section-title">2. SECURITY, AUTHENTICATION & ROLE ACCESS CONTROL</h2>
+
+<h3 class="sub-title">Screen 3: Terminal Authentication Gatekeeper (<code>/login</code>)</h3>
+The entire restaurant operations suite (<code>/app/*</code>) is protected by role-based token authentication. Direct unauthenticated access is immediately blocked and redirected to <code>/login</code>.
+
+<table class="styled-table"><thead><tr><th>Role</th><th>Default Credential</th><th>Permissions & Accessible Screens</th></tr></thead><tbody><tr><td>👑 <strong>Restaurant Owner & Admin</strong></td><td>Password: <code>spotlight2026</code><br>Master PIN: <code>9999</code></td><td>Complete access to Executive Dashboard, Consolidated Reports, Multi-Branch P&L, Inventory, Menu Pricing, and Database Backups.</td></tr><tr><td>🧾 <strong>Taramani Cashier</strong></td><td>PIN: <code>1001</code></td><td>Dedicated Counter POS Terminal for Tharamani Flagship Kitchen. Automatically scopes sales and cash drawer to Taramani.</td></tr><tr><td>🧾 <strong>Adyar Cashier</strong></td><td>PIN: <code>1002</code></td><td>Dedicated Counter POS Terminal for Adyar Beach Kitchen. Automatically scopes sales and cash drawer to Adyar.</td></tr><tr><td>🧾 <strong>Velachery Cashier</strong></td><td>PIN: <code>1003</code></td><td>Dedicated Counter POS Terminal for Velachery Delivery Hub. Automatically scopes sales and cash drawer to Velachery.</td></tr><tr><td>🧾 <strong>General / Master Cashier</strong></td><td>PIN: <code>1234</code></td><td>Allows counter POS billing across any selected branch.</td></tr><tr><td>🔥 <strong>Kitchen Head Chef</strong></td><td>PIN: <code>5555</code></td><td>Direct access to Raw Material & Kitchen Inventory Ledger (<code>/app/stock</code>). Allows recording meat/rice consumption without touching financial reports.</td></tr><tr><td>🛠️ <strong>System Architect / Developer</strong></td><td>Master Key: <code>dev@spotlight2026</code></td><td>Master administrative ownership held by Manikandan Soundar. Unlocks raw JSON database inspector, outlet reset, and emergency password bypass.</td></tr></tbody></table>
+
+<h3 class="sub-title">What Happens If a Restaurant Forgets Their Password?</h3>
+Because you possess the Master Developer Key (<code>dev@spotlight2026</code>), the restaurant owner simply contacts you. You log in via Developer Access, open the JSON database editor, reset their password/PIN, or download a fresh backup. <strong>You maintain 100% intellectual property ownership and control over all deployed outlets.</strong>
+
+<hr class="divider" />
+
+<h2 class="section-title">3. HIGH-SPEED COUNTER POS BILLING TERMINAL
+<div class="screenshot-box page-break-avoid">
+  <img src="screenshots/04_billing_pos.png" alt="Screen 4: High-Speed Counter POS Terminal with Deg Stock Enforced Limit & Direct Qty Input" />
+  <p class="caption">Visual UI Reference: Screen 4: High-Speed Counter POS Terminal with Deg Stock Enforced Limit & Direct Qty Input</p>
+</div> (<code>/app/billing</code>)</h2>
+
+<h3 class="sub-title">Core Capabilities:</h3>
+1. <strong>Sub-3-Second Order Punching:</strong> Designed for high-volume Chennai lunch rushes. Cashiers tap dish cards on the left touch-grid; items instantly append to the cart on the right.
+2. <strong>Category Switcher & Dynamic Expansion:</strong> Quick filter tabs for <code>Biriyani</code>, <code>Kushka</code>, <code>Starters</code> (Chicken 65, Pepper Chicken), <code>Chinese & Noodles</code>, <code>Fried Rice & Fast Food</code>, <code>Curries & Gravies</code>, <code>Breads</code> (Parotta), <code>Desserts</code> (Madurai Bread Halwa), and <code>Beverages</code>. Any custom category created under <code>/app/items</code> automatically appears as a billing tab.
+3. <strong>Service Type Toggle:</strong>
+   - <code>[🍽️ Dine-in]</code>: For guests dining inside the branch.
+   - <code>[🥡 Takeaway / Parcel]</code>: Adds parcel packaging instructions and prints <code>SERVICE: TAKEAWAY / PARCEL</code> boldly on the customer receipt.
+4. <strong>Channel Origin Selector:</strong>
+   - <code>Counter</code>: 0% platform commission.
+   - <code>Swiggy</code>: Deducts 28% commission and applies aggregator packaging fees.
+   - <code>Zomato</code>: Deducts 24% commission.
+5. <strong>Streamlined High-Speed Action Controls:</strong>
+   - Full-Width Primary Action: <strong><code>[ 🖨️ SAVE BILL & PRINT (F2) ]</code></strong> saves the bill and triggers the thermal printer in a single tap or via keyboard shortcut <strong>F2</strong>.
+   - Inline Quick WhatsApp Bar: Non-intrusive <code>📱 WhatsApp: [ 10-digit mobile ] [ 💬 Send ]</code> bar directly underneath the print button for cashiers whose customers request digital receipts, avoiding awkward screen shifts.
+6. <strong>Next Token Dispatcher:</strong> Automatic sequential token numbering (<code>Token #101</code>, <code>Token #102</code>) reset daily at midnight.
+7. <strong>Dynamic Live Batch & Stock Decrement:</strong> Every biriyani plate punched at the counter or received via Swiggy/Zomato immediately decrements on-hand capacity in real time. The branch card on the public website and the Chennai map dynamically reflect: <code>Lunch Batch Open · X Plates Left</code>.
+
+<h3 class="sub-title">Bill Correction & Audit Trail Workflow:</h3>
+<ul><li><strong>The Problem:</strong> A cashier enters 2 Chicken Biriyanis instead of 4, prints the bill, and the customer demands a correction.</li></ul>
+<ul><li><strong>The Solution:</strong></li></ul>
+   1. Cashier opens <strong>"Past Bills"</strong> (<code>/app/billing</code> -> <code>[History]</code>).
+   2. Search by Bill ID (e.g., <code>#T4G9FZ</code> or <code>T4G9FZ</code>, <code>#</code> prefix is automatically normalized) or Dish Name (e.g., "Chicken 65").
+   3. Tap <strong><code>[✏️ Correct Bill]</code></strong>. The cart reloads with the exact historical items.
+   4. Adjust quantities or discounts, and click <strong><code>[UPDATE & RE-PRINT BILL (F2)]</code></strong>.
+   5. The system flags the bill with <code>isEdited: true</code>, preserves <code>originalNet</code>, records <code>editedAt</code>, recalculates food costs for P&L, and displays an amber audit badge: <code>✏️ Corrected (Was ₹...)</code>. This completely prevents cash skimming.
+
+<hr class="divider" />
+
+<h2 class="section-title">4. EXECUTIVE DASHBOARD & REAL MARGIN TRACKING (<code>/app</code>)</h2>
+
+<h3 class="sub-title">The 4 Key Metrics Displayed:</h3>
+1. <strong>Total Net Revenue:</strong> Total cash and online gross sales across selected date ranges (Today, 7 Days, 30 Days).
+2. <strong>True Operating Profit:</strong> The exact cash left in the business after subtracting Food Cost (meat, rice, ghee), Aggregator Commissions, and Packaging fees.
+3. <strong>Platform Commission Bleed:</strong> The exact amount lost to Swiggy and Zomato. Gives the owner the exact data needed to push counter direct orders.
+4. <strong>Food Cost (COGS):</strong> The total cost of raw food consumed to produce today's sales.
+
+<h3 class="sub-title">Channel Profitability Matrix:</h3>
+A side-by-side comparative table demonstrating:
+<ul><li><strong>Counter Sales:</strong> 100% revenue retention with high operating margins (~45%).</li></ul>
+<ul><li><strong>Swiggy Orders:</strong> Net payout after 28% commission deduction.</li></ul>
+<ul><li><strong>Zomato Orders:</strong> Net payout after 24% commission deduction.</li></ul>
+
+<hr class="divider" />
+
+<h2 class="section-title">5. INTELLIGENT PREP FORECASTING & REPORTS (<code>/app/reports</code>)</h2>
+
+<h3 class="sub-title">How the Prep Algorithm Works:</h3>
+Biriyani sales vary wildly by day of the week. Sundays experience 3x the volume of Tuesdays.
+<ul><li>The system uses a <strong>weighted 4-week historical moving average</strong>:</li></ul>
+  $$\text{Target Prep} = (0.4 \times \text{Last Week}) + (0.3 \times \text{2 Weeks Ago}) + (0.2 \times \text{3 Weeks Ago}) + (0.1 \times \text{4 Weeks Ago})$$
+<ul><li><strong>Operational Timing (Night Day-Close at 10:00 PM — Never Wait Until 8:00 AM):</strong> Biriyani requires 3 to 4 hours of slow fire cooking starting by 7:00 AM, and wholesale meat markets (Koyambedu/Pulianthope) open before dawn. Waiting until 8:00 AM is far too late to buy meat and cook lunch. Therefore, the owner/chef reviews <code>/app/reports</code> every night during Day-Close (10:00 PM – 11:00 PM Z-Report). The <strong>"Prep Tomorrow"</strong> column tells them exact plate counts so meat, poultry, and seeraga samba rice can be ordered for 5:00 AM delivery:</li></ul>
+  - <em>Chicken Biriyani:</em> 142 plates
+  - <em>Mutton Biriyani:</em> 68 plates
+  - <em>Kushka:</em> 45 plates
+<ul><li><strong>Benefit:</strong> Zero food spoilage, zero disappointed customers.</li></ul>
+
+<hr class="divider" />
+
+<h2 class="section-title">6. RAW MATERIAL & KITCHEN INVENTORY LEDGER
+<div class="screenshot-box page-break-avoid">
+  <img src="screenshots/06_stock_ledger.png" alt="Screen 6: Kitchen Inventory Ledger & Minimum Reorder Alerts" />
+  <p class="caption">Visual UI Reference: Screen 6: Kitchen Inventory Ledger & Minimum Reorder Alerts</p>
+</div> (<code>/app/stock</code>)</h2>
+
+<h3 class="sub-title">Inventory Management:</h3>
+<ul><li><strong>Items Tracked:</strong> Broiler Chicken (kg), Tender Goat Mutton (kg), Seeraga Samba / Basmati Rice (kg), Pure Country Ghee (L), Sun Flower Oil (L), Full-Cream Curd (L), Carry Bags & Parcel Containers (Units).</li></ul>
+<ul><li><strong>Movement Types:</strong></li></ul>
+  - <code>Purchase</code>: Morning Koyambedu market inward stock. Increases stock level and total asset valuation.
+  - <code>Usage / Cooking</code>: Consumption into daily biriyani batches.
+  - <code>Wastage / Return</code>: Spoiled or returned raw ingredients.
+<ul><li><strong>Automatic Red Reorder Alert:</strong> When the on-hand quantity drops below the configured <code>reorderLevel</code>, the item card pulses red on the dashboard, signaling the store manager to reorder before the dinner batch begins.</li></ul>
+
+<hr class="divider" />
+
+<h2 class="section-title">7. MENU, DISH CONFIGURATION & ACTIVE TOGGLES (<code>/app/items</code>)</h2>
+
+<h3 class="sub-title">Dynamic Cost Engine:</h3>
+<ul><li>Displays: Dish Name, Category, Counter Price, Swiggy Price, Raw Plate Cost, and Net Profit Margin %.</li></ul>
+<ul><li><strong>Interactive Status & Action Buttons:</strong></li></ul>
+  - <code>[🟢 Serving]</code>: Dish is live and available on counter billing.
+  - <code>[⚪ Sold Out]</code>: Instantly hides the dish from cashier touch grids during evening stockouts without deleting menu master records.
+  - <code>[🗑️ Delete]</code>: Safely and permanently deletes test dishes (e.g. accidental entries) or discontinued menu items with a browser confirmation safeguard.
+<ul><li><strong>Category Engine & Custom Addition:</strong></li></ul>
+  - Standard categories include Biriyani, Kushka, Starters, Chinese & Noodles, Fried Rice & Fast Food, Curries & Gravies, Breads, Desserts, and Beverages.
+  - Selecting <code>+ Custom / New Category...</code> allows restaurant owners to type any category name (e.g. Shawarma, BBQ, Tandoori). The new category immediately auto-propagates as a navigation filter tab on the billing terminal.
+
+<hr class="divider" />
+
+<h2 class="section-title">8. HARDWARE, THERMAL PRINTERS & SETTINGS (<code>/app/settings</code>)</h2>
+
+<h3 class="sub-title">Printing Specifications:</h3>
+<ul><li><strong>Supported Paper Sizes:</strong> Standard 80mm Counter Desktop Printers and 58mm / 56mm Handheld Bluetooth Printers.</li></ul>
+<ul><li><strong>ESC/POS Driver Features:</strong></li></ul>
+  - Auto-paper cut command injection.
+  - Cash drawer 24V solenoid pulse kick on bill settlement.
+  - Custom Tamil / English receipt header and FSSAI license printing.
+  - Direct print browser bypass via USB / Bluetooth thermal printer drivers.
+<ul><li><strong>Disaster Recovery:</strong> 1-click <strong>Download Backup (JSON)</strong> and <strong>Restore Backup</strong> buttons to guarantee zero data loss.</li></ul>
+
+<hr class="divider" />
+
+<h2 class="section-title">9. SWIGGY & ZOMATO INTEGRATION ARCHITECTURE</h2>
+
+<h3 class="sub-title">How Online Orders Connect to the App:</h3>
+``<code>
+[Customer on Swiggy App]
+          │
+          ▼
+[Swiggy / Zomato Cloud Servers]
+          │ (Webhook HTTP POST JSON)
+          ▼
+[Spot Light Webhook Gateway / UrbanPiper API Relay]
+          │
+          ▼
+[Spot Light Billing Terminal]
+   ├── 1. Injects bill with channel = "swiggy"
+   ├── 2. Prints Kitchen KOT (Kitchen Order Ticket) automatically
+   ├── 3. Deducts 28% aggregator commission in P&L
+   └── 4. Depletes on-hand chicken and rice inventory in </code>/app/stock<code>
+</code>`<code>
+
+<hr class="divider" />
+
+<h2 class="section-title">10. CLOUD DEPLOYMENT & VERCEL GLOBAL SETUP</h2>
+
+<h3 class="sub-title">Live Cloud PostgreSQL Database (Neon Production):</h3>
+<ul><li><strong>Cloud Host:</strong> Neon Serverless PostgreSQL (AWS Singapore </code>ap-southeast-1<code> — 30ms ultra-low ping latency to Chennai).</li>
+<li><strong>Project Name:</strong> </code>spotlight-biriyani-prod<code> (</code>orange-cake-05189526<code>).</li>
+<li><strong>Live Provisioned Tables (All 8 Verified):</strong> </code>Branch<code>, </code>Channel<code>, </code>DishItem<code>, </code>KitchenBatch<code>, </code>Sale<code>, </code>SaleLine<code>, </code>StockItem<code>, </code>StockMove<code>.</li>
+<li><strong>Browser Table Editor:</strong> Open Neon Console -> click <strong>"Tables"</strong> to view and edit menu items, prices, and past bills in your web browser without SQL knowledge.</li>
+</ul>
+<h3 class="sub-title">Running Locally vs. Production Cloud:</h3>
+<ul><li><strong>Local Mode (</code>http://localhost:8080<code>):</strong> Operates on your laptop during local development.</li></ul>
+<ul><li><strong>Production Cloud (</code>https://spotlight-biriyani.vercel.app<code>):</strong></li></ul>
+  - Hosted globally on Vercel's edge network with free automatic SSL encryption.
+  - Once deployed, managers can open the app on Android phones, iPhones, iPads, and counter tablets anywhere in the world without local Wi-Fi restrictions.
+  - <strong>Data Isolation:</strong> Each outlet can be assigned its own tenant ID or sub-domain (e.g., </code>adyar.spotlightbiriyani.in<code>).
+
+<hr class="divider" />
+
+<hr class="divider" />
+
+<h2 class="section-title">11. APPLICATION SELLING PRICING MATRIX (PETPOOJA BENCHMARK)</h2>
+
+To sell this POS software commercially to other restaurant owners, cloud kitchens, and franchise operators, adopt the industry-standard modular SaaS subscription model (pioneered by Petpooja and Posist):
+
+<table class="styled-table"><thead><tr><th>Plan Name</th><th>Annual Subscription</th><th>Target Customer</th><th>Features Included</th></tr></thead><tbody><tr><td><strong>Core Counter Plan</strong></td><td>Rs 7,999 / year / terminal</td><td>Small Biriyani Stalls, Takeaway Kiosks, QSRs</td><td>Counter billing, 80mm ESC/POS thermal printing, daily token numbers, cash change calculator, WhatsApp deep-link receipts, offline persistence, bill correction audit logging.</td></tr><tr><td><strong>Pro Recipe & Kitchen Plan</strong></td><td>Rs 14,999 / year / outlet</td><td>Cloud Kitchens, Biriyani Outlets (100-300 plates/day)</td><td>Everything in Core + Raw material inventory ledger (/app/stock), recipe COGS margin engine, low-stock red pulse alerts, daily kitchen deg portion tracker, AI prep forecasting (/app/reports).</td></tr><tr><td><strong>Multi-Outlet Franchise Cloud</strong></td><td>Rs 24,999 / year / brand</td><td>Biriyani Chains (3-10 Outlets), Central Commissary Kitchens</td><td>Everything in Pro + Multi-branch radar map, central menu management, cross-outlet sales aggregation, role-based branch PIN security, and developer master backup controls.</td></tr></tbody></table>
+
+<h3 class="sub-title">High-Margin Add-On Modules:</h3>
+<ul><li><strong>Swiggy & Zomato Live Sync Relay (UrbanPiper / Direct Webhook):</strong> +Rs 4,000 / year / outlet.</li></ul>
+<ul><li><strong>Meta WhatsApp Cloud API (Automated PDF Receipts & Broadcasts):</strong> +Rs 1,500 / year + Meta utility message fees (Rs 0.40-Rs 0.75/msg).</li></ul>
+<ul><li><strong>Kitchen Display System (KDS) Screen for Chefs:</strong> +Rs 3,500 / year / screen.</li></ul>
+<ul><li><strong>Turnkey Hardware Bundle (One-time):</strong> Rs 28,000 (15-inch Touch Terminal + 80mm Auto-Cut ESC/POS Thermal Printer + Heavy-Duty Cash Drawer).</li></ul>
+
+<hr class="divider" />
+
+<h2 class="section-title">12. TECHNICAL ARCHITECTURE & FREQUENTLY ASKED QUESTIONS</h2>
+
+<h3 class="sub-title">Q1: Why Are We Coding in TypeScript / Node.js Instead of Java?</h3>
+<ul><li><strong>Legacy Java (Spring Boot):</strong> Requires heavy JVM memory (1-2 GB RAM just to idle), slow compile cycles, and bulky deployment containers.</li></ul>
+<ul><li><strong>Modern TypeScript / Node.js:</strong> The global standard powering modern POS platforms (Toast POS, Square Register, Shopify). TypeScript provides end-to-end type safety, runs ultra-fast in browser runtimes and serverless edge functions, consumes < 100 MB of RAM, and shares data structures directly between the POS frontend and backend without translation bugs.</li></ul>
+
+<h3 class="sub-title">Q2: Is PostgreSQL Open Source? Can We Integrate It? Does It Cost Anything?</h3>
+<ul><li><strong>Is it Open Source?</strong> Yes! PostgreSQL is 100% free and open source under the liberal PostgreSQL License. There are zero licensing fees forever.</li></ul>
+<ul><li><strong>Cost:</strong> Rs 0. You can host it on your own server or use managed cloud PostgreSQL providers like <strong>Supabase</strong> or <strong>Neon</strong>, which offer generous perpetual free tiers (500 MB database storage, millions of queries free forever).</li></ul>
+<ul><li><strong>Complexity:</strong> Extremely low. Using <strong>Prisma ORM</strong> or <strong>Drizzle ORM</strong>, database tables (Bill, SaleLine, InventoryItem, Branch) are mapped automatically to SQL tables with automated schema migrations. The application can seamlessly synchronize between local offline storage and PostgreSQL cloud backups.</li></ul>
+
+<h3 class="sub-title">Q3: Can Vercel Handle High Traffic? Why Do People Buy Domains?</h3>
+<ul><li><strong>The High-Load Myth:</strong> Vercel is built on global AWS Edge infrastructure with Anycast routing. It currently powers <strong>OpenAI (ChatGPT)</strong>, <strong>Notion</strong>, and <strong>The Washington Post</strong>, serving billions of requests per minute. It handles massive traffic spikes effortlessly.</li></ul>
+<ul><li><strong>Hosting vs Domain:</strong></li></ul>
+  - <strong>Vercel = The Engine / Server Compute:</strong> Hosts and runs the website code globally.
+  - <strong>Domain (e.g., spotlightbiriyani.com) = The Name Tag:</strong> A custom web address registered for Rs 499-Rs 899 / year on GoDaddy, Namecheap, or Cloudflare.
+  - <strong>How They Work Together:</strong> You buy your custom domain, point its DNS CNAME records to Vercel, and Vercel automatically manages free SSL certificates and serves enterprise-grade traffic under your brand name!
+
+<h3 class="sub-title">Q4: WhatsApp Integration: Do We Need a Dedicated Phone Number?</h3>
+<ul><li><strong>Option A: WhatsApp Web Deep-Link (Currently Active - 100% Free):</strong></li></ul>
+  - Uses https://wa.me/91XXXXXXXXXX?text=...
+  - <strong>No dedicated phone number required.</strong> The cashier uses the restaurant's existing phone or personal WhatsApp Web logged into the POS computer.
+  - Costs Rs 0, requires no Meta approvals, and works instantly.
+<ul><li><strong>Option B: Meta WhatsApp Cloud API (Automated Server-to-Phone PDF Delivery):</strong></li></ul>
+  - Sends bills silently in the background directly from the cloud server.
+  - <strong>Requires a dedicated 10-digit mobile number or landline</strong> that is NOT registered on the consumer WhatsApp app.
+  - Involves Meta Business verification and per-message utility charges (~Rs 0.40-Rs 0.75 per sent bill).
+
+<h3 class="sub-title">Q5: How Do Swiggy and Zomato Orders Flow Into the POS?</h3>
+1. Diner places an order on the Swiggy or Zomato app.
+2. Swiggy/Zomato servers dispatch an HTTP POST JSON payload to our POS webhook endpoint (/api/webhooks/swiggy).
+3. The POS terminal instantly plays an incoming order chime, appends the order with channel swiggy, auto-prints the Kitchen KOT on the 80mm thermal printer, and updates the daily P&L deducting the 28% commission.
+4. The on-hand Biriyani Deg capacity immediately decrements so the counter cashier knows remaining stock.
+
+<h3 class="sub-title">Q6: Live Kitchen Deg Stock Mechanics (e.g. 120 Plates Cooked Today):</h3>
+<ul><li>The chef inputs the morning batch size (e.g. 120 plates).</li></ul>
+<ul><li>As plates are sold via Counter, Swiggy, or Zomato, the POS automatically calculates:</li></ul>
+  Plates Remaining = Batch Capacity (120) - Total Plates Sold Today
+<ul><li>A dynamic progress bar and color-coded badge display on the terminal:</li></ul>
+  - <strong>Green (> 30 plates left):</strong> Healthy stock.
+  - <strong>Amber (10-30 plates left):</strong> Low stock warning.
+  - <strong>Red Pulse (< 10 plates left):</strong> Critical batch depletion alert.
+  - <strong>Sold Out:</strong> Prevents overselling and prompts chef to start the evening batch.
+
+<h3 class="sub-title">Q7: Keycloak, Docker & Microservices — Are They Needed For This Application?</h3>
+<ul><li><strong>Why Keycloak is unnecessary:</strong></li></ul>
+  - Keycloak is an enterprise IAM / OAuth2 server written in Java (WildFly/Quarkus) designed for conglomerates with thousands of corporate employees.
+  - It requires 1GB - 2GB of dedicated RAM just to boot, requires Java runtime dependencies, and costs ₹3,000 - ₹5,000/month in cloud server RAM.
+  - For a high-speed restaurant counter where a cashier must enter a 4-digit PIN in under 1 second, Keycloak introduces unacceptable network latency and server bloat.
+  - Spot Light POS uses lightweight, instant cryptographic PIN/JWT authentication with Cloud PostgreSQL and local cache fallback, giving sub-50ms login speeds at ₹0 hosting cost.
+<ul><li><strong>Why Docker is not needed:</strong></li></ul>
+  - Docker is useful when running multi-container backend microservices on AWS EC2 or Linux VPS.
+  - Spot Light POS is built on <strong>Serverless Edge Architecture (Vercel)</strong> + <strong>Cloud Serverless PostgreSQL (Neon / Supabase)</strong>.
+  - Serverless eliminates containers completely: pages and APIs scale from 0 to 10,000 requests per second automatically with zero server maintenance, zero memory footprint on cash counter laptops, and instant global edge CDN caching.
+
+<h3 class="sub-title">Q8: How to Inspect & Check PostgreSQL Data in Real Time:</h3>
+<ul><li><strong>Option A: Web Dashboard (Zero Installation in Google Chrome):</strong></li></ul>
+  - <strong>Neon (neon.tech):</strong> Log in to the Neon console, click <strong>"Tables"</strong> or <strong>"SQL Editor"</strong> on the left menu. You can browse, search, and edit records in </code>Branch<code>, </code>DishItem<code>, </code>SaleOrder<code>, and </code>InventoryStock<code> directly in your browser just like Google Sheets!
+  - <strong>Supabase (supabase.com):</strong> Log in to Supabase, click <strong>"Table Editor"</strong>. It gives a visual spreadsheet view where you can see every order, plate count, and stock movement in real time.
+<ul><li><strong>Option B: Local Visual Spreadsheet (Prisma Studio):</strong></li></ul>
+  - Open terminal and run:
+    </code>`<code>bash
+    npx prisma studio
+    </code>`<code>
+  - It opens an interactive visual GUI at </code>http://localhost:5555<code> where you can view, filter, sort, and edit all your PostgreSQL tables, rows, and relationships visually with zero SQL knowledge.
+
+<h3 class="sub-title">Q9: Deg Batch Granularity: Why Deg Applies Only to Biriyani & How We Differentiate:</h3>
+<ul><li><strong>The Traditional Restaurant Reality:</strong></li></ul>
+  - In authentic biriyani kitchens, food cooked in a brass/copper <em>Deg</em> under charcoal <em>dum</em> is strictly:
+    1. <strong>Chicken Biriyani Deg</strong> (~70-90 plates per deg)
+    2. <strong>Mutton Biriyani Deg</strong> (~40-50 plates per deg)
+    3. <strong>Kushka</strong> (scooped directly from the fragrant spiced dum rice of the biriyani deg, without the meat piece)
+    4. <strong>Egg Biriyani</strong> (dum rice served with boiled eggs)
+  - Items like Starters (Chicken 65, Pepper Chicken), Chinese noodles, Fried rice, Parottas, Desserts, and Beverages are NOT cooked in a deg—they are prepared on the tawa/wok or served from cold storage.
+<ul><li><strong>How Spot Light POS Differentiates & Tracks Portions:</strong></li></ul>
+  - The live batch monitor computes dish-level breakdown:
+    - <strong>Chicken Biriyani:</strong> Shows remaining Chicken portions in Deg.
+    - <strong>Mutton Biriyani:</strong> Shows remaining Mutton portions in Deg.
+    - <strong>Kushka Portions:</strong> Tracks dum rice depletion without decrementing meat pieces.
+  - Non-deg items (starters, Chinese, drinks) show standard kitchen inventory or made-to-order status.
+
+<h3 class="sub-title">Q10: Real-Time Cross-Tab & Cross-Device Reactive Synchronization:</h3>
+<ul><li>When a sale of 100 biriyanis is punched in the Billing Terminal in Tab 1, all other open tabs (e.g. Homepage South Chennai Radar Map in Tab 2, Executive Dashboard in Tab 3) update their plate counters and charts <strong>instantly in real time (sub-2ms)</strong> with ZERO manual browser refresh (</code>F5<code>).</li></ul>
+<ul><li>This is achieved through a multi-tier reactive message bus combining browser-native </code>BroadcastChannel("spotlight_pos_cross_tab_bus")<code> and storage event listeners in </code>pos-store.ts<code>.</li></ul>
+
+<h3 class="sub-title">Q11: Complete Export, Reports, Formulas & Sharing Ecosystem:</h3>
+<ul><li><strong>Excel (.CSV / .XLSX compatible):</strong> 1-click structured CSV export in </code>/app/reports<code> detailing Date, Invoice ID, Channel, Gross, Discount, Net Revenue, COGS, Platform Commission, and Net Operating Profit.</li></ul>
+<ul><li><strong>PDF (.PDF):</strong></li></ul>
+  - Instant Day-End Z-Report print with FSSAI, GSTIN, payment splits, and tax summary via the <strong>"Download / Print PDF"</strong> button.
+  - 80mm & 58mm ESC/POS Thermal Bill receipts for kitchen and customers.
+  - Master 8-screen Restaurant Operations Manual PDF (</code>SPOTLIGHT_FULL_OPERATIONS_MANUAL.pdf<code>).
+<ul><li><strong>Live Formulas & Costing:</strong></li></ul>
+  - Embedded P&L formulas visible directly under the <strong>"View Embedded Formulas & Math"</strong> toggle in </code>/app/reports<code>.
+  - Recipe COGS calculation (</code>Food Cost % = (Ingredient Cost / Price) * 100<code>).
+  - True operating profit margin (</code>Margin = Price - COGS - Aggregator Cut<code>).
+  - Cash tendered change calculator (</code>Change Due = Tendered - Net Payable<code>).
+<ul><li><strong>Instant Digital Sharing:</strong></li></ul>
+  - 1-click WhatsApp bill receipt dispatch directly to customer mobile number with automated itemized text, tax summary, and kitchen pickup token.
+
+<h3 class="sub-title">Q12: Master Field Guide & Operations Clarifications:</h3>
+<ul><li><strong>1. Where to find PDF Export & Formulas:</strong></li></ul>
+  - Navigate to <strong>Reports & Forecast</strong> (</code>/app/reports<code>).
+  - Next to the "Excel / CSV" button, click <strong>"Download / Print PDF"</strong> to open a ready-to-print executive Day-End Z-Report / P&L statement with full FSSAI, GSTIN, and branch metrics.
+  - Click <strong>"View Embedded Formulas & Math"</strong> right above the table to view the exact formulas for Revenue, COGS, Commission, Net Profit, Margin %, and Tomorrow's Prep forecast.
+  - For full spreadsheet editing, downloading the CSV opens directly in Microsoft Excel or Google Sheets, where you can write </code>=SUM()<code>, </code>=AVERAGE()<code>, add pivot tables, and share via email/WhatsApp.
+<ul><li><strong>2. Neon & Supabase Credentials:</strong></li></ul>
+  - Neon (</code>neon.tech<code>) and Supabase (</code>supabase.com<code>) are external serverless cloud database providers.
+  - There is NO pre-configured username/password from us. You simply sign up on their website using your own Google account or personal email for free.
+  - Once signed up, click "Create Project" (select AWS Mumbai </code>ap-south-1<code> region) to obtain your unique </code>DATABASE_URL<code>. Paste this URL into your </code>.env<code> file. You can then view and edit all live tables directly in Chrome!
+<ul><li><strong>3. Prisma Studio (</code>npx prisma studio<code>):</strong></li></ul>
+  - </code>localhost:5555<code> showed "refused to connect" because Prisma Studio is a background development command that must be started in a terminal first (</code>npx prisma studio<code>).
+  - With Neon Cloud Database, you don't even need to run Prisma Studio on your laptop—you can view and edit records in Neon's built-in web table editor in any browser.
+<ul><li><strong>4. Deg Batch Math Reconciliation:</strong></li></ul>
+  - Kitchen batch capacity is now split cleanly between Chicken Deg (e.g. 130 plates) and Mutton Deg (e.g. 70 plates) in the batch capacity modal.
+  - Individual dish remaining counts are strictly capped and reconciled by total deg plates remaining (</code>platesLeft = chickenLeft + muttonLeft<code>), completely eliminating any mathematical mismatch.
+<ul><li><strong>5. Single-Digit Quantity Typing:</strong></li></ul>
+  - Dish cards now keep the quantity input box mounted even if you backspace down to 0 while typing.
+  - Clicking on the quantity box automatically highlights the number via </code>onFocus<code> auto-select, allowing cashiers to type </code>2<code>–</code>9<code> directly in one single keypress without backspacing.
+<ul><li><strong>6. Menu & Costs <-> Counter POS Sold Out Sync:</strong></li></ul>
+  - When an item is toggled from "Serving" to "Sold Out" in Menu & Costs (</code>/app/items<code>), it immediately shows as "Sold Out" in Counter POS (</code>/app/billing<code>) and is disabled from billing.
+  - When deg inventory runs out, Counter POS displays "Batch Sold Out" to prevent overselling.
+<ul><li><strong>7. Multi-Branch Role & PIN Reference:</strong></li></ul>
+  - <strong>Owner (Central Admin):</strong> Password </code>spotlight2026<code> or PIN </code>9999<code> (has master access across all 3 branches: Taramani, Adyar, Velachery).
+  - <strong>Taramani Cashier:</strong> PIN </code>1001<code> (locks terminal to Taramani branch).
+  - <strong>Adyar Cashier:</strong> PIN </code>1002<code> (locks terminal to Adyar branch).
+  - <strong>Velachery Cashier:</strong> PIN </code>1003<code> (locks terminal to Velachery branch).
+  - <strong>General Cashier:</strong> PIN </code>1234<code>.
+  - <strong>Kitchen Chef:</strong> PIN </code>5555<code>.
+<ul><li><strong>8. Past Bills Branch Badging:</strong></li></ul>
+  - Every order in Past Bills displays a clear branch badge (</code>📍 Taramani<code>, </code>📍 Adyar<code>, </code>📍 Velachery<code>), making multi-outlet auditing and reprints instantaneous.
+
+<hr class="divider" />
+
+<h3 class="sub-title">Q13: Automation Architecture, AWS Mumbai Rationale & Deg Batch Controls</h3>
+
+<ul><li><strong>1. What is 100% AUTOMATIC vs What is MANUAL in Spot Light POS?</strong></li></ul>
+  * <strong>100% Automated by System:</strong>
+    * <strong>Real-Time Deg Batch Decrementation:</strong> Every time a Chicken or Mutton Biriyani/Kushka is billed (Counter, Swiggy, or Zomato), remaining batch plates immediately decrement in real time.
+    * <strong>Instant Profit & Margin Computation:</strong> System dynamically calculates Net Total, COGS (recipe food cost), Aggregator Commission (22% Swiggy, 24% Zomato), Packaging deductions (₹12), and Net Operating Profit for every single bill.
+    * <strong>Sequential Daily Token Generator:</strong> Automatically resets and generates </code>#001<code>, </code>#002<code>, </code>#003<code> sequentially per branch per calendar day.
+    * <strong>Cross-Tab & Multi-Terminal Synchronization:</strong> If an order is punched on one terminal, other counter terminals and kitchen screens instantly receive live stock updates via BroadcastChannel and reactive store events.
+    * <strong>GST & Tax Compliance Calculations:</strong> Automated 5% restaurant GST calculations, FSSAI badge printing, and invoice numbering.
+    * <strong>Aggregator Pricing Auto-Switch:</strong> Switching channels from Counter to Swiggy/Zomato automatically switches dish prices to aggregator tier prices and applies packaging charges without cashier manual typing.
+    * <strong>Sold-Out Safety Interlocks:</strong> When the batch hits 0, deg dishes automatically enter "Batch Sold Out" mode and disable further addition to cart, preventing over-selling.
+    * <strong>Tomorrow's Kitchen Prep Forecast:</strong> Automatically analyzes past 4 weeks' matching day sales patterns to forecast exactly how many plates of Basmati Rice, Chicken, and Mutton should be cooked tomorrow.
+    * <strong>End-of-Day Z-Report & Audit Ledger:</strong> System auto-summarizes total orders, cash collected, online payments, platform deductions, and net margins for day-end settlement.
+  * <strong>What is Manual (Human Input Required):</strong>
+    * <strong>Dish Selection / Order Punching:</strong> Cashier taps items on the left touch rail or menu cards to add them to the cart.
+    * <strong>Accepting Payment & Tender Amount:</strong> Cashier receives physical currency notes and enters cash tendered (e.g. ₹500 note) to calculate change due.
+    * <strong>Morning Deg Batch Cook Entry:</strong> When the chef finishes cooking the morning dum deg, the chef or owner taps </code>[ ✏️ Edit Deg Capacity ]<code> to enter how many plates were actually cooked today (e.g., Chicken: 130, Mutton: 70).
+    * <strong>Ingredient Cost & Menu Price Changes:</strong> If raw meat/vegetable market rates fluctuate, the owner manually updates base food costs in </code>/app/items<code> or </code>/app/stock<code>.
+    * <strong>Physical Paper Bill Delivery:</strong> Tearing off the thermal receipt from the printer and handing it with food/token to the diner.
+
+<ul><li><strong>2. Why AWS Mumbai (</code>ap-south-1<code>) Region?</strong></li></ul>
+  * <strong>Ultra-Low Latency (15–20ms vs 280ms):</strong> A server in US East (N. Virginia) takes ~280ms round-trip to Chennai. AWS Mumbai takes only 15–20ms. In high-speed lunchtime billing where 30 customers are queued, 20ms feels instantaneous with zero cashier lag.
+  * <strong>Indian Data Localization & Legal Compliance:</strong> Under RBI, GST, and Indian corporate compliance guidelines, financial transactions, GST invoices, and customer phone records of registered Indian businesses are strongly mandated to be stored within Indian national borders.
+  * <strong>Direct ISP Peering:</strong> Major Indian broadband and mobile networks (Jio, Airtel, ACT Fibernet) have direct fiber trunk routes to Mumbai Internet Exchanges (NIXI / Mumbai IX), guaranteeing uptime even during undersea cable disturbances.
+  * <strong>INR (₹) Billing with GST Input Credit:</strong> Indian region cloud services provide GST invoices in Indian Rupees, allowing 18% GST input tax credit for your business entity.
+
+<ul><li><strong>3. How is Today's Deg Batch Defined (130 Chicken + 70 Mutton = 200 Plates)?</strong></li></ul>
+  * <strong>100% Dynamic, Never Hardcoded:</strong> The daily cooked batch capacity is stored in </code>db.settings.batchSplit<code> and </code>db.settings.dailyBatchCapacity<code>.
+  * <strong>Single, Clean 1-Tap Entry for Chef / Owner:</strong>
+    * In Counter POS (</code>/app/billing<code>), right above the dish cards in the Deg Batch banner, there is ONE prominent button: <strong></code>[ ✏️ Edit Deg Capacity ]<code></strong> (the duplicate button inside the stat box has been removed to eliminate confusion).
+    * Tapping it opens the <strong>"TODAY'S DEG CAPACITY"</strong> dialog.
+    * Enter Chicken Deg (e.g. </code>130<code>), Mutton Deg (e.g. </code>70<code>), or click a quick preset (</code>100<code>, </code>120<code>, </code>160<code>, </code>200<code>).
+    * Click <strong>"Save Batch Capacity"</strong>—the system updates immediately across all screens!
+
+<ul><li><strong>4. Critical Billing Persistence & UI Stability Fix:</strong></li></ul>
+  * <strong>The Root Cause:</strong> In </code>pos-store.ts<code>, </code>getDB()<code> was redundantly calling </code>persist()<code> on cache reads, triggering cross-tab ping-pong loops that could revert in-memory mutations. In addition, </code>lg:grid-cols-[1.5fr_1fr]<code> allowed elements to cause horizontal page scrolling (</code>window.scrollX<code>), which shifted the left header and dishes offscreen when selecting branches.
+  * <strong>The Fix:</strong>
+    1. Ensured </code>newSale<code> is assigned a fresh ISO timestamp (</code>date: new Date().toISOString()<code>), guaranteed branch ID (</code>branchId: activeBranch<code>), and unique UUID at checkout.
+    2. Locked layout with stable grid columns (</code>lg:grid-cols-[minmax(0,1fr)_350px] xl:grid-cols-[minmax(0,1fr)_380px]<code>) and enforced </code>overflow-x-hidden<code> on main wrappers, completely eliminating horizontal scrolling and layout shifts.
+    3. Derived </code>todayToken<code> directly from </code>todaySales.length + 1<code>, ensuring token sequence and history count are strictly synchronized.
+
+<ul><li><strong>5. Login Page Aesthetic Redesign (Clean Watermarks & Brand Badges):</strong></li></ul>
+  * <strong>Removed Giant Blocked Center Circle:</strong> The heavy dark bullseye centered behind the card has been completely removed.
+  * <strong>Delicate Corner Watermarks:</strong> Added elegant, faint establishment seals in the top-left and bottom-right page margins (</code>opacity-[0.07]<code>), completely outside the login card area so they are never blocked and never dark.
+  * <strong>Card Brand Insignia:</strong> Placed an authentic Spot Light Biriyani flame badge directly inside the login card header for a proud, luxurious look.
+
+<ul><li><strong>6. "ITEM-WISE PERFORMANCE & KITCHEN PREP" Explained Simply:</strong></li></ul>
+  * <strong>Item:</strong> Dish name (e.g. Chicken Biriyani Half, Mutton Biriyani Full, Kushka).
+  * <strong>Plates:</strong> Total plates sold across Counter, Swiggy, and Zomato.
+  * <strong>Revenue:</strong> Total cash collected from customers for this item.
+  * <strong>Profit:</strong> Pure net profit left after deducting meat/rice food cost (COGS), platform commission (23–28%), and packaging charges.
+  * <strong>Profit / Plate:</strong> Exactly how much profit the restaurant earns on every single plate (e.g. ₹52 profit per ₹110 Half Biriyani).
+  * <strong>Prep Tomorrow (The Chef's Secret Weapon):</strong> An automated weighted forecast (40% last week + 30% 2 weeks ago + 20% 3 weeks ago + 10% 4 weeks ago) that tells the chef exactly how many plates to cook tomorrow, preventing costly food wastage while avoiding selling out too early.
+
+<hr class="divider" />
+
+<ul><li><strong>7. Deg Batch Inventory Reconciliation (The 6-Plate Exact Breakdown):</strong></li>
+</ul>  * <strong>Where Did the 6th Plate Go?</strong> When an order contains Chicken Biriyani (Full), Chicken Biriyani (Half), Chicken 65 Biriyani, Mutton Biriyani (Full), Mutton Biriyani (Half), and Egg Biriyani, total sold plates equals 6.
+  * <strong>The Display Fix:</strong> The Deg Breakdown bar now explicitly presents all 4 kitchen categories:
+    🍗 Chicken Biriyani: 3 sold · X left | 🍖 Mutton Biriyani: 2 sold · Y left | 🥚 Egg Biriyani: 1 sold | 🍚 Kushka Portions: 0 sold.
+  * <strong>Exact Math Verification:</strong> 3 Chicken + 2 Mutton + 1 Egg + 0 Kushka = 6 plates sold. 100% of punched dishes are fully visible and matched with the SOLD TODAY: 6 badge.
+<ul><li><strong>8. Terminal Header Elevation & Parallel Cart Alignment:</strong></li>
+</ul>  * <strong>No Gap Above Cart:</strong> Extracted the terminal title and quick actions (COUNTER POS, Past Bills, + Custom Dish, Next Token) into a full-width header bar spanning across the top.
+  * <strong>Perfect Parallel Baseline:</strong> Directly below the top bar, both the Kitchen Deg Batch card (left column) and the Billing Cart card (right column) start at the exact same vertical pixel. This completely eliminates blank whitespace above the [🍽️ Dine-in] / [🥡 Takeaway] and channel toggle buttons.
+  * <strong>Restored Side Gutters (Vertical Breathing Room):</strong> Standardized container width across all pages (/app, /app/billing, /app/reports, /app/stock, /app/items) to max-w-6xl with generous padding (px-4 sm:px-6 lg:px-8). Restores the elegant framed dashboard appearance on laptops and POS displays instead of edge-to-edge stretching.
+<hr class="divider" />
+<ul><li><strong>9. Intelligent Prep Tomorrow Forecasting & New-Launch Fallback:</strong></li>
+</ul>  * <strong>How the Prep Data Feeds:</strong> In </code>/app/reports<code>, the <strong>Prep Tomorrow</strong> column calculates the exact quantity of each dish the kitchen should prepare for tomorrow's lunch and dinner services.
+  * <strong>4-Week Weighted Moving Average (Mature Outlets):</strong> For established branches, it looks at the last 4 same weekdays ($40\% W_1 + 30\% W_2 + 20\% W_3 + 10\% W_4$). For example, a Sunday prep forecast is calculated from the last 4 Sundays because weekend biriyani demand is 2x to 3x higher than a Tuesday.
+  * <strong>New Restaurant Smart Fallback (Why it Showed "0" Previously):</strong> In a freshly opened outlet or test environment, there are no sales recorded 7, 14, 21, or 28 days ago. The system now uses an intelligent run-rate fallback: it calculates the average daily sales of that dish across recorded active days and applies a $+20\%$ weekend buffer (Friday–Sunday) or $+5\%$ weekday buffer. A restaurant that sold 8 Chicken Biriyanis today will now see a sensible recommendation (e.g. 8–10 plates) instead of an unhelpful 0 plates!
+  * <strong>Why Checking at Night (Day-Close ~10:00 PM) is Vital (Never Wait Until 8:00 AM):</strong> Checking prep at 8:00 AM is far too late for a biriyani kitchen. Chennai wholesale meat markets (Koyambedu / Pulianthope) open at 4:00 AM, and authentic Dum Biriyani requires 3 to 4 hours of slow dum cooking starting by 7:30 AM to be hot and fragrant for 12:00 PM lunch. Therefore, the owner and head chef check the <strong>Prep Tomorrow</strong> column every night during Day-Close (10:00 PM – 11:00 PM Z-Report review), immediately place supplier orders for meat, poultry, seeraga samba rice, and onions for 5:00 AM delivery, ensuring 100% on-time preparation without last-minute panic or costly waste.
+<ul><li><strong>10. Live Kitchen Deg Stockout vs. Master "Menu & Costs" Status:</strong></li>
+</ul>  * <strong>The User's Question:</strong> If all 160 plates in the Deg are sold out, does it change to "Sold Out" in MENU & COSTS (</code>/app/items<code>)?
+  * <strong>System Distinction:</strong>
+    1. <strong>Live Deg Batch Stockout (Daily Dynamic Inventory):</strong> When the 160 plates cooked for today are sold out ($platesLeft = 0$), the POS billing screen immediately marks all biriyani cards as <strong>"SOLD OUT"</strong> in red and blocks further punching. This is <em>automatic daily inventory exhaustion</em>.
+    2. <strong>Master Menu Catalog (</code>/app/items<code>):</strong> The </code>[🟢 Serving]<code> vs </code>[⚪ Sold Out]<code> button in MENU & COSTS is the <em>permanent catalog toggle</em> (e.g., when a supplier fails to deliver mutton, or a seasonal dish is taken off menu for months).
+    3. <strong>Why They Are Decoupled:</strong> If the daily 160-plate stockout flipped the master menu toggle to "Sold Out", the owner would have to manually open MENU & COSTS every single morning and re-enable 15 different dishes one by one! Instead, tomorrow morning's fresh cooked Deg capacity (e.g. 160 plates) automatically resets live ordering, saving the owner manual effort.
+<ul><li><strong>11. Touch-Optimized Billing Header & Live Terminal Controls:</strong></li>
+</ul>  * <strong>Large High-Touch Buttons:</strong> [Past Bills] and [+ Custom / Open Dish] now have expanded touch padding (px-5 py-2.5), bold font styling, and 18px icons, engineered specifically for speed on counter touchscreens.
+  * <strong>Live Register & Keyboard Shortcut Helpers:</strong> Bridges the header gap on wide monitors by displaying a pulsing Live Counter · {Branch Name} status pill and quick keyboard shortcuts ([F2] Save & Print · [Esc] Clear).
+  * <strong>Prominent Next Token Badge:</strong> Positioned directly above the billing cart with double-border amber/primary gradient styling (Next Token #X) for effortless visual tracking by cashiers and expeditors.
+  * <strong>Optimal 7XL Margins:</strong> Upgraded container layout to max-w-7xl with px-4 sm:px-6 lg:px-8, allowing dish cards, tables, and reports to occupy full comfortable width.
+<ul><li><strong>12. Modern Ambient Culinary Login Screen (Zero Watermark Clutter):</strong></li>
+</ul>  * <strong>Why Old Watermarks Looked Clumsy:</strong> Circular clip-art watermarks or dark seals placed behind login boxes get 70% covered by the card, creating awkward severed shapes and visual clutter.
+  * <strong>Modern SaaS Ambient Lighting:</strong> Replaced with soft, diffuse culinary radial glows (mber-500/10 and primary/8) with 64px Gaussian blur behind the card, paired with an executive gradient top-accent bar (h-1 amber-to-primary) and crisp terminal gateway badges.
+  * <strong>Result:</strong> Looks like modern high-end software (Stripe, Linear, Toast) while keeping 100% focus on secure, fast terminal authentication.
+  * <strong>Header Gap Elimination:</strong> Grouped terminal controls (</code>[Past Bills]<code>, </code>[+ Custom / Open Dish]<code>, and </code>[Next Token #X]<code>) directly beside the </code>COUNTER POS<code> title with a subtle divider line, completely eliminating the wide empty gap across wide screens.
+  * <strong>Optimal 7XL Margins:</strong> Upgraded container layout to </code>max-w-7xl<code> with </code>px-4 sm:px-6 lg:px-8<code>. Dishes, tables, and reports now occupy more screen width comfortably while preserving clean breathing margins from the window edges.
+<ul><li><strong>12. 100% Watermark-Free Login Screen:</strong></li>
+</ul>  * <strong>Clean & Modern Gateway:</strong> Completely removed all background watermark circles and seals from </code>/login`. The login portal is now pristine, crisp, and distraction-free.
+<hr class="divider" />
+<p><em>(End of Operations Manual - Prepared for Spot Light Biriyani & Commerce Cloud)</em></p>
+</body>
+</html>

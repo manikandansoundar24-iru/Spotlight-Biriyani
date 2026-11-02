@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>4 WHITE LABEL REBRANDING GUIDE</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+  body {
+    font-family: 'Outfit', -apple-system, sans-serif;
+    color: #1f2937;
+    background: #fff;
+    max-width: 820px;
+    margin: 40px auto;
+    padding: 0 30px;
+    line-height: 1.6;
+    font-size: 14px;
+  }
+  h1 { color: #ea580c; font-size: 26px; border-bottom: 2px solid #ea580c; padding-bottom: 8px; margin-top: 30px; font-weight: 800; }
+  h2 { color: #1e293b; font-size: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-top: 26px; font-weight: 700; }
+  h3 { color: #334155; font-size: 16px; margin-top: 20px; font-weight: 600; }
+  code { font-family: 'JetBrains Mono', monospace; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 12px; color: #b91c1c; }
+  pre { background: #0f172a; color: #f8fafc; padding: 14px; border-radius: 8px; overflow-x: auto; font-size: 12px; }
+  pre code { background: transparent; color: inherit; padding: 0; }
+  blockquote { border-left: 4px solid #ea580c; margin: 0; padding-left: 14px; color: #475569; font-style: italic; background: #fff7ed; padding: 10px 14px; border-radius: 0 6px 6px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+  th, td { border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; }
+  th { background: #f8fafc; font-weight: 700; }
+  tr:nth-child(even) { background: #f8fafc; }
+  .print-btn {
+    position: fixed;
+    top: 20px;
+    right: 25px;
+    background: #ea580c;
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 25px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(234, 88, 12, 0.4);
+    z-index: 1000;
+  }
+  .print-btn:hover { background: #c2410c; }
+  @media print {
+    .print-btn { display: none; }
+    body { margin: 0; padding: 0; font-size: 11pt; }
+    @page { margin: 15mm; }
+  }
+</style>
+</head>
+<body>
+<button class="print-btn" onclick="window.print()">🖨️ Save as PDF / Print</button>
+<h1>🚀 White-Label Rebranding Guide & Restaurant SaaS Billionaire Playbook</h1>
+
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:20px 0;">
+
+<h2>1. Is This Application Generic?</h2>
+<p><strong>YES, 100%.</strong></p>
+<p>Although the demo data and food photography are tailored for <em>Spot Light Biriyani</em>, the entire architecture is a <strong>universal restaurant management and POS engine</strong>.</p>
+
+<p>You can white-label and sell this software to:</p>
+<li>🍗 <strong>Biriyani & Mandi Restaurants</strong> (Dum biriyani, mutton, kushka, grills)</li>
+<li>☕ <strong>Chai, Coffee & Tiffin Cafes</strong> (Chai, samosas, idli, dosa, parotta)</li>
+<li>🍔 <strong>Burger, Pizza & Fast Food Joints</strong> (Combos, fries, beverages)</li>
+<li>🥟 <strong>Chinese, Momo & Roll Corners</strong> (Noodles, fried rice, shawarmas)</li>
+<li>🍱 <strong>Cloud Kitchens on Swiggy / Zomato</strong> (Multi-brand delivery kitchens)</li>
+
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:20px 0;">
+
+<h2>2. How to Rebrand for a New Client in 15 Minutes</h2>
+
+<h3>Step 1: Business Information & Branches (<code>/app/settings</code>)</h3>
+<p>Open the app in your browser and navigate to <code>/app/settings</code>:</p>
+<p>1. <strong>Business Name</strong>: Change <em>"Spot Light Biriyani"</em> to your client's name (e.g. <em>"SS Hyderabad Biriyani"</em> or <em>"Madras Chai Cafe"</em>).</p>
+<p>2. <strong>Branches</strong>: Update branch names, addresses, and phone numbers.</p>
+<p>3. <strong>Channel Commissions</strong>: Enter the client's actual Swiggy (e.g. 22%) and Zomato (e.g. 20%) commission percentages and packaging fee.</p>
+
+<h3>Step 2: Configure Menu Dishes & Plate Food Costs (<code>/app/items</code>)</h3>
+<p>Open <code>/app/items</code>:</p>
+<p>1. Delete demo dishes not sold by the client.</p>
+<p>2. Add the client's dishes:</p>
+<li><strong>Counter Price</strong>: What walk-in counter customers pay.</li>
+<li><strong>Online Price</strong>: What Swiggy/Zomato customers pay.</li>
+<li><strong>Plate Cost</strong>: Cost of ingredients to prepare 1 portion.</li>
+<p>3. Margins calculate dynamically for every dish.</p>
+
+<h3>Step 3: Change Brand Accent Colors (Optional)</h3>
+<p>In [src/styles.css](file:///c:/Users/ManikandanSoundar/OneDrive%20-%20Adeahub/Personal%20Work/spotlight-biriyani-full-kit/spotlight-biriyani/src/styles.css):</p>
+<li>For a <strong>Vegetarian / Pure Veg Cafe</strong>: Change <code>--primary: oklch(0.68 0.15 150)</code> (Emerald Green).</li>
+<li>For a <strong>Chai / Bakery Cafe</strong>: Change <code>--primary: oklch(0.75 0.18 70)</code> (Warm Amber Gold).</li>
+<li>For a <strong>Fast Food / Pizza Joint</strong>: Change <code>--primary: oklch(0.65 0.22 25)</code> (Vibrant Crimson Red).</li>
+
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:20px 0;">
+
+<h2>3. The 3 Winning Monetization Models</h2>
+
+<h3>Model A: One-time Setup + Annual Maintenance (Quick Upfront Cash)</h3>
+<li><strong>₹15,000 Upfront Setup Fee</strong>: You setup their menu, configure their tablet, connect their 80mm thermal printer, and train staff for 1 hour.</li>
+<li><strong>₹6,000 / Year / Branch</strong>: Annual maintenance, tech support, and data backups.</li>
+<li><em>Best for single standalone shops who want to buy outright.</em></li>
+
+<h3>Model B: Monthly Subscription / SaaS (Predictable Recurring Income)</h3>
+<li><strong>Single Branch</strong>: <strong>₹1,499 / Month</strong>.</li>
+<li><strong>Multi-Branch (up to 3 branches)</strong>: <strong>₹3,499 / Month</strong>.</li>
+<li><em>Includes software, updates, and customer support.</em></li>
+
+<h3>Model C: Cloud Enterprise Upgrade (High-Ticket Upsell)</h3>
+<li>When the owner expands to 4+ branches and wants to monitor live sales from his iPhone while sitting at home, charge <strong>₹25,000 Setup + ₹2,500/Month</strong> to connect the app to a Supabase Cloud database!</li>
+
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:20px 0;">
+
+<h2>4. The Path to Building a Crore+ Restaurant Tech Business</h2>
+
+<pre><code>graph TD
+<p>    Stage1["Phase 1: 10 Local Shops\nMRR: ₹25,000 / month\nUpfront Setup: ₹1,50,000"] --&gt; Stage2["Phase 2: 50 City Outlets\nMRR: ₹1,50,000 / month\nARR: ₹18 Lakhs / year"]</p>
+<p>    Stage2 --&gt; Stage3["Phase 3: 200 Regional Restaurants\nMRR: ₹7,00,000 / month\nARR: ₹84 Lakhs / year"]</p>
+<p>    Stage3 --&gt; Stage4["Phase 4: 1,000 Pan-India Outlets\nMRR: ₹38,00,000 / month\nARR: ₹4.56 Crore / year"]</p>
+<p></code></pre></p>
+
+<h3>The Pitch Script to Close Any Restaurant Owner in 5 Minutes:</h3>
+<blockquote><em>"Good evening, Anna/Sir. Most POS machines like Petpooja or billing computers cost ₹25,000 to ₹40,000 upfront, lock you into proprietary hardware, and crash whenever there is a power cut or Wi-Fi drop.</em></blockquote>
+<p>></p>
+<blockquote><em>More importantly, they only tell you your gross sales — they hide how much money Swiggy and Zomato eat from your pockets.</em></blockquote>
+<p>></p>
+<blockquote><em>Look at this demo on my phone: When you bill 2 Chicken Biriyani on Swiggy, our system instantly deducts food cost, platform commission, and packaging to show your actual take-home profit before you save.</em></blockquote>
+<p>></p>
+<blockquote><em>Plus, our Prep Forecast tells your kitchen cook exactly how many plates to prepare each morning, saving you ₹3,000 to ₹5,000 every single week in wasted meat and rice.</em></blockquote>
+<p>></p>
+<blockquote><em>It runs on any tablet or phone you already have with zero new hardware to buy. Let me set it up for your kitchen today for just ₹15,000."</em></blockquote>
+
+</body>
+</html>

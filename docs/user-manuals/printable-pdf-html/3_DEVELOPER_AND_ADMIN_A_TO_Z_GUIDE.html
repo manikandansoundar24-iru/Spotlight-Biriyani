@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>3 DEVELOPER AND ADMIN A TO Z GUIDE</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+  body {
+    font-family: 'Outfit', -apple-system, sans-serif;
+    color: #1f2937;
+    background: #fff;
+    max-width: 820px;
+    margin: 40px auto;
+    padding: 0 30px;
+    line-height: 1.6;
+    font-size: 14px;
+  }
+  h1 { color: #ea580c; font-size: 26px; border-bottom: 2px solid #ea580c; padding-bottom: 8px; margin-top: 30px; font-weight: 800; }
+  h2 { color: #1e293b; font-size: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; margin-top: 26px; font-weight: 700; }
+  h3 { color: #334155; font-size: 16px; margin-top: 20px; font-weight: 600; }
+  code { font-family: 'JetBrains Mono', monospace; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 12px; color: #b91c1c; }
+  pre { background: #0f172a; color: #f8fafc; padding: 14px; border-radius: 8px; overflow-x: auto; font-size: 12px; }
+  pre code { background: transparent; color: inherit; padding: 0; }
+  blockquote { border-left: 4px solid #ea580c; margin: 0; padding-left: 14px; color: #475569; font-style: italic; background: #fff7ed; padding: 10px 14px; border-radius: 0 6px 6px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+  th, td { border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; }
+  th { background: #f8fafc; font-weight: 700; }
+  tr:nth-child(even) { background: #f8fafc; }
+  .print-btn {
+    position: fixed;
+    top: 20px;
+    right: 25px;
+    background: #ea580c;
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 25px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(234, 88, 12, 0.4);
+    z-index: 1000;
+  }
+  .print-btn:hover { background: #c2410c; }
+  @media print {
+    .print-btn { display: none; }
+    body { margin: 0; padding: 0; font-size: 11pt; }
+    @page { margin: 15mm; }
+  }
+</style>
+</head>
+<body>
+<button class="print-btn" onclick="window.print()">🖨️ Save as PDF / Print</button>
+<h1>💻 Spot Light Biriyani — Developer & Admin A to Z Operating Guide</h1>
+
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:20px 0;">
+
+<h2>Welcome, Developer / Administrator!</h2>
+<p>This document explains the technical runtime environment, starting and stopping the server, how local networking works, finding your IP address, opening the app on mobile phones/tablets, and deploying for free to the cloud.</p>
+
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:20px 0;">
+
+<h2>1. Technical Prerequisites & Architecture</h2>
+<li><strong>Language</strong>: TypeScript / React 19</li>
+<li><strong>Bundler / Server</strong>: Vite 8 (Node.js v20+)</li>
+<li><strong>Routing</strong>: TanStack Router (File-based routing under <code>src/routes/</code>)</li>
+<li><strong>Styles</strong>: Tailwind CSS v4 + OKLCH Design Tokens in <code>src/styles.css</code></li>
+<li><strong>Data Persistence</strong>: Offline-first <code>localStorage</code> (key: <code>slb.pos.v1</code>)</li>
+
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:20px 0;">
+
+<h2>2. How to Start and Stop the Development Server</h2>
+
+<h3>A. Start the Server</h3>
+<p>Open Windows PowerShell or VS Code Terminal:</p>
+<pre><code>cd "c:\Users\ManikandanSoundar\OneDrive - Adeahub\Personal Work\spotlight-biriyani-full-kit\spotlight-biriyani"
+
+<p># Run Vite dev server on port 8080</p>
+<p>& "C:\Users\ManikandanSoundar\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe" "node_modules\vite\bin\vite.js" --port 8080</p>
+<p></code></pre></p>
+<p><em>(If Node is in your environment PATH, simply run <code>npm run dev</code>)</em>.</p>
+
+<h3>B. Stop the Server</h3>
+<li>If running in an active terminal: Press <code>Ctrl + C</code> and type <code>y</code>.</li>
+<li>If running in background or port 8080 is locked:</li>
+<pre><code>Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
+<p></code></pre></p>
+
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:20px 0;">
+
+<h2>3. How to Open the App on Mobile Phones & Tablets</h2>
+
+<h3>Why <code>http://localhost:8080</code> does NOT work on a Mobile Phone:</h3>
+<li><code>localhost</code> is a special computer word that literally means <strong>"THIS SAME MACHINE"</strong>.</li>
+<li>When you type <code>localhost</code> on your laptop, it connects to your laptop's server.</li>
+<li>When you type <code>localhost</code> on your mobile phone, the phone looks inside itself! Since the phone does not have Node.js or Vite running inside it, the phone browser displays:</li>
+<p>  <strong>"This site can't be reached" (ERR_CONNECTION_REFUSED)</strong>.</p>
+
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:20px 0;">
+
+<h3>Step-by-Step Instructions to Open on Mobile Phone:</h3>
+
+<p>#### Step 1: Connect Phone & Laptop to the Same Wi-Fi</p>
+<li>Both your laptop and your mobile phone <strong>MUST be connected to the exact same Wi-Fi router</strong> (or turn on your phone's Mobile Hotspot and connect your laptop to your phone's hotspot).</li>
+
+<p>#### Step 2: Find Your Laptop's Local Wi-Fi IP Address</p>
+<p>Open PowerShell on your laptop and run:</p>
+<pre><code>ipconfig
+<p></code></pre></p>
+<p>Look for <strong>Wireless LAN adapter Wi-Fi</strong> -> <strong>IPv4 Address</strong>.</p>
+<p><em>(Your laptop's current Wi-Fi IP address is: <code>10.223.36.25</code>)</em>.</p>
+
+<p>#### Step 3: Open on Your Mobile Browser (Chrome or Safari)</p>
+<p>On your mobile phone, type this exact URL:</p>
+<p>👉 <strong><code>http://10.223.36.25:8080/app/billing</code></strong> (or <code>http://10.223.36.25:8080/</code>)</p>
+
+<p>#### Step 4: Install as an App on the Phone / Counter Tablet</p>
+<p>1. In Chrome on your phone/tablet, tap the top-right menu <strong>(⋮)</strong>.</p>
+<p>2. Tap <strong>"Add to Home screen"</strong> or <strong>"Install App"</strong>.</p>
+<p>3. An app icon named <strong>Spot Light Manager</strong> appears on your home screen.</p>
+<p>4. Tapping it opens full-screen with zero browser address bar, running like a native POS application!</p>
+
+<hr style="border:0;border-top:1px solid #e2e8f0;margin:20px 0;">
+
+<h2>4. How to Deploy to Free Cloud (Vercel / Netlify)</h2>
+
+<p>When you deploy to Vercel or Netlify, you get a public URL (e.g. <code>https://spotlight-biriyani.vercel.app</code>) that works on <strong>ANY phone, anywhere in the world on mobile data (4G/5G)</strong> without needing the same Wi-Fi!</p>
+
+<pre><code># 1. Build production bundle
+<p>npm run build</p>
+
+<p># 2. Preview production build locally</p>
+<p>npm run preview</p>
+<p></code></pre></p>
+
+<h3>Steps to Deploy to Vercel (100% Free):</h3>
+<p>1. Push this project to GitHub.</p>
+<p>2. Log into [Vercel.com](https://vercel.com) with GitHub.</p>
+<p>3. Click <strong>"Add New Project"</strong> -> Select <code>spotlight-biriyani</code>.</p>
+<p>4. Framework Preset: <strong>Vite</strong>.</p>
+<p>5. Click <strong>"Deploy"</strong>.</p>
+<p>6. In 60 seconds, your application is live globally with free SSL (<code>https://</code>).</p>
+
+</body>
+</html>
