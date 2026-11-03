@@ -118,7 +118,7 @@ function AppLayout() {
     <div className={`min-h-screen w-full max-w-full overflow-x-hidden bg-background text-foreground ${isDarkMode ? "dark" : ""}`}>
       <header className="sticky top-0 z-40 border-b border-border/80 bg-card/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-3 sm:px-6 lg:px-8 py-2.5">
-          {/* LEFT SIDE: Platform SaaS Brand & Logo */}
+          {/* LEFT SIDE: SaaS Product Brand & Logo (Catchy, Professional) */}
           <Link to="/app" className="flex items-center gap-2.5 group shrink-0">
             <span className="flex size-8 sm:size-9 items-center justify-center rounded-xl bg-gradient-to-tr from-amber-500 via-orange-600 to-red-600 shadow-md group-hover:scale-105 transition-transform text-white">
               <Flame className="size-4 sm:size-5" />
@@ -126,30 +126,28 @@ function AppLayout() {
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
                 <span className="font-display font-black text-sm sm:text-base tracking-wide whitespace-nowrap leading-none text-foreground">
-                  ADEA RESTO OS
+                  RESTOPULSE
                 </span>
                 <span className="hidden sm:inline-block rounded-md bg-primary/10 border border-primary/20 px-1.5 py-0.5 text-[9px] font-extrabold text-primary leading-none">
-                  Cloud ERP
+                  Cloud POS &amp; ERP
                 </span>
               </div>
               <span className="text-[10px] font-semibold text-muted-foreground leading-none mt-1">
-                Multi-Branch Kitchen &amp; POS Platform
+                Intelligent Restaurant &amp; Kitchen Operating System
               </span>
             </div>
           </Link>
 
           <div className="flex items-center gap-1.5 sm:gap-2.5 flex-wrap">
-            {/* RIGHT SIDE: Active Client Restaurant Identity */}
-            <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-2.5 sm:px-3 py-1 shadow-2xs">
-              <div className="flex flex-col text-left">
-                <span className="text-[8px] sm:text-[9px] font-extrabold uppercase tracking-wider text-primary leading-none">
-                  Client Restaurant
-                </span>
-                <span className="text-xs sm:text-sm font-black text-foreground leading-tight truncate max-w-[130px] sm:max-w-none">
-                  Spot Light Biriyani
-                </span>
-              </div>
-              <div className="h-5 w-px bg-border mx-0.5" />
+            {/* RIGHT SIDE: Active Restaurant Brand & Branch (Clean, No awkward "Client:" text) */}
+            <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-2.5 sm:px-3 py-1.5 shadow-2xs">
+              <span className="flex size-6 items-center justify-center rounded-lg bg-primary/15 text-primary text-xs">
+                🍽️
+              </span>
+              <span className="text-xs sm:text-sm font-black text-foreground leading-tight truncate max-w-[140px] sm:max-w-none">
+                SPOT LIGHT BIRIYANI
+              </span>
+              <div className="h-4 w-px bg-border mx-0.5" />
               <select
                 value={db?.settings.activeBranchId ?? ""}
                 onChange={(e) =>
@@ -157,8 +155,8 @@ function AppLayout() {
                     d.settings.activeBranchId = e.target.value;
                   })
                 }
-                className="rounded-lg border-none bg-transparent py-0.5 text-xs font-bold text-foreground focus:outline-none cursor-pointer"
-                title="Select active branch"
+                className="rounded-lg border-none bg-transparent py-0.5 text-xs font-bold text-primary focus:outline-none cursor-pointer"
+                title="Select restaurant branch"
               >
                 {(db ?? getDB()).branches.map((b) => (
                   <option key={b.id} value={b.id}>

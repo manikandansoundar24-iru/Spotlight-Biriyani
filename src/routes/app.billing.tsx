@@ -998,7 +998,7 @@ function Billing() {
         <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-4 flex-wrap w-full sm:w-auto">
           <div className="flex flex-col justify-center">
             <p className="text-[10px] font-bold uppercase tracking-wider text-primary leading-none">
-              Client: Spot Light Biriyani · Billing Terminal
+              Spot Light Biriyani · Billing Terminal
             </p>
             <h1 className="text-xl sm:text-3xl font-display font-black tracking-tight leading-none mt-1">COUNTER POS</h1>
           </div>
