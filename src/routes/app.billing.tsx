@@ -50,6 +50,8 @@ import {
   getLiveBatchStatus,
   inr,
   isSameDay,
+  normalizeCategory,
+  sanitizeAndDeduplicateItems,
   setDB,
   useDB,
   type Category,
@@ -527,9 +529,10 @@ function Billing() {
     ];
     if (db?.items) {
       db.items.forEach((it) => {
-        if (!list.some((c) => c.id === it.category)) {
-          const formattedLabel = it.category.charAt(0).toUpperCase() + it.category.slice(1);
-          list.push({ id: it.category, label: formattedLabel });
+        const normCat = normalizeCategory(it.category);
+        if (!list.some((c) => c.id === normCat)) {
+          const formattedLabel = normCat.charAt(0).toUpperCase() + normCat.slice(1);
+          list.push({ id: normCat, label: formattedLabel });
         }
       });
     }
@@ -542,7 +545,7 @@ function Billing() {
       db.items.forEach((it) => {
         if (it.active) {
           counts["all"] = (counts["all"] || 0) + 1;
-          const c = it.category || "other";
+          const c = normalizeCategory(it.category || "other");
           counts[c] = (counts[c] || 0) + 1;
         }
       });
@@ -968,9 +971,11 @@ function Billing() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [preview, saveOrUpdate]);
 
-  const items = db?.items
-    ? db.items.filter((i) => (cat === "all" ? true : i.category === cat) && i.active)
-    : [];
+  const items = useMemo(() => {
+    if (!db?.items) return [];
+    const sanitized = sanitizeAndDeduplicateItems(db.items);
+    return sanitized.filter((i) => (cat === "all" ? true : normalizeCategory(i.category) === cat) && i.active);
+  }, [db?.items, cat]);
 
   // Cash change computation
   const tenderNum = Number(cashTendered) || 0;
@@ -992,7 +997,9 @@ function Billing() {
         {/* Left: Terminal Brand & Actions */}
         <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-4 flex-wrap w-full sm:w-auto">
           <div className="flex flex-col justify-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-primary leading-none">Billing Terminal</p>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-primary leading-none">
+              Client: Spot Light Biriyani · Billing Terminal
+            </p>
             <h1 className="text-xl sm:text-3xl font-display font-black tracking-tight leading-none mt-1">COUNTER POS</h1>
           </div>
 

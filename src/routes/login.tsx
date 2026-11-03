@@ -158,11 +158,11 @@ function LoginPage() {
         <div className="relative z-10">
           <div className="text-center max-w-xl mx-auto">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1 text-xs font-bold text-primary">
-              <Shield className="size-3.5" /> Secure Terminal Gateway
+              <Shield className="size-3.5" /> Adea RestoOS Enterprise Gateway
             </span>
-            <h1 className="mt-3 text-4xl font-display">STAFF &amp; DEVELOPER LOGIN</h1>
+            <h1 className="mt-3 text-3xl sm:text-4xl font-display font-black tracking-tight">TERMINAL &amp; CLIENT LOGIN</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Select your assigned role to access your dedicated terminal interface.
+              Adea RestoOS Cloud Platform · Select role to authenticate into active restaurant tenant.
             </p>
           </div>
 
@@ -199,12 +199,17 @@ function LoginPage() {
         {portalType === "customer" ? (
           /* Diner / Customer Sign In & Sign Up Form */
           <div className="relative mt-6 mx-auto max-w-md rounded-2xl border border-primary/25 bg-card/95 backdrop-blur-md p-6 sm:p-8 shadow-2xl overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-gradient-to-r before:from-primary/30 before:via-primary before:to-amber-500/30">
-            <div className="flex items-center justify-center gap-2 mb-4 pb-3 border-b border-border/60">
-              <span className="flex size-7 items-center justify-center rounded-lg bg-gradient-ember shadow-xs">
-                <Flame className="size-3.5 text-white" />
-              </span>
-              <span className="font-display font-black text-xs uppercase tracking-wider text-foreground">
-                Spot Light Biriyani · Chennai
+            <div className="flex flex-col items-center justify-center gap-1 mb-4 pb-3 border-b border-border/60 text-center">
+              <div className="flex items-center gap-2">
+                <span className="flex size-7 items-center justify-center rounded-lg bg-gradient-ember shadow-xs">
+                  <Flame className="size-3.5 text-white" />
+                </span>
+                <span className="font-display font-black text-xs uppercase tracking-wider text-foreground">
+                  Spot Light Biriyani · Chennai
+                </span>
+              </div>
+              <span className="text-[10px] text-muted-foreground font-semibold">
+                Customer &amp; Online Order Portal · Powered by Adea RestoOS
               </span>
             </div>
             <div className="flex rounded-xl bg-muted/60 p-1 mb-5 text-xs">
@@ -327,12 +332,20 @@ function LoginPage() {
 
             {/* Main Authentication Box */}
             <div className="relative mt-6 mx-auto max-w-md rounded-2xl border border-primary/25 bg-card/95 backdrop-blur-md p-6 sm:p-8 shadow-2xl overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-gradient-to-r before:from-primary/30 before:via-primary before:to-amber-500/30">
-              <div className="flex items-center justify-center gap-2 mb-3 pb-3 border-b border-border/60">
-                <span className="flex size-7 items-center justify-center rounded-lg bg-gradient-ember shadow-xs">
-                  <Flame className="size-3.5 text-white" />
-                </span>
-                <span className="font-display font-black text-xs uppercase tracking-wider text-foreground">
-                  Spot Light Biriyani · Chennai
+              <div className="flex flex-col items-center justify-center gap-1 mb-3 pb-3 border-b border-border/60 text-center">
+                <div className="flex items-center gap-2">
+                  <span className="flex size-6 items-center justify-center rounded-lg bg-primary/15 text-primary text-xs font-black">
+                    ⚡
+                  </span>
+                  <span className="font-display font-black text-xs uppercase tracking-wider text-foreground">
+                    ADEA RESTO OS
+                  </span>
+                  <span className="rounded bg-primary/10 px-1.5 py-0.2 text-[9px] font-bold text-primary">
+                    Cloud ERP
+                  </span>
+                </div>
+                <span className="text-[10px] text-muted-foreground font-semibold">
+                  Client Workspace: <strong className="text-foreground">Spot Light Biriyani</strong> · Chennai
                 </span>
               </div>
               {!isDevUnlocked ? (

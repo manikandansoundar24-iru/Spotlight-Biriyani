@@ -451,6 +451,64 @@ const listeners = new Set<() => void>();
 const SYNC_CHANNEL_NAME = "spotlight_pos_cross_tab_bus";
 let broadcastBus: BroadcastChannel | null = null;
 
+export function normalizeCategory(cat: string): Category {
+  const c = (cat || "").trim().toLowerCase();
+  if (c === "starters" || c === "starter") return "starter";
+  if (c === "biriyanis" || c === "briyani" || c === "biryani") return "biryani";
+  if (c === "breads" || c === "bread") return "bread";
+  if (c === "desserts" || c === "dessert") return "dessert";
+  if (c === "beverages" || c === "beverage") return "beverage";
+  if (c === "curries" || c === "curry") return "curry";
+  if (c === "chinese & noodles" || c === "chinese") return "chinese";
+  if (c === "fried rice & fast food" || c === "rice") return "rice";
+  if (c === "combos & buckets" || c === "combos") return "combos";
+  if (c === "kushka") return "kushka";
+  return c;
+}
+
+export function cleanDishName(name: string): string {
+  let n = (name || "").trim();
+  // Standardize common variant names
+  if (/^chicken\s*65\s*\(\s*starters\s*\)$/i.test(n)) return "Chicken 65";
+  if (/^kushka\s*\(\s*plain\s*biriyani\s*kuska\s*\)$/i.test(n)) return "Kushka (Plain)";
+  if (/^pepper\s*chicken\s*dry$/i.test(n)) return "Pepper Chicken";
+  // Remove extra multiple spaces
+  n = n.replace(/\s+/g, " ");
+  return n;
+}
+
+export function sanitizeAndDeduplicateItems(items: Item[]): Item[] {
+  if (!Array.isArray(items)) return [];
+  const seen = new Map<string, Item>();
+  for (const item of items) {
+    if (!item || !item.name) continue;
+    const cleanName = cleanDishName(item.name);
+    const cleanCat = normalizeCategory(item.category);
+    const key = cleanName.toLowerCase().replace(/\s+/g, " ");
+
+    const sanitizedItem: Item = {
+      ...item,
+      name: cleanName,
+      category: cleanCat,
+      price: Number(item.price) || 0,
+      onlinePrice: Number(item.onlinePrice) || Math.round((Number(item.price) || 0) * 1.28),
+      cost: Number(item.cost) || Math.round((Number(item.price) || 0) * 0.45),
+      active: item.active !== false,
+    };
+
+    if (!seen.has(key)) {
+      seen.set(key, sanitizedItem);
+    } else {
+      const prev = seen.get(key)!;
+      // Prefer authoritative IDs (like slb- prefix) or actively priced items
+      if (sanitizedItem.id && sanitizedItem.id.startsWith("slb-") && !prev.id.startsWith("slb-")) {
+        seen.set(key, sanitizedItem);
+      }
+    }
+  }
+  return Array.from(seen.values());
+}
+
 if (typeof window !== "undefined") {
   if ("BroadcastChannel" in window) {
     try {
@@ -512,24 +570,11 @@ export function getDB(): DB {
     needsPersist = true;
   }
 
-  // Auto-deduplicate dishes by normalized name (eliminates duplicate dishes in UI)
+  // Auto-deduplicate and normalize dishes permanently
   if (Array.isArray(cache.items) && cache.items.length > 0) {
-    const seen = new Map<string, Item>();
-    for (const item of cache.items) {
-      if (!item || !item.name) continue;
-      const key = item.name.trim().toLowerCase().replace(/\s+/g, " ");
-      if (!seen.has(key)) {
-        seen.set(key, item);
-      } else {
-        const prev = seen.get(key)!;
-        if (item.id.startsWith("slb-") && !prev.id.startsWith("slb-")) {
-          seen.set(key, item);
-        }
-        needsPersist = true;
-      }
-    }
-    if (seen.size !== cache.items.length) {
-      cache.items = Array.from(seen.values());
+    const cleaned = sanitizeAndDeduplicateItems(cache.items);
+    if (cleaned.length !== cache.items.length) {
+      cache.items = cleaned;
       needsPersist = true;
     }
   }
@@ -551,6 +596,10 @@ function persist() {
 export function setDB(mutate: (db: DB) => void) {
   const db = getDB();
   mutate(db);
+  // Guarantee items are always sanitized and deduplicated
+  if (Array.isArray(db.items)) {
+    db.items = sanitizeAndDeduplicateItems(db.items);
+  }
   // Ensure array references are fresh copies so React triggers instant re-renders
   if (Array.isArray(db.sales)) db.sales = [...db.sales];
   if (Array.isArray(db.items)) db.items = [...db.items];

@@ -3,7 +3,7 @@ import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { CATEGORIES, inr, setDB, useDB, type Category } from "@/lib/pos-store";
+import { CATEGORIES, inr, sanitizeAndDeduplicateItems, setDB, useDB, type Category } from "@/lib/pos-store";
 
 export const Route = createFileRoute("/app/items")({
   component: Items,
@@ -21,6 +21,8 @@ function Items() {
   const [customCat, setCustomCat] = useState("");
 
   if (!db) return <p className="text-sm text-muted-foreground">Loading…</p>;
+
+  const displayItems = sanitizeAndDeduplicateItems(db.items);
 
   const update = (id: string, patch: Partial<{ price: number; onlinePrice: number; cost: number; active: boolean }>) =>
     setDB((d) => {
@@ -158,7 +160,7 @@ function Items() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border/60">
-            {db.items.map((i) => (
+            {displayItems.map((i) => (
               <tr key={i.id} className="hover:bg-muted/30 transition-colors">
                 <td className="py-2 font-medium">{i.name}</td>
                 <td className="py-2 text-muted-foreground">

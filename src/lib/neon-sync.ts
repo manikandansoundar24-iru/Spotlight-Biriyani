@@ -6,7 +6,7 @@
  */
 
 import { createServerFn } from "@tanstack/react-start";
-import { getDB, setDB, DB, Sale, Item } from "./pos-store";
+import { getDB, setDB, DB, Sale, Item, sanitizeAndDeduplicateItems } from "./pos-store";
 
 const NEON_SQL_ENDPOINT = "https://ep-small-frog-aorujp14.c-2.ap-southeast-1.aws.neon.tech/sql";
 const NEON_CONN_STRING = "postgresql://neondb_owner:npg_7NjC6EYaLsgW@ep-small-frog-aorujp14.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require";
@@ -33,6 +33,79 @@ export const executeNeonQuery = createServerFn({ method: "POST" })
 
     return res.json();
   });
+
+/**
+ * Pull all persistent sales orders and bill line items from Neon Cloud PostgreSQL
+ */
+export async function pullSalesFromCloud(): Promise<Sale[]> {
+  try {
+    const res = await executeNeonQuery({
+      data: {
+        query: `
+          SELECT 
+            s."id",
+            s."date",
+            s."branchId",
+            s."channel",
+            s."gross",
+            s."discount",
+            s."net",
+            s."cogs",
+            s."commission",
+            s."packaging",
+            s."profit",
+            s."payment",
+            s."orderType",
+            COALESCE(
+              (
+                SELECT json_agg(
+                  json_build_object(
+                    'itemId', COALESCE(l."itemId", ''),
+                    'name', l."name",
+                    'qty', l."qty",
+                    'price', l."price",
+                    'cost', l."cost"
+                  )
+                )
+                FROM "SaleLine" l
+                WHERE l."saleId" = s."id"
+              ),
+              '[]'::json
+            ) AS lines
+          FROM "Sale" s
+          ORDER BY s."date" DESC
+          LIMIT 500;
+        `,
+      },
+    });
+
+    if (res && Array.isArray(res.rows)) {
+      return res.rows.map((r: any) => ({
+        id: String(r.id),
+        date: r.date ? new Date(r.date).toISOString() : new Date().toISOString(),
+        branchId: r.branchId || "taramani",
+        channel: r.channel || "counter",
+        lines: Array.isArray(r.lines)
+          ? r.lines
+          : typeof r.lines === "string"
+            ? JSON.parse(r.lines)
+            : [],
+        gross: Number(r.gross || 0),
+        discount: Number(r.discount || 0),
+        net: Number(r.net || 0),
+        cogs: Number(r.cogs || 0),
+        commission: Number(r.commission || 0),
+        packaging: Number(r.packaging || 0),
+        profit: Number(r.profit || 0),
+        payment: r.payment || "cash",
+        orderType: r.orderType || "dinein",
+      }));
+    }
+  } catch (err) {
+    console.error("Failed to pull sales from Neon:", err);
+  }
+  return [];
+}
 
 /**
  * Push local sales to Neon Cloud PostgreSQL via ultra-fast multi-row batch insert
@@ -122,7 +195,7 @@ export async function pullDishesFromCloud(): Promise<Item[]> {
     });
 
     if (res && Array.isArray(res.rows)) {
-      return res.rows.map((r: any) => ({
+      const items = res.rows.map((r: any) => ({
         id: r.id,
         name: r.name,
         category: r.category,
@@ -131,6 +204,7 @@ export async function pullDishesFromCloud(): Promise<Item[]> {
         cost: Number(r.cost),
         active: Boolean(r.active),
       }));
+      return sanitizeAndDeduplicateItems(items);
     }
   } catch (err) {
     console.error("Failed to pull dishes from Neon:", err);
@@ -140,56 +214,84 @@ export async function pullDishesFromCloud(): Promise<Item[]> {
 
 /**
  * Complete two-way sync:
- * 1. Pulls latest dish prices & items from Neon PostgreSQL
- * 2. Pushes today's bills and past orders to Neon PostgreSQL in single fast batch
+ * 1. Cleans duplicate dishes and pulls dishes from Neon Cloud
+ * 2. Pulls all orders from Neon Cloud so any device shows current sales immediately
+ * 3. Pushes today's local bills to Neon Cloud
  */
 export async function performFullSync(): Promise<{
   success: boolean;
   salesPushed: number;
+  salesPulled: number;
   dishesSynced: number;
   message: string;
 }> {
   try {
-    const currentDB = getDB();
+    // 1. Clean duplicates & pull dishes from Neon Cloud
+    try {
+      await executeNeonQuery({
+        data: {
+          query: `
+            DELETE FROM "DishItem" a USING "DishItem" b
+            WHERE a."id" > b."id" 
+              AND LOWER(TRIM(a."name")) = LOWER(TRIM(b."name"));
+          `,
+        },
+      });
+    } catch {
+      // ignore if join syntax differs
+    }
 
-    // 1. Pull Dishes from Postgres (so edits made in Neon console appear in UI)
     const cloudDishes = await pullDishesFromCloud();
     let dishesSynced = 0;
     if (cloudDishes.length > 0) {
       setDB((draft) => {
-        cloudDishes.forEach((cd) => {
-          const cdNorm = cd.name.trim().toLowerCase().replace(/\s+/g, " ");
-          const existing = draft.items.find(
-            (i) => i.id === cd.id || i.name.trim().toLowerCase().replace(/\s+/g, " ") === cdNorm
-          );
-          if (existing) {
-            existing.id = cd.id;
-            existing.price = cd.price;
-            existing.onlinePrice = cd.onlinePrice;
-            existing.cost = cd.cost;
-            existing.active = cd.active;
-            existing.name = cd.name;
-          } else {
-            draft.items.push(cd);
-          }
-        });
+        draft.items = sanitizeAndDeduplicateItems(cloudDishes);
       });
       dishesSynced = cloudDishes.length;
     }
 
-    // 2. Batch push all local sales to Postgres
+    // 2. Pull all cloud orders down into local store so laptop & phones stay 100% in sync
+    const cloudSales = await pullSalesFromCloud();
+    let salesPulled = 0;
+    if (cloudSales.length > 0) {
+      setDB((draft) => {
+        if (!Array.isArray(draft.sales)) draft.sales = [];
+        const existingIds = new Set(draft.sales.map((s) => s.id));
+        const newSales = cloudSales.filter((cs) => !existingIds.has(cs.id));
+
+        // Update any existing sales that match
+        draft.sales = draft.sales.map((ls) => {
+          const cloudMatch = cloudSales.find((cs) => cs.id === ls.id);
+          return cloudMatch ? { ...ls, ...cloudMatch } : ls;
+        });
+
+        // Insert new ones
+        if (newSales.length > 0) {
+          draft.sales = [...newSales, ...draft.sales];
+        }
+
+        // Sort descending by date
+        draft.sales.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      });
+      salesPulled = cloudSales.length;
+    }
+
+    // 3. Batch push any local sales up to Neon Cloud that are missing from cloud
+    const currentDB = getDB();
     const pushRes = await pushSalesToCloud(currentDB.sales || []);
 
     return {
       success: true,
       salesPushed: pushRes.count,
+      salesPulled,
       dishesSynced,
-      message: `Synchronized ${pushRes.count} orders and ${dishesSynced} dishes with Neon Cloud PostgreSQL.`,
+      message: `Synchronized ${salesPulled} orders and ${dishesSynced} dishes with Neon Cloud PostgreSQL.`,
     };
   } catch (err: any) {
     return {
       success: false,
       salesPushed: 0,
+      salesPulled: 0,
       dishesSynced: 0,
       message: err.message || "Sync failed",
     };
