@@ -65,10 +65,14 @@ export type Sale = {
   packaging: number;
   profit: number;
   payment: "cash" | "upi" | "card" | "online";
-  orderType?: "dinein" | "takeaway";
-  isEdited?: boolean;
-  originalNet?: number;
-  editedAt?: string;
+  orderType?: "dinein" | "takeaway" | undefined;
+  customerPhone?: string | undefined;
+  customerName?: string | undefined;
+  tableId?: string | undefined;
+  kotToken?: number | undefined;
+  isEdited?: boolean | undefined;
+  originalNet?: number | undefined;
+  editedAt?: string | undefined;
 };
 
 export type StockItem = {
@@ -112,6 +116,164 @@ export const DEFAULT_PRINTER_SETTINGS: PrinterSettings = {
   customFooter: "Freshly cooked twice daily · No reheats · Thank you! Visit again.",
 };
 
+/* --- Phase 2 Enterprise Types --- */
+
+export type TableStatus = "available" | "occupied" | "billed";
+
+export type TableSession = {
+  id: string; // "T1", "T2", ... "T8", "O1", "O2"
+  name: string; // "Table 1 (Window)", etc.
+  capacity: number; // 2, 4, 6
+  status: TableStatus;
+  lines: SaleLine[];
+  customerPhone?: string | undefined;
+  customerName?: string | undefined;
+  notes?: string | undefined;
+  openedAt?: string | undefined;
+  lastKotAt?: string | undefined;
+  kotCount?: number | undefined;
+};
+
+export type KdsStatus = "pending" | "preparing" | "ready" | "completed";
+
+export type KdsOrder = {
+  id: string; // KOT or Sale ID
+  orderNumber?: string | undefined;
+  tokenNum?: number | undefined;
+  tableId?: string | undefined;
+  orderType: "dinein" | "takeaway" | "swiggy" | "zomato";
+  channel: ChannelId;
+  createdAt: string;
+  status: KdsStatus;
+  notes?: string | undefined;
+  lines: { name: string; qty: number; done?: boolean | undefined }[];
+};
+
+export type ShiftDayClose = {
+  id: string;
+  date: string;
+  closedAt: string;
+  cashierName: string;
+  openingFloat: number;
+  cashBilled: number;
+  upiBilled: number;
+  cardBilled: number;
+  expenses: number;
+  expectedCash: number;
+  actualCash: number;
+  variance: number; // actualCash - expectedCash
+  note?: string;
+};
+
+export type TenantConfig = {
+  id: string;
+  businessName: string;
+  tagline: string;
+  activeBranchName: string;
+  phone: string;
+  address: string;
+  gstin: string;
+  fssai: string;
+  upiId: string;
+  gstPct: number;
+  enabledModules: {
+    billing: boolean;
+    tables: boolean;
+    kds: boolean;
+    stock: boolean;
+    reports: boolean;
+    menu: boolean;
+    loyalty: boolean;
+    dynamicUpi: boolean;
+    zReport: boolean;
+  };
+};
+
+export const DEFAULT_TABLES: TableSession[] = [
+  { id: "T1", name: "Table 1 (Window)", capacity: 2, status: "available", lines: [] },
+  { id: "T2", name: "Table 2 (Window)", capacity: 2, status: "available", lines: [] },
+  { id: "T3", name: "Table 3 (Center)", capacity: 4, status: "available", lines: [] },
+  { id: "T4", name: "Table 4 (Center)", capacity: 4, status: "available", lines: [] },
+  { id: "T5", name: "Table 5 (Booth)", capacity: 4, status: "available", lines: [] },
+  { id: "T6", name: "Table 6 (Family)", capacity: 6, status: "available", lines: [] },
+  { id: "T7", name: "Table 7 (High Top)", capacity: 4, status: "available", lines: [] },
+  { id: "T8", name: "Table 8 (High Top)", capacity: 2, status: "available", lines: [] },
+  { id: "O1", name: "Outdoor 1 (Patio)", capacity: 4, status: "available", lines: [] },
+  { id: "O2", name: "Outdoor 2 (Patio)", capacity: 4, status: "available", lines: [] },
+];
+
+export const DEFAULT_TENANTS: TenantConfig[] = [
+  {
+    id: "spotlight-biriyani",
+    businessName: "Spot Light Biriyani",
+    tagline: "Authentic Chennai Dum Biriyani & Starters",
+    activeBranchName: "Taramani (Flagship)",
+    phone: "+91 98844 30710",
+    address: "10, Kaikankuppam, Kazhikundram, Taramani, Chennai - 600113",
+    gstin: "33AAAAA0000A1Z5",
+    fssai: "12424008000456",
+    upiId: "spotlightbiriyani@oksbi",
+    gstPct: 5,
+    enabledModules: {
+      billing: true,
+      tables: true,
+      kds: true,
+      stock: true,
+      reports: true,
+      menu: true,
+      loyalty: true,
+      dynamicUpi: true,
+      zReport: true,
+    },
+  },
+  {
+    id: "csk-biriyani",
+    businessName: "CSK Biriyani & Fast Food",
+    tagline: "Chennai Super Kitchen",
+    activeBranchName: "T. Nagar (Main)",
+    phone: "+91 98765 43210",
+    address: "45, Usman Road, T. Nagar, Chennai - 600017",
+    gstin: "33BCDEF1234A1Z1",
+    fssai: "12424008000999",
+    upiId: "cskbiriyani@okaxis",
+    gstPct: 5,
+    enabledModules: {
+      billing: true,
+      tables: true,
+      kds: true,
+      stock: true,
+      reports: true,
+      menu: true,
+      loyalty: true,
+      dynamicUpi: true,
+      zReport: true,
+    },
+  },
+  {
+    id: "madurai-star",
+    businessName: "Madurai Star Biriyani",
+    tagline: "Original Seeraga Samba Biriyani",
+    activeBranchName: "Anna Nagar Kitchen",
+    phone: "+91 98400 11223",
+    address: "12, 2nd Avenue, Anna Nagar, Chennai - 600040",
+    gstin: "33CDEFG5678B1Z2",
+    fssai: "12424008000888",
+    upiId: "maduraistar@okicici",
+    gstPct: 5,
+    enabledModules: {
+      billing: true,
+      tables: true,
+      kds: true,
+      stock: false,
+      reports: true,
+      menu: true,
+      loyalty: true,
+      dynamicUpi: true,
+      zReport: true,
+    },
+  },
+];
+
 export type DB = {
   branches: Branch[];
   channels: Channel[];
@@ -119,11 +281,18 @@ export type DB = {
   sales: Sale[];
   stock: StockItem[];
   moves: StockMove[];
+  tables?: TableSession[];
+  kdsOrders?: KdsOrder[];
+  shiftCloses?: ShiftDayClose[];
+  tenants?: TenantConfig[];
+  activeTenantId?: string;
+  saasPlatformName?: string;
   settings: {
     businessName: string;
     gstPct: number;
     activeBranchId: string;
     printerSettings: PrinterSettings;
+    upiId?: string;
     dailyBatchCapacity?: Record<string, number>;
     batchSplit?: Record<string, { chickenCap: number; muttonCap: number }>;
   };
@@ -570,6 +739,32 @@ export function getDB(): DB {
     needsPersist = true;
   }
 
+  // Phase 2 State Initialization
+  if (!cache.tables || !Array.isArray(cache.tables) || cache.tables.length === 0) {
+    cache.tables = [...DEFAULT_TABLES];
+    needsPersist = true;
+  }
+  if (!cache.tenants || !Array.isArray(cache.tenants) || cache.tenants.length === 0) {
+    cache.tenants = [...DEFAULT_TENANTS];
+    needsPersist = true;
+  }
+  if (!cache.kdsOrders || !Array.isArray(cache.kdsOrders)) {
+    cache.kdsOrders = [];
+    needsPersist = true;
+  }
+  if (!cache.shiftCloses || !Array.isArray(cache.shiftCloses)) {
+    cache.shiftCloses = [];
+    needsPersist = true;
+  }
+  if (!cache.settings.upiId) {
+    cache.settings.upiId = "spotlightbiriyani@oksbi";
+    needsPersist = true;
+  }
+  if (!cache.saasPlatformName) {
+    cache.saasPlatformName = "RestoPulse";
+    needsPersist = true;
+  }
+
   // Auto-deduplicate and normalize dishes permanently
   if (Array.isArray(cache.items) && cache.items.length > 0) {
     const cleaned = sanitizeAndDeduplicateItems(cache.items);
@@ -676,17 +871,176 @@ export function totals(sales: Sale[]) {
 }
 
 export function itemBreakdown(sales: Sale[]) {
-  const map = new Map<string, { name: string; qty: number; revenue: number; profit: number }>();
-  for (const s of sales) {
+  const map = new Map<string, { name: string; itemId: string; qty: number; revenue: number; profit: number }>();
+  for (const s of (sales || [])) {
+    if (!s || !Array.isArray(s.lines)) continue;
     for (const l of s.lines) {
-      const row = map.get(l.itemId) ?? { name: l.name, qty: 0, revenue: 0, profit: 0 };
-      row.qty += l.qty;
-      row.revenue += l.price * l.qty;
-      row.profit += (l.price - l.cost) * l.qty;
-      map.set(l.itemId, row);
+      if (!l || !l.name) continue;
+      const canonicalKey = l.name.trim().toLowerCase();
+      const existing = map.get(canonicalKey);
+      const price = Number(l.price) || 0;
+      const cost = Number(l.cost) || 0;
+      const qty = Number(l.qty) || 0;
+      if (existing) {
+        existing.qty += qty;
+        existing.revenue += price * qty;
+        existing.profit += (price - cost) * qty;
+      } else {
+        map.set(canonicalKey, {
+          name: l.name.trim(),
+          itemId: l.itemId || canonicalKey,
+          qty,
+          revenue: price * qty,
+          profit: (price - cost) * qty,
+        });
+      }
     }
   }
   return [...map.values()].sort((a, b) => b.qty - a.qty);
+}
+
+/* ---------------- Phase 2 Enterprise Operations & Helpers ---------------- */
+
+/**
+ * Customer Loyalty & VIP Regular lookup based on 10-digit mobile phone number.
+ */
+export function getCustomerLoyalty(sales: Sale[], phone: string) {
+  const clean = (phone || "").replace(/\D/g, "").slice(-10);
+  if (!clean || clean.length < 10) return null;
+  const customerSales = (sales || []).filter((s) => {
+    const p = (s.customerPhone || "").replace(/\D/g, "").slice(-10);
+    return p === clean;
+  });
+  const visitCount = customerSales.length;
+  const totalSpent = customerSales.reduce((acc, s) => acc + (s.net || 0), 0);
+  const isVip = visitCount >= 3;
+  return {
+    phone: clean,
+    visitCount,
+    totalSpent,
+    isVip,
+    suggestedDiscountPct: isVip ? 10 : 0,
+    lastVisit: customerSales[0]?.date,
+  };
+}
+
+/**
+ * Occupy or update active tab for a table.
+ */
+export function setTableOrder(tableId: string, lines: SaleLine[], phone?: string, notes?: string) {
+  setDB((d) => {
+    if (!d.tables) d.tables = [...DEFAULT_TABLES];
+    const t = d.tables.find((tbl) => tbl.id === tableId);
+    if (t) {
+      t.lines = lines;
+      if (phone) t.customerPhone = phone;
+      if (notes) t.notes = notes;
+      t.status = lines.length > 0 ? "occupied" : "available";
+      if (!t.openedAt) t.openedAt = new Date().toISOString();
+    }
+  });
+}
+
+/**
+ * Reset table to available after billing.
+ */
+export function vacateTable(tableId: string) {
+  setDB((d) => {
+    if (!d.tables) return;
+    const t = d.tables.find((tbl) => tbl.id === tableId);
+    if (t) {
+      t.lines = [];
+      delete t.customerPhone;
+      delete t.customerName;
+      delete t.notes;
+      delete t.openedAt;
+      delete t.lastKotAt;
+      t.kotCount = 0;
+      t.status = "available";
+    }
+  });
+}
+
+/**
+ * Add or update an order on the Kitchen Display System (KDS).
+ */
+export function addKdsOrder(order: Omit<KdsOrder, "createdAt" | "status">) {
+  setDB((d) => {
+    if (!d.kdsOrders) d.kdsOrders = [];
+    const newKds: KdsOrder = {
+      ...order,
+      createdAt: new Date().toISOString(),
+      status: "pending",
+    };
+    d.kdsOrders.unshift(newKds);
+  });
+}
+
+/**
+ * Update KDS order status (pending -> preparing -> ready -> completed).
+ */
+export function updateKdsStatus(orderId: string, status: KdsStatus) {
+  setDB((d) => {
+    if (!d.kdsOrders) return;
+    const order = d.kdsOrders.find((o) => o.id === orderId);
+    if (order) {
+      order.status = status;
+    }
+  });
+}
+
+/**
+ * Toggle checkmark for an item on the kitchen tablet screen.
+ */
+export function toggleKdsLineDone(orderId: string, lineIndex: number) {
+  setDB((d) => {
+    if (!d.kdsOrders) return;
+    const order = d.kdsOrders.find((o) => o.id === orderId);
+    if (order && order.lines[lineIndex]) {
+      order.lines[lineIndex].done = !order.lines[lineIndex].done;
+    }
+  });
+}
+
+/**
+ * Record a Cashier Day-End Z-Report Shift Close.
+ */
+export function recordShiftClose(close: Omit<ShiftDayClose, "id" | "closedAt">) {
+  const newClose: ShiftDayClose = {
+    ...close,
+    id: `z_${Date.now()}`,
+    closedAt: new Date().toISOString(),
+  };
+  setDB((d) => {
+    if (!d.shiftCloses) d.shiftCloses = [];
+    d.shiftCloses.unshift(newClose);
+  });
+  return newClose;
+}
+
+/**
+ * Multi-Tenant Switcher (Used exclusively by Developer Super-Admin).
+ */
+export function switchClientTenant(tenantId: string) {
+  setDB((d) => {
+    if (!d.tenants) d.tenants = [...DEFAULT_TENANTS];
+    const tenant = d.tenants.find((t) => t.id === tenantId);
+    if (tenant) {
+      d.activeTenantId = tenant.id;
+      d.settings.businessName = tenant.businessName;
+      d.settings.gstPct = tenant.gstPct;
+      if (tenant.upiId) d.settings.upiId = tenant.upiId;
+      if (d.branches && d.branches[0]) {
+        d.branches[0].name = tenant.activeBranchName;
+        d.branches[0].phone = tenant.phone;
+        d.branches[0].address = tenant.address;
+      }
+      if (d.settings.printerSettings) {
+        d.settings.printerSettings.gstin = tenant.gstin;
+        d.settings.printerSettings.fssaiNumber = tenant.fssai;
+      }
+    }
+  });
 }
 
 export function dailySeries(sales: Sale[], days: number) {
@@ -719,13 +1073,17 @@ export function forecastQty(sales: Sale[], itemId: string, targetDate = new Date
   const weights = [0.4, 0.3, 0.2, 0.1];
   let total = 0;
   let used = 0;
+  const matchItem = (l: SaleLine) =>
+    l.itemId === itemId ||
+    (l.name && l.name.trim().toLowerCase() === itemId.trim().toLowerCase());
+
   for (let w = 0; w < 4; w++) {
     const d = new Date(targetDate.getTime() - (w + 1) * 7 * 864e5);
     if (d.getDay() !== weekday) continue;
     const key = d.toISOString().slice(0, 10);
     const qty = (sales || [])
       .filter((s) => s && dayKey(s.date) === key)
-      .reduce((sum, s) => sum + (s.lines || []).filter((l) => l.itemId === itemId).reduce((q, l) => q + (l.qty || 0), 0), 0);
+      .reduce((sum, s) => sum + (s.lines || []).filter(matchItem).reduce((q, l) => q + (l.qty || 0), 0), 0);
     total += qty * weights[w]!;
     used += weights[w]!;
   }
@@ -746,7 +1104,7 @@ export function forecastQty(sales: Sale[], itemId: string, targetDate = new Date
       const dk = dayKey(s.date);
       recentDays.add(dk);
       const itemQty = (s.lines || [])
-        .filter((l) => l.itemId === itemId)
+        .filter(matchItem)
         .reduce((sum, l) => sum + (l.qty || 0), 0);
       recentTotal += itemQty;
     }

@@ -39,6 +39,13 @@ import {
   Volume2,
   Wheat,
   X,
+  ChefHat,
+  Crown,
+  DollarSign,
+  CheckSquare,
+  Square,
+  UserCheck,
+  Maximize2,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -47,19 +54,30 @@ import {
   buildSale,
   CATEGORIES,
   DEFAULT_PRINTER_SETTINGS,
+  DEFAULT_TABLES,
+  getCustomerLoyalty,
   getLiveBatchStatus,
   inr,
   isSameDay,
   normalizeCategory,
+  recordShiftClose,
   sanitizeAndDeduplicateItems,
   setDB,
+  setTableOrder,
+  updateKdsStatus,
   useDB,
+  vacateTable,
+  addKdsOrder,
+  toggleKdsLineDone,
   type Category,
   type ChannelId,
   type Item,
   type PrinterSettings,
   type Sale,
   type SaleLine,
+  type TableSession,
+  type KdsOrder,
+  type ShiftDayClose,
 } from "@/lib/pos-store";
 import { pushSalesToCloud } from "@/lib/neon-sync";
 
@@ -428,6 +446,16 @@ function Billing() {
   const [historyChannelFilter, setHistoryChannelFilter] = useState<"all" | ChannelId>("all");
   const [quickPhone, setQuickPhone] = useState("");
 
+  // Phase 2 Enterprise State: Tables, KDS, UPI QR, Z-Report
+  const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
+  const [kdsModalOpen, setKdsModalOpen] = useState(false);
+  const [upiQrModalOpen, setUpiQrModalOpen] = useState(false);
+  const [zReportModalOpen, setZReportModalOpen] = useState(false);
+  const [openingFloat, setOpeningFloat] = useState<number>(2000);
+  const [pettyCashExpenses, setPettyCashExpenses] = useState<number>(0);
+  const [countedPhysicalCash, setCountedPhysicalCash] = useState<string>("");
+  const [kdsFilter, setKdsFilter] = useState<"all" | "pending" | "preparing" | "ready">("all");
+
   // Category UI Layout Toggle ('top' | 'rail') — Default to Left Touch Rail for ergonomic counter billing
   const [categoryLayout, setCategoryLayout] = useState<"top" | "rail">("rail");
 
@@ -474,6 +502,15 @@ function Billing() {
 
   const [orderType, setOrderType] = useState<"dinein" | "takeaway">("dinein");
 
+  // VIP Customer Loyalty Lookup (triggers on 10-digit phone number)
+  const customerLoyalty = useMemo(() => {
+    const p = (quickPhone.trim() || customerPhone.trim()).replace(/\D/g, "");
+    if (p.length >= 10 && db?.sales) {
+      return getCustomerLoyalty(db.sales, p);
+    }
+    return null;
+  }, [quickPhone, customerPhone, db?.sales]);
+
   // Today's Sales History (most recent first for active branch)
   const todaySales = useMemo(() => {
     if (!db || !Array.isArray(db.sales)) return [];
@@ -490,6 +527,22 @@ function Billing() {
       .slice()
       .reverse();
   }, [db]);
+
+  const todayCashTotal = useMemo(() => {
+    return todaySales.filter((s) => s.payment === "cash").reduce((acc, s) => acc + (s.net || 0), 0);
+  }, [todaySales]);
+
+  const todayUpiTotal = useMemo(() => {
+    return todaySales.filter((s) => s.payment === "upi").reduce((acc, s) => acc + (s.net || 0), 0);
+  }, [todaySales]);
+
+  const todayOtherTotal = useMemo(() => {
+    return todaySales.filter((s) => s.payment !== "cash" && s.payment !== "upi").reduce((acc, s) => acc + (s.net || 0), 0);
+  }, [todaySales]);
+
+  const expectedCashInDrawer = openingFloat + todayCashTotal - pettyCashExpenses;
+  const countedNum = Number(countedPhysicalCash) || 0;
+  const drawerVariance = countedPhysicalCash === "" ? 0 : countedNum - expectedCashInDrawer;
 
   const filteredHistory = useMemo(() => {
     const rawSales = Array.isArray(db?.sales) ? db.sales : [];
@@ -903,18 +956,43 @@ function Billing() {
       // Normal new bill with service order type
       const currentToken = todayToken;
       const activeBranch = db.settings.activeBranchId || "taramani";
+      const cleanCustomerPhone = (quickPhone.trim() || customerPhone.trim()).replace(/\D/g, "").slice(-10);
       const newSale: Sale = {
         ...currentPreview,
         id: currentPreview.id || Math.random().toString(36).slice(2, 10),
         date: new Date().toISOString(),
         branchId: activeBranch,
         orderType,
+        kotToken: currentToken,
       };
+      if (cleanCustomerPhone) newSale.customerPhone = cleanCustomerPhone;
+      if (selectedTableId) newSale.tableId = selectedTableId;
+
       setDB((d) => {
         if (!Array.isArray(d.sales)) d.sales = [];
         d.sales.push(newSale);
       });
       pushSalesToCloud([newSale]).catch((err) => console.warn("Background Neon push:", err));
+
+      // Push to Kitchen Display System (KDS)
+      const kdsItem: Parameters<typeof addKdsOrder>[0] = {
+        id: newSale.id,
+        orderNumber: selectedTableId ? `Table ${selectedTableId}` : `#${currentToken}`,
+        tokenNum: currentToken,
+        orderType,
+        channel,
+        lines: newSale.lines.map((l) => ({ name: l.name, qty: l.qty })),
+      };
+      if (selectedTableId) kdsItem.tableId = selectedTableId;
+      if (note) kdsItem.notes = note;
+      addKdsOrder(kdsItem);
+
+      // If billing a dine-in table, vacate table upon settlement
+      if (selectedTableId) {
+        vacateTable(selectedTableId);
+        setSelectedTableId(null);
+      }
+
       playChime("cash", soundStyle);
       setLastBill(newSale);
       setLastTendered(tender);
@@ -944,31 +1022,29 @@ function Billing() {
 
   const handleQuickWhatsApp = () => {
     if (!preview) return;
-    const cleanPhone = (quickPhone.trim() || customerPhone || "").replace(/\D/g, "");
+    const rawInput = quickPhone.trim() || customerPhone.trim();
+    const cleanPhone = rawInput.replace(/\D/g, "");
+    if (!cleanPhone || cleanPhone.length < 10) {
+      toast.error("Please enter a valid 10-digit customer mobile number before sending WhatsApp receipt");
+      return;
+    }
+    const validPhone = cleanPhone.slice(-10);
     const target = saveOrUpdate();
     if (!target) return;
 
-    if (cleanPhone.length >= 10) {
-      // 10-digit phone provided! Direct WhatsApp launch immediately
-      const validPhone = cleanPhone.slice(-10);
-      const businessName = db?.settings?.businessName || "Spot Light Biriyani";
-      const branch = db?.branches.find((b) => b.id === target.branchId) || db?.branches[0];
-      const itemsText = target.lines.map((l) => `🍲 ${l.qty}x ${l.name} - ₹${l.price * l.qty}`).join("\n");
-      const orderTypeStr = target.orderType === "takeaway" ? "🥡 TAKEAWAY / PARCEL" : "🍽️ DINE-IN";
-      const msg = `Hi Customer, your ${businessName} bill is confirmed ✅\n\n*${businessName} — ${branch?.name || "Kitchen"}*\n📅 ${new Date(target.date).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}\n🔖 *${orderTypeStr}*\n${itemsText}\n💰 *₹${target.net}* · Paid via ${target.payment.toUpperCase()}\n📍 ${branch?.address || "Chennai"}\n📞 ${branch?.phone || ""}\nBill Ref: *#${target.id.slice(0, 6).toUpperCase()}*\n\n♨️ Thank you for dining with us!`;
+    const businessName = db?.settings?.businessName || "Spot Light Biriyani";
+    const branch = db?.branches.find((b) => b.id === target.branchId) || db?.branches[0];
+    const itemsText = target.lines.map((l) => `🍲 ${l.qty}x ${l.name} - ₹${l.price * l.qty}`).join("\n");
+    const orderTypeStr = target.orderType === "takeaway" ? "🥡 TAKEAWAY / PARCEL" : (target.tableId ? `🍽️ DINE-IN (${target.tableId})` : "🍽️ DINE-IN");
+    const msg = `Hi Customer, your ${businessName} bill is confirmed ✅\n\n*${businessName} — ${branch?.name || "Kitchen"}*\n📅 ${new Date(target.date).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}\n🔖 *${orderTypeStr}*\n${itemsText}\n💰 *₹${target.net}* · Paid via ${target.payment.toUpperCase()}\n📍 ${branch?.address || "Chennai"}\n📞 ${branch?.phone || ""}\nBill Ref: *#${target.id.slice(0, 6).toUpperCase()}*\n\n♨️ Thank you for dining with us! Visit again.`;
 
-      const whatsappUrl = `https://wa.me/91${validPhone}?text=${encodeURIComponent(msg)}`;
-      const w = window.open(whatsappUrl, "_blank");
-      if (!w || w.closed || typeof w.closed === "undefined") {
-        window.location.href = whatsappUrl;
-      }
-      toast.success(`WhatsApp receipt launched for +91 ${validPhone}!`);
-      setQuickPhone("");
-    } else {
-      // Open modal for entering customer name & number
-      setWhatsappTargetBill(target);
-      setWhatsappModalOpen(true);
+    const whatsappUrl = `https://wa.me/91${validPhone}?text=${encodeURIComponent(msg)}`;
+    const w = window.open(whatsappUrl, "_blank");
+    if (!w || w.closed || typeof w.closed === "undefined") {
+      window.location.href = whatsappUrl;
     }
+    toast.success(`WhatsApp receipt launched for +91 ${validPhone}!`);
+    setQuickPhone("");
   };
 
   useEffect(() => {
@@ -1028,22 +1104,41 @@ function Billing() {
             <span>Next Token #{todayToken}</span>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-2.5 w-full sm:w-auto mt-1 sm:mt-0">
+          <div className="flex items-center gap-2 sm:gap-2.5 w-full sm:w-auto mt-1 sm:mt-0 flex-wrap">
             <button
               onClick={() => setOrderHistoryOpen(true)}
-              className="flex-1 sm:flex-none h-10 sm:h-11 flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 sm:px-5 text-xs sm:text-sm font-bold text-foreground hover:border-primary hover:text-primary transition-all shadow-2xs active:scale-98"
+              className="flex-1 sm:flex-none h-10 sm:h-11 flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 sm:px-4 text-xs sm:text-sm font-bold text-foreground hover:border-primary hover:text-primary transition-all shadow-2xs active:scale-98"
               title="View today's past bills, reprint receipts, re-send WhatsApp, or correct wrong bills"
             >
-              <History className="size-4 sm:size-4.5 text-primary shrink-0" />
+              <History className="size-4 text-primary shrink-0" />
               <span>Past Bills ({todaySales.length})</span>
             </button>
+
+            <button
+              onClick={() => setKdsModalOpen(true)}
+              className="flex-1 sm:flex-none h-10 sm:h-11 flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 sm:px-4 text-xs sm:text-sm font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-all shadow-2xs active:scale-98"
+              title="Open Kitchen Display System (KDS) for kitchen chefs and tablet display"
+            >
+              <ChefHat className="size-4 text-amber-600 shrink-0" />
+              <span>KDS Screen {((db?.kdsOrders || []).filter((o) => o.status !== "completed")).length > 0 && `(${((db?.kdsOrders || []).filter((o) => o.status !== "completed")).length})`}</span>
+            </button>
+
+            <button
+              onClick={() => setZReportModalOpen(true)}
+              className="flex-1 sm:flex-none h-10 sm:h-11 flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 sm:px-4 text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-all shadow-2xs active:scale-98"
+              title="Perform Day-End Cashier Z-Close & Cash Drawer Reconciliation"
+            >
+              <FileText className="size-4 text-emerald-600 shrink-0" />
+              <span>Z-Report Day Close</span>
+            </button>
+
             <button
               onClick={() => setCustomModalOpen(true)}
-              className="flex-1 sm:flex-none h-10 sm:h-11 flex items-center justify-center gap-2 rounded-xl border border-primary/40 bg-card px-3 sm:px-5 text-xs sm:text-sm font-bold text-foreground hover:border-primary hover:text-primary transition-all shadow-2xs active:scale-98"
+              className="flex-1 sm:flex-none h-10 sm:h-11 flex items-center justify-center gap-2 rounded-xl border border-primary/40 bg-card px-3 sm:px-4 text-xs sm:text-sm font-bold text-foreground hover:border-primary hover:text-primary transition-all shadow-2xs active:scale-98"
               title="Add an unlisted custom item or special order to the bill"
             >
-              <PlusCircle className="size-4 sm:size-4.5 text-primary shrink-0" />
-              <span>+ Custom / Open Dish</span>
+              <PlusCircle className="size-4 text-primary shrink-0" />
+              <span>+ Custom Item</span>
             </button>
           </div>
         </div>
@@ -1336,7 +1431,10 @@ function Billing() {
             </button>
             <button
               type="button"
-              onClick={() => setOrderType("takeaway")}
+              onClick={() => {
+                setOrderType("takeaway");
+                setSelectedTableId(null);
+              }}
               className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-bold transition-all ${orderType === "takeaway"
                   ? "bg-amber-600 text-white shadow-xs"
                   : "text-muted-foreground hover:text-foreground"
@@ -1345,6 +1443,92 @@ function Billing() {
               🥡 Takeaway / Parcel
             </button>
           </div>
+
+          {/* Dine-in Interactive Floor Plan & Table Bar */}
+          {orderType === "dinein" && (
+            <div className="mb-2.5 rounded-xl border border-primary/30 bg-primary/5 p-2 space-y-1.5">
+              <div className="flex items-center justify-between text-[11px] font-bold">
+                <span className="flex items-center gap-1 text-primary uppercase tracking-wider">
+                  <Utensils className="size-3" /> Select Table / Floor Plan:
+                </span>
+                {selectedTableId ? (
+                  <span className="text-xs text-primary font-black">
+                    Table {selectedTableId} Tab Active
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-muted-foreground">Tap table to assign</span>
+                )}
+              </div>
+              <div className="grid grid-cols-5 gap-1">
+                {(db.tables || DEFAULT_TABLES).map((tbl) => {
+                  const isSelected = selectedTableId === tbl.id;
+                  const isOccupied = tbl.status === "occupied";
+                  return (
+                    <button
+                      key={tbl.id}
+                      type="button"
+                      onClick={() => {
+                        if (isSelected) {
+                          setSelectedTableId(null);
+                        } else {
+                          setSelectedTableId(tbl.id);
+                          if (tbl.lines && tbl.lines.length > 0) {
+                            setLines(tbl.lines);
+                            if (tbl.customerPhone) setQuickPhone(tbl.customerPhone);
+                            if (tbl.notes) setOrderNote(tbl.notes);
+                            toast.info(`Loaded active tab for ${tbl.name}`);
+                          }
+                        }
+                      }}
+                      className={`rounded-lg py-1 px-1 text-center font-bold text-xs transition-all border flex flex-col items-center justify-center ${
+                        isSelected
+                          ? "bg-primary text-white border-primary shadow-xs"
+                          : isOccupied
+                          ? "bg-rose-500/10 text-rose-600 border-rose-500/40 hover:bg-rose-500/20"
+                          : "bg-card text-foreground border-border hover:border-primary/50"
+                      }`}
+                      title={`${tbl.name} (${tbl.capacity} seats) · ${isOccupied ? "Occupied" : "Free"}`}
+                    >
+                      <span>{tbl.id}</span>
+                      <span className={`size-1.5 rounded-full mt-0.5 ${isOccupied ? "bg-rose-500" : "bg-emerald-500"}`} />
+                    </button>
+                  );
+                })}
+              </div>
+
+              {selectedTableId && (
+                <div className="flex items-center justify-between pt-1 border-t border-primary/20 text-xs">
+                  <span className="text-[10px] text-muted-foreground font-semibold">
+                    {selectedTableId} Tab Open
+                  </span>
+                  <button
+                    type="button"
+                    disabled={!preview || preview.lines.length === 0}
+                    onClick={() => {
+                      if (!preview) return;
+                      const currentTable = (db.tables || DEFAULT_TABLES).find((t) => t.id === selectedTableId);
+                      setTableOrder(selectedTableId, preview.lines, quickPhone, orderNote);
+                      printKOT(selectedTableId, currentTable?.name || selectedTableId, preview.lines, orderNote);
+                      addKdsOrder({
+                        id: `kot_${Date.now()}`,
+                        tokenNum: todayToken,
+                        tableId: selectedTableId,
+                        orderType: "dinein",
+                        channel,
+                        lines: preview.lines.map((l) => ({ name: l.name, qty: l.qty })),
+                        notes: orderNote,
+                      });
+                      playChime("print", soundStyle);
+                      toast.success(`KOT printed & sent to kitchen for ${selectedTableId}! Tab is saved.`);
+                    }}
+                    className="rounded bg-orange-600 hover:bg-orange-700 text-white font-bold px-2 py-0.5 text-[10px] flex items-center gap-1 shadow-2xs disabled:opacity-40"
+                  >
+                    <Flame className="size-3" /> Send KOT to Kitchen
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Channel Switcher */}
           <div className="flex gap-1 rounded-xl border border-border bg-muted/60 p-1">
@@ -1584,7 +1768,7 @@ function Billing() {
               <div className="mt-2.5 mx-auto p-2 bg-white rounded-xl border border-slate-200 inline-block shadow-inner">
                 <img
                   src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=6&data=${encodeURIComponent(
-                    `upi://pay?pa=spotlightbiriyani@oksbi&pn=Spot+Light+Biriyani&am=${preview.net}&cu=INR`
+                    `upi://pay?pa=${db.settings.upiId || "spotlightbiriyani@oksbi"}&pn=${encodeURIComponent(db.settings.businessName || "Spot Light Biriyani")}&am=${preview.net}&cu=INR`
                   )}`}
                   alt={`UPI Payment QR ₹${preview.net}`}
                   className="size-36 mx-auto"
@@ -1596,8 +1780,16 @@ function Billing() {
                 Scan with GPay · PhonePe · Paytm · BHIM · Cred
               </p>
               <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
-                VPA: spotlightbiriyani@oksbi
+                VPA: {db.settings.upiId || "spotlightbiriyani@oksbi"}
               </p>
+
+              <button
+                type="button"
+                onClick={() => setUpiQrModalOpen(true)}
+                className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
+              >
+                <Maximize2 className="size-3" /> Show Customer Full Screen QR
+              </button>
             </div>
           )}
 
@@ -1667,6 +1859,36 @@ function Billing() {
                 <span>Send</span>
               </button>
             </div>
+
+            {/* VIP Regular Loyalty Banner */}
+            {customerLoyalty && (
+              <div className="flex items-center justify-between rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-900 dark:text-amber-200">
+                <div className="flex items-center gap-1.5 font-bold">
+                  <Crown className="size-4 text-amber-500 shrink-0" />
+                  <div>
+                    <span className="block font-black leading-tight">
+                      {customerLoyalty.isVip ? "🌟 VIP Regular Customer!" : "Returning Customer"}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground leading-none font-normal">
+                      {customerLoyalty.visitCount} visits · {inr(customerLoyalty.totalSpent)} lifetime spend
+                    </span>
+                  </div>
+                </div>
+                {discount === 0 && preview && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const disc = Math.round(preview.gross * 0.10);
+                      setDiscount(disc);
+                      toast.success(`Applied 10% VIP Regular Discount (${inr(disc)})!`);
+                    }}
+                    className="rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] px-2.5 py-1 shadow-xs transition-all shrink-0"
+                  >
+                    Apply 10% Disc
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Quick Recent Bills Panel (Last 3 Bills) with instant Print, WhatsApp, and Edit actions */}
@@ -2321,6 +2543,368 @@ function Billing() {
           })()}
         </div>
       )}
+
+      {/* =========================================================================
+          PHASE 2: KITCHEN DISPLAY SYSTEM (KDS) MODAL / CHEF TABLET VIEW
+      ========================================================================= */}
+      {kdsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-3 sm:p-6 overflow-y-auto">
+          <div className="w-full max-w-5xl rounded-2xl border border-border bg-card p-4 sm:p-6 shadow-2xl flex flex-col max-h-[90vh]">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="flex size-9 items-center justify-center rounded-xl bg-amber-500/15 text-amber-500">
+                  <ChefHat className="size-5" />
+                </span>
+                <div>
+                  <h2 className="text-lg sm:text-xl font-display font-black leading-tight text-foreground">
+                    KITCHEN DISPLAY SYSTEM (KDS)
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    Real-time chef tablet display with elapsed cooking timers &amp; item checklist.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="flex rounded-lg border border-border bg-muted/60 p-0.5 text-xs">
+                  {(["all", "pending", "preparing", "ready"] as const).map((status) => (
+                    <button
+                      key={status}
+                      type="button"
+                      onClick={() => setKdsFilter(status)}
+                      className={`rounded px-2.5 py-1 font-bold capitalize transition-all ${
+                        kdsFilter === status
+                          ? "bg-primary text-white shadow-xs"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {status}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setKdsModalOpen(false)}
+                  className="rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <X className="size-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* KDS Order Cards Grid */}
+            <div className="mt-4 flex-1 overflow-y-auto grid gap-3 sm:grid-cols-2 lg:grid-cols-3 pr-1">
+              {((db?.kdsOrders || []).filter((o) => (kdsFilter === "all" ? o.status !== "completed" : o.status === kdsFilter))).length === 0 ? (
+                <div className="col-span-full py-16 text-center text-muted-foreground">
+                  <UtensilsCrossed className="size-10 mx-auto text-muted-foreground/40 mb-2" />
+                  <p className="font-bold text-sm">No Active Kitchen Orders</p>
+                  <p className="text-xs text-muted-foreground/80 mt-1">Orders sent from Counter Billing or Table KOT will appear here automatically.</p>
+                </div>
+              ) : (
+                (db?.kdsOrders || [])
+                  .filter((o) => (kdsFilter === "all" ? o.status !== "completed" : o.status === kdsFilter))
+                  .map((order) => {
+                    const elapsedMins = Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 60000);
+                    const isUrgent = elapsedMins >= 10;
+                    const isMedium = elapsedMins >= 5 && elapsedMins < 10;
+                    return (
+                      <div
+                        key={order.id}
+                        className={`rounded-2xl border p-4 shadow-sm flex flex-col justify-between transition-all ${
+                          order.status === "ready"
+                            ? "border-emerald-500/40 bg-emerald-500/5"
+                            : isUrgent
+                            ? "border-rose-500/60 bg-rose-500/10 animate-pulse"
+                            : isMedium
+                            ? "border-amber-500/50 bg-amber-500/5"
+                            : "border-border bg-card"
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between border-b border-border/60 pb-2">
+                            <div>
+                              <span className="font-display font-black text-base text-foreground">
+                                {order.tableId ? `Table ${order.tableId}` : `Token #${order.tokenNum || order.orderNumber}`}
+                              </span>
+                              <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">
+                                {order.orderType === "takeaway" ? "Takeaway" : "Dine-in"}
+                              </span>
+                            </div>
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-[10px] font-black tracking-wide ${
+                                isUrgent
+                                  ? "bg-rose-600 text-white"
+                                  : isMedium
+                                  ? "bg-amber-500 text-white"
+                                  : "bg-emerald-600 text-white"
+                              }`}
+                            >
+                              ⏱ {elapsedMins}m ago
+                            </span>
+                          </div>
+
+                          {/* Items Checklist */}
+                          <div className="mt-3 space-y-2">
+                            {order.lines.map((line, idx) => (
+                              <button
+                                key={idx}
+                                type="button"
+                                onClick={() => toggleKdsLineDone(order.id, idx)}
+                                className={`w-full flex items-center justify-between text-left p-1.5 rounded-lg border transition-all ${
+                                  line.done
+                                    ? "border-emerald-500/30 bg-emerald-500/10 line-through text-muted-foreground opacity-60"
+                                    : "border-border/60 bg-muted/40 text-foreground"
+                                }`}
+                              >
+                                <span className="font-bold text-xs flex items-center gap-1.5">
+                                  {line.done ? <CheckSquare className="size-3.5 text-emerald-600 shrink-0" /> : <Square className="size-3.5 text-muted-foreground shrink-0" />}
+                                  {line.name}
+                                </span>
+                                <span className="font-mono font-black text-sm text-primary px-1">
+                                  x{line.qty}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+
+                          {order.notes && (
+                            <p className="mt-2 text-[11px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/10 p-1.5 rounded-lg">
+                              Note: {order.notes}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Status Actions */}
+                        <div className="mt-4 pt-2 border-t border-border/60 flex gap-2">
+                          {order.status !== "ready" ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                updateKdsStatus(order.id, "ready");
+                                playChime("cash", soundStyle);
+                                toast.success(`Order ${order.orderNumber || order.tableId || order.id} marked Ready for Pickup!`);
+                              }}
+                              className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 text-xs shadow-md transition-all flex items-center justify-center gap-1.5"
+                            >
+                              <CheckCircle2 className="size-3.5" /> Mark Ready (Ding Bell)
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                updateKdsStatus(order.id, "completed");
+                                toast.info(`Order ${order.orderNumber || order.tableId || order.id} completed & cleared from kitchen`);
+                              }}
+                              className="w-full rounded-xl bg-muted hover:bg-muted/80 text-foreground font-bold py-2 text-xs border border-border transition-all"
+                            >
+                              Clear from Screen
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          PHASE 2: SHIFT DAY-CLOSE & CASHIER Z-REPORT MODAL
+      ========================================================================= */}
+      {zReportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-2xl animate-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2">
+                <FileText className="size-5 text-emerald-600" />
+                <div>
+                  <h3 className="font-display font-black text-lg text-foreground">
+                    CASHIER SHIFT DAY-CLOSE (Z-REPORT)
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Reconcile physical cash drawer with system billed totals before closing shift.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setZReportModalOpen(false)}
+                className="rounded-lg border border-border p-1 text-muted-foreground hover:bg-muted"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-3 text-xs">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-xl border border-border bg-muted/40 p-2.5">
+                  <span className="text-[10px] uppercase font-bold text-muted-foreground block">Cash Billed Today</span>
+                  <span className="font-display font-black text-base text-foreground">₹{todayCashTotal}</span>
+                </div>
+                <div className="rounded-xl border border-border bg-muted/40 p-2.5">
+                  <span className="text-[10px] uppercase font-bold text-muted-foreground block">UPI Billed Today</span>
+                  <span className="font-display font-black text-base text-emerald-600">₹{todayUpiTotal}</span>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-border p-3 space-y-2 bg-card">
+                <label className="flex items-center justify-between font-bold text-muted-foreground">
+                  <span>Opening Cash Float (Counter Starting Cash):</span>
+                  <input
+                    type="number"
+                    value={openingFloat}
+                    onChange={(e) => setOpeningFloat(Number(e.target.value) || 0)}
+                    className="w-24 rounded-lg border border-input bg-background px-2 py-1 text-right text-xs text-foreground font-mono focus:border-primary focus:outline-none"
+                  />
+                </label>
+
+                <label className="flex items-center justify-between font-bold text-muted-foreground">
+                  <span>Petty Cash Expenses (Paid from Drawer):</span>
+                  <input
+                    type="number"
+                    value={pettyCashExpenses}
+                    onChange={(e) => setPettyCashExpenses(Number(e.target.value) || 0)}
+                    placeholder="0"
+                    className="w-24 rounded-lg border border-input bg-background px-2 py-1 text-right text-xs text-foreground font-mono focus:border-primary focus:outline-none"
+                  />
+                </label>
+
+                <div className="border-t border-border/60 pt-2 flex justify-between font-bold text-foreground">
+                  <span>Expected Cash in Drawer:</span>
+                  <span className="font-mono text-sm">₹{expectedCashInDrawer}</span>
+                </div>
+
+                <label className="flex items-center justify-between font-black text-foreground pt-1 border-t border-dashed border-border/60">
+                  <span>Actual Cash Counted by Cashier:</span>
+                  <input
+                    type="number"
+                    autoFocus
+                    placeholder="Enter count"
+                    value={countedPhysicalCash}
+                    onChange={(e) => setCountedPhysicalCash(e.target.value)}
+                    className="w-32 rounded-lg border-2 border-primary bg-background px-2.5 py-1 text-right text-sm font-bold text-foreground font-mono focus:border-primary focus:outline-none"
+                  />
+                </label>
+
+                {countedPhysicalCash !== "" && (
+                  <div
+                    className={`rounded-lg p-2 font-bold flex justify-between items-center text-xs ${
+                      drawerVariance === 0
+                        ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/30"
+                        : drawerVariance > 0
+                        ? "bg-blue-500/10 text-blue-600 border border-blue-500/30"
+                        : "bg-rose-500/10 text-rose-600 border border-rose-500/30"
+                    }`}
+                  >
+                    <span>Cash Drawer Variance:</span>
+                    <span>
+                      {drawerVariance === 0
+                        ? "✅ Exact Match (₹0 Variance)"
+                        : drawerVariance > 0
+                        ? `+₹${drawerVariance} (Cash Surplus / Over)`
+                        : `-₹${Math.abs(drawerVariance)} (Cash Shortage)`}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setZReportModalOpen(false)}
+                  className="flex-1 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const counted = Number(countedPhysicalCash) || expectedCashInDrawer;
+                    const closeRec = recordShiftClose({
+                      date: new Date().toISOString().slice(0, 10),
+                      cashierName: localStorage.getItem("spotlight_auth_user") || "Counter Cashier",
+                      openingFloat,
+                      cashBilled: todayCashTotal,
+                      upiBilled: todayUpiTotal,
+                      cardBilled: todayOtherTotal,
+                      expenses: pettyCashExpenses,
+                      expectedCash: expectedCashInDrawer,
+                      actualCash: counted,
+                      variance: counted - expectedCashInDrawer,
+                    });
+                    const p = db.settings.printerSettings ?? DEFAULT_PRINTER_SETTINGS;
+                    printZReport(closeRec, db.settings.businessName, p);
+                    toast.success("Shift Day-Close finalized & Z-Report sent to printer!");
+                    setZReportModalOpen(false);
+                  }}
+                  className="flex-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 text-xs shadow-md transition-all flex items-center justify-center gap-1.5"
+                >
+                  <Printer className="size-3.5" /> Close Shift &amp; Print Z-Report
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          PHASE 2: CUSTOMER FACING DYNAMIC UPI QR MODAL
+      ========================================================================= */}
+      {upiQrModalOpen && preview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-xs p-4">
+          <div className="w-full max-w-sm rounded-3xl border-2 border-primary/50 bg-card p-6 shadow-2xl text-center animate-in zoom-in-95">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 border border-primary/30 px-3 py-1 text-xs font-black text-primary">
+              <QrCode className="size-3.5" /> SCAN &amp; PAY VIA UPI
+            </span>
+            <h3 className="mt-2 font-display font-black text-xl text-foreground">
+              {db.settings.businessName.toUpperCase()}
+            </h3>
+            <p className="text-3xl font-display font-black text-primary mt-1">
+              ₹{preview.net}
+            </p>
+
+            <div className="mt-4 mx-auto p-3 bg-white rounded-2xl border-2 border-slate-300 inline-block shadow-lg">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(
+                  `upi://pay?pa=${db.settings.upiId || "spotlightbiriyani@oksbi"}&pn=${encodeURIComponent(db.settings.businessName || "Spot Light Biriyani")}&am=${preview.net}&cu=INR`
+                )}`}
+                alt={`UPI Dynamic QR ₹${preview.net}`}
+                className="size-48 mx-auto"
+                loading="eager"
+              />
+            </div>
+
+            <p className="mt-3 text-xs font-semibold text-foreground">
+              Scan with GPay · PhonePe · Paytm · BHIM · Cred
+            </p>
+            <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
+              Merchant VPA: {db.settings.upiId || "spotlightbiriyani@oksbi"}
+            </p>
+
+            <div className="mt-5 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setUpiQrModalOpen(false)}
+                className="flex-1 rounded-xl border border-border px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted"
+              >
+                Back to Counter
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setUpiQrModalOpen(false);
+                  saveOrUpdate();
+                }}
+                className="flex-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 text-xs shadow-md transition-all flex items-center justify-center gap-1.5"
+              >
+                <CheckCircle2 className="size-3.5" /> Payment Received
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -2476,4 +3060,95 @@ function printBill(
   setTimeout(() => {
     w.print();
   }, 250);
+}
+
+/** Opens an 80mm or 58mm Kitchen Order Ticket (KOT) formatted print dialog */
+function printKOT(
+  tableId: string,
+  tableName: string,
+  lines: SaleLine[],
+  note?: string,
+  printer: PrinterSettings = DEFAULT_PRINTER_SETTINGS,
+) {
+  const is58 = printer.paperWidth === "58mm";
+  const w = window.open("", "_blank", `width=${is58 ? 260 : 380},height=500`);
+  if (!w) return;
+  const rows = lines
+    .map(
+      (l) =>
+        `<tr>
+          <td style="padding: 4px 0; font-size: ${is58 ? "12px" : "14px"}; font-weight: 800;">${l.name.toUpperCase()}</td>
+          <td style="text-align: right; padding: 4px 0; font-size: ${is58 ? "14px" : "16px"}; font-weight: 900;">${l.qty}</td>
+        </tr>`
+    )
+    .join("");
+
+  w.document.write(`<!DOCTYPE html><html><head><title>KOT - ${tableName}</title><style>
+    @media print { body { width: ${printer.paperWidth}; margin: 0; padding: 4px; font-family: monospace; color: #000; } }
+    body { width: ${is58 ? "210px" : "280px"}; margin: auto; padding: 8px; font-family: monospace; color: #111; }
+    .c { text-align: center; }
+    .b { font-weight: bold; }
+    table { width: 100%; border-collapse: collapse; }
+  </style></head><body>
+    <div class="c b" style="font-size: 14px; border-bottom: 2px dashed #000; padding-bottom: 4px;">*** KITCHEN ORDER TICKET (KOT) ***</div>
+    <div style="font-size: 13px; font-weight: 900; margin-top: 6px;">TABLE: ${tableName.toUpperCase()}</div>
+    <div style="font-size: 10px; color: #333;">TIME: ${new Date().toLocaleTimeString("en-IN", { timeStyle: "short" })} · DINE-IN</div>
+    <div style="border-top: 1px dashed #000; margin: 6px 0;"></div>
+    <table>
+      <thead>
+        <tr style="border-bottom: 1px dashed #000; font-size: 10px;">
+          <th style="text-align: left; padding-bottom: 3px;">ITEM</th>
+          <th style="text-align: right; padding-bottom: 3px;">QTY</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    ${note ? `<div style="margin-top: 8px; border: 1px solid #000; padding: 4px; font-size: 11px; font-weight: bold;">SPECIAL INSTRUCTION: ${note.toUpperCase()}</div>` : ""}
+    <div style="border-top: 2px dashed #000; margin: 8px 0;"></div>
+    <div class="c" style="font-size: 10px; font-weight: bold;">-- PREPARE IMMEDIATELY --</div>
+  </body></html>`);
+  w.document.close();
+  setTimeout(() => w.print(), 250);
+}
+
+/** Opens an 80mm or 58mm Cashier Shift Day-Close (Z-Report) formatted print dialog */
+function printZReport(
+  z: ShiftDayClose,
+  businessName: string,
+  printer: PrinterSettings = DEFAULT_PRINTER_SETTINGS,
+) {
+  const is58 = printer.paperWidth === "58mm";
+  const w = window.open("", "_blank", `width=${is58 ? 260 : 380},height=600`);
+  if (!w) return;
+
+  w.document.write(`<!DOCTYPE html><html><head><title>Z-Report - ${z.date}</title><style>
+    @media print { body { width: ${printer.paperWidth}; margin: 0; padding: 4px; font-family: monospace; color: #000; } }
+    body { width: ${is58 ? "210px" : "280px"}; margin: auto; padding: 8px; font-family: monospace; color: #111; }
+    .c { text-align: center; }
+    .b { font-weight: bold; }
+    .row { display: flex; justify-content: space-between; padding: 2px 0; }
+  </style></head><body>
+    <div class="c b" style="font-size: 14px;">${businessName.toUpperCase()}</div>
+    <div class="c b" style="font-size: 11px; margin-top: 2px;">*** CASHIER SHIFT DAY-CLOSE (Z-REPORT) ***</div>
+    <div class="c" style="font-size: 9px; margin-top: 2px;">CLOSED AT: ${new Date(z.closedAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</div>
+    <div class="c" style="font-size: 9px;">CASHIER: ${z.cashierName}</div>
+    <div style="border-top: 1px dashed #000; margin: 6px 0;"></div>
+    <div class="row"><span>Opening Cash Float:</span><span>₹${z.openingFloat}</span></div>
+    <div class="row"><span>Cash Sales Billed:</span><span>₹${z.cashBilled}</span></div>
+    <div class="row"><span>UPI Sales Billed:</span><span>₹${z.upiBilled}</span></div>
+    ${z.cardBilled > 0 ? `<div class="row"><span>Card/Online Billed:</span><span>₹${z.cardBilled}</span></div>` : ""}
+    ${z.expenses > 0 ? `<div class="row"><span>Petty Cash Expenses:</span><span>-₹${z.expenses}</span></div>` : ""}
+    <div style="border-top: 1px dashed #000; margin: 6px 0;"></div>
+    <div class="row b"><span>Expected Cash in Drawer:</span><span>₹${z.expectedCash}</span></div>
+    <div class="row b"><span>Counted Cash Handed Over:</span><span>₹${z.actualCash}</span></div>
+    <div class="row b" style="font-size: 12px; margin-top: 4px;">
+      <span>Discrepancy (Variance):</span>
+      <span>${z.variance === 0 ? "₹0 (BALANCED)" : (z.variance > 0 ? `+₹${z.variance} (OVER)` : `-₹${Math.abs(z.variance)} (SHORT)`)}</span>
+    </div>
+    <div style="border-top: 2px dashed #000; margin: 12px 0 24px 0;"></div>
+    <div style="font-size: 10px; margin-top: 10px;">Manager Signature: __________________</div>
+    <div style="font-size: 10px; margin-top: 8px;">Cashier Signature: __________________</div>
+  </body></html>`);
+  w.document.close();
+  setTimeout(() => w.print(), 250);
 }

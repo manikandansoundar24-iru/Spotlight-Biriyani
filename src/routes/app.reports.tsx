@@ -34,8 +34,8 @@ function Reports() {
     const header = "Item,Plates sold,Revenue,Profit,Profit per plate,Suggested prep tomorrow";
     const body = rows
       .map((r) => {
-        const item = db.items.find((i) => i.name === r.name);
-        const f = item ? forecastQty(allSales, item.id, new Date(Date.now() + 864e5)) : 0;
+        const item = db.items.find((i) => i.name.toLowerCase() === r.name.toLowerCase() || i.id === r.itemId);
+        const f = forecastQty(allSales, item?.id || r.name, new Date(Date.now() + 864e5));
         return [r.name, r.qty, Math.round(r.revenue), Math.round(r.profit), Math.round(r.profit / r.qty), f].join(",");
       })
       .join("\n");
@@ -194,8 +194,8 @@ function Reports() {
           </thead>
           <tbody className="divide-y divide-border/60">
             {rows.map((r) => {
-              const item = db.items.find((i) => i.name === r.name);
-              const f = item ? forecastQty(allSales, item.id, new Date(Date.now() + 864e5)) : 0;
+              const item = db.items.find((i) => i.name.toLowerCase() === r.name.toLowerCase() || i.id === r.itemId);
+              const f = forecastQty(allSales, item?.id || r.name, new Date(Date.now() + 864e5));
               return (
                 <tr key={r.name}>
                   <td className="py-2.5 font-medium">{r.name}</td>
