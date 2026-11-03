@@ -944,15 +944,30 @@ function Billing() {
 
   const handleQuickWhatsApp = () => {
     if (!preview) return;
-    const phoneToUse = quickPhone.trim() || customerPhone;
-    if (quickPhone.trim()) {
-      setCustomerPhone(quickPhone.trim());
-    }
+    const cleanPhone = (quickPhone.trim() || customerPhone || "").replace(/\D/g, "");
     const target = saveOrUpdate();
-    if (target) {
+    if (!target) return;
+
+    if (cleanPhone.length >= 10) {
+      // 10-digit phone provided! Direct WhatsApp launch immediately
+      const validPhone = cleanPhone.slice(-10);
+      const businessName = db?.settings?.businessName || "Spot Light Biriyani";
+      const branch = db?.branches.find((b) => b.id === target.branchId) || db?.branches[0];
+      const itemsText = target.lines.map((l) => `🍲 ${l.qty}x ${l.name} - ₹${l.price * l.qty}`).join("\n");
+      const orderTypeStr = target.orderType === "takeaway" ? "🥡 TAKEAWAY / PARCEL" : "🍽️ DINE-IN";
+      const msg = `Hi Customer, your ${businessName} bill is confirmed ✅\n\n*${businessName} — ${branch?.name || "Kitchen"}*\n📅 ${new Date(target.date).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}\n🔖 *${orderTypeStr}*\n${itemsText}\n💰 *₹${target.net}* · Paid via ${target.payment.toUpperCase()}\n📍 ${branch?.address || "Chennai"}\n📞 ${branch?.phone || ""}\nBill Ref: *#${target.id.slice(0, 6).toUpperCase()}*\n\n♨️ Thank you for dining with us!`;
+
+      const whatsappUrl = `https://wa.me/91${validPhone}?text=${encodeURIComponent(msg)}`;
+      const w = window.open(whatsappUrl, "_blank");
+      if (!w || w.closed || typeof w.closed === "undefined") {
+        window.location.href = whatsappUrl;
+      }
+      toast.success(`WhatsApp receipt launched for +91 ${validPhone}!`);
+      setQuickPhone("");
+    } else {
+      // Open modal for entering customer name & number
       setWhatsappTargetBill(target);
       setWhatsappModalOpen(true);
-      setQuickPhone("");
     }
   };
 
@@ -998,7 +1013,7 @@ function Billing() {
         <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-4 flex-wrap w-full sm:w-auto">
           <div className="flex flex-col justify-center">
             <p className="text-[10px] font-bold uppercase tracking-wider text-primary leading-none">
-              Spot Light Biriyani · Billing Terminal
+              {db?.settings?.businessName || "Spot Light Biriyani"} · Billing Terminal
             </p>
             <h1 className="text-xl sm:text-3xl font-display font-black tracking-tight leading-none mt-1">COUNTER POS</h1>
           </div>
@@ -2280,10 +2295,17 @@ function Billing() {
                           toast.error("Please enter a valid 10-digit mobile number");
                           return;
                         }
+                        const validPhone = cleanPhone.slice(-10);
+                        const businessName = db?.settings?.businessName || "Spot Light Biriyani";
                         const itemsText = activeBill.lines.map((l) => `🍲 ${l.qty}x ${l.name} - ₹${l.price * l.qty}`).join("\n");
                         const orderTypeStr = activeBill.orderType === "takeaway" ? "🥡 TAKEAWAY / PARCEL" : "🍽️ DINE-IN";
-                        const msg = `Hi ${customerName || "Customer"}, your Spot Light Biriyani bill is confirmed ✅\n\n*Spot Light Biriyani — ${branch?.name || "Chennai Kitchen"}*\n📅 ${new Date(activeBill.date).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}\n🔖 *${orderTypeStr}*\n${itemsText}\n💰 *₹${activeBill.net}* · Paid via ${activeBill.payment.toUpperCase()}\n📍 ${branch?.address || "Chennai, Tamil Nadu"}\n📞 ${branch?.phone || "+91 98844 30710"}\nBill Ref: *#${activeBill.id.slice(0, 6).toUpperCase()}*\n\n♨️ Freshly prepared authentic Chennai recipe. Enjoy your meal!`;
-                        window.open(`https://api.whatsapp.com/send/?phone=91${cleanPhone}&text=${encodeURIComponent(msg)}`, "_blank");
+                        const msg = `Hi ${customerName || "Customer"}, your ${businessName} bill is confirmed ✅\n\n*${businessName} — ${branch?.name || "Kitchen"}*\n📅 ${new Date(activeBill.date).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}\n🔖 *${orderTypeStr}*\n${itemsText}\n💰 *₹${activeBill.net}* · Paid via ${activeBill.payment.toUpperCase()}\n📍 ${branch?.address || "Chennai"}\n📞 ${branch?.phone || ""}\nBill Ref: *#${activeBill.id.slice(0, 6).toUpperCase()}*\n\n♨️ Thank you! Visit again.`;
+                        
+                        const whatsappUrl = `https://wa.me/91${validPhone}?text=${encodeURIComponent(msg)}`;
+                        const w = window.open(whatsappUrl, "_blank");
+                        if (!w || w.closed || typeof w.closed === "undefined") {
+                          window.location.href = whatsappUrl;
+                        }
                         toast.success("WhatsApp opened with formatted bill!");
                         setWhatsappModalOpen(false);
                         setWhatsappTargetBill(null);

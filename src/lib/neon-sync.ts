@@ -38,6 +38,9 @@ export const executeNeonQuery = createServerFn({ method: "POST" })
  * Pull all persistent sales orders and bill line items from Neon Cloud PostgreSQL
  */
 export async function pullSalesFromCloud(): Promise<Sale[]> {
+  if (typeof window !== "undefined" && !navigator.onLine) {
+    return [];
+  }
   try {
     const res = await executeNeonQuery({
       data: {
@@ -112,6 +115,9 @@ export async function pullSalesFromCloud(): Promise<Sale[]> {
  * Completes in ~300ms instead of minutes!
  */
 export async function pushSalesToCloud(sales: Sale[]): Promise<{ count: number }> {
+  if (typeof window !== "undefined" && !navigator.onLine) {
+    return { count: 0 };
+  }
   if (!sales || sales.length === 0) return { count: 0 };
 
   const validSales = sales.filter((s) => s && s.id);
@@ -225,6 +231,15 @@ export async function performFullSync(): Promise<{
   dishesSynced: number;
   message: string;
 }> {
+  if (typeof window !== "undefined" && !navigator.onLine) {
+    return {
+      success: true,
+      salesPushed: 0,
+      salesPulled: 0,
+      dishesSynced: 0,
+      message: "Offline mode active. All bills and changes are securely saved on this device.",
+    };
+  }
   try {
     // 1. Clean duplicates & pull dishes from Neon Cloud
     try {

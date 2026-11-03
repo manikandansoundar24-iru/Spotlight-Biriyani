@@ -72,11 +72,65 @@ function Settings() {
         </p>
       </div>
 
-      <div className="surface-card p-5">
-        <h2 className="text-lg">BUSINESS</h2>
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <label className="text-xs text-muted-foreground">
-            Business name
+      {/* =========================================================================
+          DEVELOPER & CLIENT TENANT CONFIGURATION (FOR SELLING TO NEW CLIENTS)
+      ========================================================================= */}
+      <div className="surface-card p-5 border-2 border-primary/30">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
+          <div>
+            <div className="flex items-center gap-1.5 text-primary text-xs font-bold uppercase tracking-wider">
+              <Cpu className="size-4" /> Developer &amp; Multi-Tenant Control Panel
+            </div>
+            <h2 className="text-xl font-display font-black mt-0.5">CLIENT RESTAURANT IDENTITY</h2>
+            <p className="text-xs text-muted-foreground">
+              When selling to a new restaurant (e.g. CSK Biriyani), change the name here. It instantly updates all headers, bills, WhatsApp receipts, and login screens!
+            </p>
+          </div>
+          <span className="rounded-full bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-bold text-primary">
+            Active Tenant: {db.settings.businessName || "Spot Light Biriyani"}
+          </span>
+        </div>
+
+        {/* Quick Tenant Switcher Presets */}
+        <div className="mt-3.5">
+          <label className="text-[11px] font-bold uppercase text-muted-foreground block mb-1.5">
+            Quick Client Presets (1-Click Rebrand)
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { name: "Spot Light Biriyani", branch: "Taramani (Flagship)", phone: "+91 98844 30710" },
+              { name: "CSK Biriyani & Fast Food", branch: "T. Nagar (Main)", phone: "+91 98765 43210" },
+              { name: "Madurai Star Biriyani", branch: "Anna Nagar Kitchen", phone: "+91 98400 11223" },
+              { name: "Royal Cloud Kitchen", branch: "Velachery Hub", phone: "+91 99400 55667" },
+            ].map((preset) => (
+              <button
+                key={preset.name}
+                type="button"
+                onClick={() => {
+                  setDB((d) => {
+                    d.settings.businessName = preset.name;
+                    if (d.branches && d.branches[0]) {
+                      d.branches[0].name = preset.branch;
+                      d.branches[0].phone = preset.phone;
+                    }
+                  });
+                  toast.success(`Switched tenant to "${preset.name}"! All screens updated.`);
+                }}
+                className={`rounded-lg border px-3 py-1.5 text-xs font-bold transition-all ${
+                  db.settings.businessName === preset.name
+                    ? "bg-primary text-primary-foreground border-primary shadow-xs"
+                    : "border-border bg-card text-foreground hover:border-primary/50"
+                }`}
+              >
+                🏢 {preset.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <label className="text-xs font-semibold text-muted-foreground sm:col-span-2">
+            Client Restaurant Name
             <input
               value={db.settings.businessName}
               onChange={(e) =>
@@ -84,11 +138,12 @@ function Settings() {
                   d.settings.businessName = e.target.value;
                 })
               }
-              className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground"
+              placeholder="e.g. CSK Biriyani"
+              className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground font-bold focus:border-primary focus:outline-none"
             />
           </label>
-          <label className="text-xs text-muted-foreground">
-            GST % (shown on bills if you enable it)
+          <label className="text-xs font-semibold text-muted-foreground">
+            GST % (Tax Rate)
             <input
               type="number"
               value={db.settings.gstPct}
@@ -97,7 +152,7 @@ function Settings() {
                   d.settings.gstPct = Number(e.target.value) || 0;
                 })
               }
-              className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground"
+              className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
             />
           </label>
         </div>

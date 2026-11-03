@@ -123,3 +123,4 @@ Offer three clean, straightforward pricing packages:
 2. **5 Visits = 2 Demos = 1 Trial:** Out of 5 walk-ins, 2 owners will watch your 2-minute demo. One will agree to a 7-day free trial.
 3. **Closing the Trial:** On Day 6 of the trial, show the owner their Dashboard: *"Sir, you did 412 bills this week with zero system errors. Let's activate your annual license today for just ₹8,999."*
 4. **50 Active Clients = ₹45,000 to ₹90,000 recurring monthly revenue with 98% gross profit margin.**
+

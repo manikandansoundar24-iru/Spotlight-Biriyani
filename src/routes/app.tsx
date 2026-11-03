@@ -50,9 +50,18 @@ function AppLayout() {
     };
     window.addEventListener("focus", onFocus);
 
+    const onOnline = () => {
+      toast.info("Internet connection restored! Syncing with Neon Cloud...", {
+        icon: <Database className="size-4 text-primary" />,
+      });
+      performFullSync().catch(() => {});
+    };
+    window.addEventListener("online", onOnline);
+
     return () => {
       clearInterval(interval);
       window.removeEventListener("focus", onFocus);
+      window.removeEventListener("online", onOnline);
     };
   }, []);
 
@@ -145,7 +154,7 @@ function AppLayout() {
                 🍽️
               </span>
               <span className="text-xs sm:text-sm font-black text-foreground leading-tight truncate max-w-[140px] sm:max-w-none">
-                SPOT LIGHT BIRIYANI
+                {(db?.settings?.businessName || "Spot Light Biriyani").toUpperCase()}
               </span>
               <div className="h-4 w-px bg-border mx-0.5" />
               <select

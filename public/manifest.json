@@ -1,0 +1,16 @@
+{
+  "name": "RestoPulse — Cloud POS & Kitchen ERP",
+  "short_name": "RestoPulse",
+  "start_url": "/app/billing",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#ea580c",
+  "description": "Fast Cloud POS Terminal and Multi-Branch Kitchen Operating System",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}

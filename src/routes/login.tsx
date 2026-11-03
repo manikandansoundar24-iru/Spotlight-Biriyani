@@ -345,7 +345,7 @@ function LoginPage() {
                   </span>
                 </div>
                 <span className="text-[10px] text-muted-foreground font-semibold">
-                  <strong className="text-foreground">Spot Light Biriyani</strong> · Chennai Flagship
+                  <strong className="text-foreground">{typeof window !== "undefined" ? (getDB()?.settings?.businessName || "Spot Light Biriyani") : "Spot Light Biriyani"}</strong> · Active Tenant
                 </span>
               </div>
               {!isDevUnlocked ? (

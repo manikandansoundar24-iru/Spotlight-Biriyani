@@ -93,3 +93,4 @@ Use this guide to know **which document to read**, **what to explain to whom**, 
 1. **Day 1 — Master the Product:** Read `docs/SPOTLIGHT_FULL_OPERATIONS_MANUAL.md` to know every single button and feature.
 2. **Day 2 — Master the Sales Pitch:** Read `docs/RESTAURANT_SALES_BATTLECARD_AND_CLOSING_STRATEGY.md` to know how to sell and overcome any doubt.
 3. **Day 3 — Master the Tech & Code:** Read `docs/ARCHITECTURE.md` and `docs/CODE_WALKTHROUGH_LINE_BY_LINE.md` to understand the code under the hood.
+
