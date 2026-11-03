@@ -105,10 +105,17 @@ function AppLayout() {
       <header className="sticky top-0 z-40 border-b border-border/80 bg-card/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-3 sm:px-6 lg:px-8 py-2.5">
           <Link to="/app" className="flex items-center gap-2 group shrink-0">
-            <span className="flex size-7 sm:size-8 items-center justify-center rounded-lg bg-gradient-ember shadow-ember group-hover:scale-105 transition-transform">
-              <Flame className="size-3.5 sm:size-4 text-white" />
+            <span className="flex size-8 items-center justify-center rounded-lg bg-gradient-ember shadow-ember group-hover:scale-105 transition-transform">
+              <Flame className="size-4 text-white" />
             </span>
-            <span className="font-display font-black text-base sm:text-lg tracking-wide whitespace-nowrap">SPOT LIGHT MANAGER</span>
+            <div className="flex flex-col">
+              <span className="font-display font-black text-sm sm:text-base tracking-wide whitespace-nowrap leading-none">
+                SPOT LIGHT BIRIYANI
+              </span>
+              <span className="text-[9px] font-bold tracking-wider text-primary uppercase leading-none mt-0.5">
+                Cloud POS &amp; Kitchen ERP
+              </span>
+            </div>
           </Link>
 
           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
