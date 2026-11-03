@@ -47,12 +47,29 @@ export const Route = createFileRoute("/")({
           "priceRange": "₹₹ (₹110 - ₹450)",
           "address": {
             "@type": "PostalAddress",
-            "streetAddress": "MGR Main Road, Near Kazhikundram / OMR",
-            "addressLocality": "Tharamani, Chennai",
+            "streetAddress": "10, Kaikankuppam, Kazhikundram",
+            "addressLocality": "Taramani, Chennai",
             "addressRegion": "Tamil Nadu",
             "postalCode": "600113",
             "addressCountry": "IN"
           },
+          "areaServed": [
+            "Taramani",
+            "Kazhikundram",
+            "OMR",
+            "Velachery",
+            "Adyar",
+            "Perungudi",
+            "Thiruvanmiyur",
+            "Besant Nagar",
+            "Kanagam",
+            "Kotturpuram"
+          ],
+          "hasMap": "https://share.google/lU6Btsx3qdGqh2S8K",
+          "sameAs": [
+            "https://share.google/lU6Btsx3qdGqh2S8K",
+            "https://www.instagram.com/spot_light_biriyani/"
+          ],
           "geo": {
             "@type": "GeoCoordinates",
             "latitude": 12.9863,
