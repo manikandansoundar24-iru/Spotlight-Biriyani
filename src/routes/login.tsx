@@ -76,10 +76,9 @@ function LoginPage() {
       if (ownerPassword === "spotlight2026" || ownerPassword === "9999") {
         localStorage.setItem("spotlight_auth_role", "owner");
         localStorage.setItem("spotlight_auth_user", "Restaurant Owner (Admin)");
-        toast.success("Welcome, Master Admin! Access granted to Executive Dashboard.");
-        setTimeout(() => navigate({ to: "/app", replace: true }), 300);
+        navigate({ to: "/app", replace: true });
       } else {
-        toast.error("Invalid owner credentials. Use 'spotlight2026' or PIN '9999'.");
+        toast.error("Invalid owner credentials. Please check your password or PIN.");
       }
     } else if (role === "cashier") {
       let branchId = cashierBranch;
@@ -98,7 +97,7 @@ function LoginPage() {
         branchId = cashierBranch || "taramani";
         branchName = branchId === "adyar" ? "Adyar Beach Kitchen" : branchId === "velachery" ? "Velachery Delivery Hub" : "Tharamani Flagship";
       } else {
-        toast.error("Incorrect Cashier PIN. Assigned PINs: Taramani: 1001, Adyar: 1002, Velachery: 1003 (or Master PIN: 1234).");
+        toast.error("Incorrect Cashier PIN. Please enter your valid 4-digit terminal PIN.");
         return;
       }
 
@@ -108,16 +107,14 @@ function LoginPage() {
       localStorage.setItem("spotlight_auth_role", "cashier");
       localStorage.setItem("spotlight_auth_branch", branchId);
       localStorage.setItem("spotlight_auth_user", `${branchName} Cashier`);
-      toast.success(`${branchName} Terminal Unlocked! Loading Counter POS...`);
-      setTimeout(() => navigate({ to: "/app/billing", replace: true }), 300);
+      navigate({ to: "/app/billing", replace: true });
     } else if (role === "kitchen") {
       if (kitchenPin === "5555") {
         localStorage.setItem("spotlight_auth_role", "kitchen");
         localStorage.setItem("spotlight_auth_user", "Kitchen Head Chef");
-        toast.success("Kitchen Terminal Unlocked! Opening Stock Ledger...");
-        setTimeout(() => navigate({ to: "/app/stock", replace: true }), 300);
+        navigate({ to: "/app/stock", replace: true });
       } else {
-        toast.error("Incorrect Kitchen PIN. Default PIN is '5555'.");
+        toast.error("Incorrect Kitchen PIN. Please verify your chef PIN.");
       }
     } else if (role === "developer") {
       if (devKey === "dev@spotlight2026" || devKey === "admin") {
@@ -125,9 +122,8 @@ function LoginPage() {
         localStorage.setItem("spotlight_auth_user", "System Architect & Developer");
         setIsDevUnlocked(true);
         setDbJson(JSON.stringify(getDB(), null, 2));
-        toast.success("Developer Console Unlocked! Diagnostic tools active.");
       } else {
-        toast.error("Invalid Developer Security Key. Use 'dev@spotlight2026'.");
+        toast.error("Invalid Developer Security Key.");
       }
     }
   };
@@ -263,7 +259,7 @@ function LoginPage() {
                 <input
                   type="tel"
                   required
-                  placeholder="+91 98844 30710"
+                  placeholder="e.g. 98765 43210"
                   value={custPhone}
                   onChange={(e) => setCustPhone(e.target.value)}
                   className="mt-1 w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm font-mono"
@@ -376,7 +372,7 @@ function LoginPage() {
                             {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                           </button>
                         </div>
-                        <p className="mt-1 text-[11px] text-muted-foreground">Default: <strong>spotlight2026</strong> or PIN <strong>9999</strong></p>
+                        <p className="mt-1 text-[11px] text-muted-foreground">Enter your secure administrator password or master PIN.</p>
                       </div>
                     </>
                   )}
@@ -394,9 +390,9 @@ function LoginPage() {
                           onChange={(e) => setCashierBranch(e.target.value)}
                           className="mt-1 w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm font-medium"
                         >
-                          <option value="taramani">Tharamani (OMR Flagship Kitchen) — PIN: 1001</option>
-                          <option value="adyar">Adyar (Beach Kitchen) — PIN: 1002</option>
-                          <option value="velachery">Velachery (Delivery Hub) — PIN: 1003</option>
+                          <option value="taramani">Tharamani (OMR Flagship Kitchen)</option>
+                          <option value="adyar">Adyar (Beach Kitchen)</option>
+                          <option value="velachery">Velachery (Delivery Hub)</option>
                         </select>
                       </div>
                       <div>
@@ -411,7 +407,7 @@ function LoginPage() {
                           className="mt-1 w-full tracking-[0.6em] text-center text-xl font-mono rounded-xl border border-input bg-background px-3.5 py-3"
                         />
                         <p className="mt-1.5 text-[11px] text-muted-foreground">
-                          Branch PINs: Tharamani (<strong>1001</strong>), Adyar (<strong>1002</strong>), Velachery (<strong>1003</strong>), Master (<strong>1234</strong>)
+                          Enter your assigned 4-digit branch counter security PIN.
                         </p>
                       </div>
                     </>

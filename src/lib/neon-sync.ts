@@ -158,8 +158,12 @@ export async function performFullSync(): Promise<{
     if (cloudDishes.length > 0) {
       setDB((draft) => {
         cloudDishes.forEach((cd) => {
-          const existing = draft.items.find((i) => i.id === cd.id);
+          const cdNorm = cd.name.trim().toLowerCase().replace(/\s+/g, " ");
+          const existing = draft.items.find(
+            (i) => i.id === cd.id || i.name.trim().toLowerCase().replace(/\s+/g, " ") === cdNorm
+          );
           if (existing) {
+            existing.id = cd.id;
             existing.price = cd.price;
             existing.onlinePrice = cd.onlinePrice;
             existing.cost = cd.cost;

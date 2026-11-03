@@ -6,25 +6,80 @@ import heroImg from "@/assets/hero-biriyani.jpg";
 import chickenRealImg from "@/assets/chicken-biriyani-real.jpg";
 import muttonRealImg from "@/assets/mutton-biriyani-real.jpg";
 import kushkaRealImg from "@/assets/kushka-salna-real.jpg";
-import dalchaImg from "@/assets/ennai-kathirikai.jpg";
-import halwaImg from "@/assets/bread-halwa.jpg";
-import raitaImg from "@/assets/onion-raita.jpg";
 import { SiteShell } from "@/components/site/SiteShell";
 import { ChennaiLeafletMap } from "@/components/map/ChennaiLeafletMap";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Spot Light Biriyani — Chennai Biriyani Specialists | 3 Kitchens" },
+      { title: "Spot Light Biriyani — Authentic Chennai Biriyani Specialists | Tharamani, Adyar, Velachery" },
       {
         name: "description",
         content:
-          "Traditional authentic Chennai biriyani in Tharamani, Adyar & Velachery. Freshly cooked twice daily. Order on WhatsApp, Swiggy or dine-in.",
+          "Spot Light Biriyani serves traditional seeraga samba mutton & chicken biriyani freshly cooked twice daily in Chennai (Tharamani, Adyar, Velachery). Order online, Swiggy, Zomato & takeaway.",
       },
+      {
+        name: "keywords",
+        content:
+          "Spot Light Biriyani, Spotlight Biriyani, Chennai biriyani, Tharamani biriyani, Adyar biriyani, Velachery biriyani, authentic Chennai biriyani, mutton biriyani Chennai, chicken biriyani OMR, seeraga samba biriyani",
+      },
+      { name: "robots", content: "index, follow, max-image-preview:large" },
       { property: "og:title", content: "Spot Light Biriyani — Authentic Chennai Biriyani" },
       {
         property: "og:description",
-        content: "Authentic Chennai biriyani, tender mutton & chicken, kushka and bread halwa. 4.9★ Google rating.",
+        content: "Authentic Chennai biriyani, tender mutton & chicken cuts, kushka. 4.9★ Google rating across South Chennai kitchens.",
+      },
+      { property: "og:type", content: "restaurant" },
+      { property: "og:locale", content: "en_IN" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Spot Light Biriyani — Chennai Biriyani Specialists" },
+      { name: "twitter:description", content: "Freshly cooked twice daily authentic Chennai biriyani across Tharamani, Adyar & Velachery." },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Restaurant",
+          "name": "Spot Light Biriyani",
+          "image": "https://spotlight-biriyani.vercel.app/assets/hero-biriyani-YI-fIhWX.jpg",
+          "servesCuisine": ["South Indian", "Biriyani", "Mughlai"],
+          "priceRange": "₹₹ (₹110 - ₹450)",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "MGR Main Road, Near Kazhikundram / OMR",
+            "addressLocality": "Tharamani, Chennai",
+            "addressRegion": "Tamil Nadu",
+            "postalCode": "600113",
+            "addressCountry": "IN"
+          },
+          "geo": {
+            "@type": "GeoCoordinates",
+            "latitude": 12.9863,
+            "longitude": 80.2425
+          },
+          "telephone": "+91 98844 30710",
+          "url": "https://spotlight-biriyani.vercel.app",
+          "openingHoursSpecification": [
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+              "opens": "11:30",
+              "closes": "15:30"
+            },
+            {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+              "opens": "18:30",
+              "closes": "23:00"
+            }
+          ],
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.9",
+            "reviewCount": "1250"
+          }
+        }),
       },
     ],
   }),
@@ -79,27 +134,6 @@ const BUCKET_COMBOS = [
     price: "₹999",
     items: ["1 Mutton Biriyani", "2 Chicken Biriyanis", "Chicken 65 (250g)", "Double Dalcha & Raita", "Bread Halwa Feast"],
     popular: false,
-  },
-];
-
-const ACCOMPANIMENTS = [
-  {
-    name: "Ennai Kathirikai (Brinjal Dalcha)",
-    desc: "Slow-roasted baby brinjals in a tangy tamarind, sesame, and roasted peanut gravy. The soul of Chennai biriyani.",
-    img: dalchaImg,
-    tag: "Authentic Dalcha",
-  },
-  {
-    name: "Madurai Ghee Bread Halwa",
-    desc: "Crisp fried bread simmered in pure country ghee, sweetened milk, cashews, and saffron essence.",
-    img: halwaImg,
-    tag: "Pure Country Ghee",
-  },
-  {
-    name: "Thick Curd Onion Raita",
-    desc: "Finely sliced shallots and crisp onions mixed in thick full-cream curd with green chilies and fresh coriander.",
-    img: raitaImg,
-    tag: "Creamy & Chilled",
   },
 ];
 
@@ -317,41 +351,6 @@ function Home() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Chennai Authentic Accompaniments */}
-      <section className="mx-auto max-w-6xl px-5 py-20">
-        <div className="text-center max-w-2xl mx-auto">
-          <p className="text-xs font-bold uppercase tracking-wider text-primary">Traditional Accompaniments</p>
-          <h2 className="mt-2 text-3xl sm:text-4xl font-display">AUTHENTIC CHENNAI SIDES</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Served complimentary with every plate of authentic Chennai biriyani to balance the spices.
-          </p>
-        </div>
-
-        <div className="mt-10 grid gap-6 md:grid-cols-3">
-          {ACCOMPANIMENTS.map((acc) => (
-            <div key={acc.name} className="surface-card group overflow-hidden transition-all hover:border-primary/80 hover:shadow-ember">
-              <div className="relative h-52 w-full overflow-hidden">
-                <img
-                  src={acc.img}
-                  alt={acc.name}
-                  loading="lazy"
-                  width={600}
-                  height={450}
-                  className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <span className="absolute left-3 top-3 rounded-full bg-card/90 px-3 py-1 text-[11px] font-bold text-primary backdrop-blur-md border border-border shadow-xs">
-                  {acc.tag}
-                </span>
-              </div>
-              <div className="p-5 text-left">
-                <h3 className="text-base font-bold text-foreground">{acc.name}</h3>
-                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{acc.desc}</p>
-              </div>
-            </div>
-          ))}
         </div>
       </section>
 

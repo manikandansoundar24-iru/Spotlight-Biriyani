@@ -139,13 +139,76 @@ function Stock() {
 
       <div className="grid gap-6 lg:grid-cols-[1fr_380px] items-start">
         <div className="space-y-6">
-          <div className="surface-card overflow-x-auto p-5">
+          <div className="surface-card p-4 sm:p-5">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-display">CURRENT ON-HAND STOCK</h2>
               <span className="text-xs text-muted-foreground">{db.stock.length} materials tracked</span>
             </div>
 
-            <table className="w-full min-w-[620px] text-sm">
+            {/* Mobile-Friendly Stock Card List (Phone Screens) */}
+            <div className="sm:hidden space-y-3 mb-4">
+              {db.stock.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">No materials in inventory.</p>
+              ) : (
+                db.stock.map((s) => {
+                  const low = s.qty <= s.reorderLevel;
+                  return (
+                    <div key={s.id} className="rounded-xl border border-border/80 bg-background/50 p-3.5 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-foreground text-sm">{s.name}</span>
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                            low
+                              ? "bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30"
+                              : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                          }`}
+                        >
+                          {low ? <><AlertTriangle className="size-2.5" /> Reorder Alert</> : <><CheckCircle2 className="size-2.5" /> Healthy</>}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-border/50">
+                        <div>
+                          <span className="text-[10px] uppercase text-muted-foreground block">On-Hand Qty</span>
+                          <span className="font-mono font-bold text-foreground text-sm">{s.qty} {s.unit}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] uppercase text-muted-foreground block">Reorder At</span>
+                          <span className="font-mono text-muted-foreground">{s.reorderLevel} {s.unit}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] uppercase text-muted-foreground block">Cost / Unit</span>
+                          <span className="font-mono text-muted-foreground">{inr(s.costPerUnit)}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] uppercase text-muted-foreground block">Asset Value</span>
+                          <span className="font-mono font-bold text-primary">{inr(s.qty * s.costPerUnit)}</span>
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-2 pt-2 border-t border-border/50">
+                        <button
+                          type="button"
+                          onClick={() => startEdit(s)}
+                          className="flex items-center gap-1 rounded-lg border border-border bg-card px-2.5 py-1 text-xs font-semibold text-foreground hover:border-primary hover:text-primary transition-colors"
+                        >
+                          <Pencil className="size-3 text-primary" /> Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteItem(s.id, s.name)}
+                          className="flex items-center gap-1 rounded-lg border border-destructive/30 bg-destructive/10 px-2.5 py-1 text-xs font-semibold text-destructive hover:bg-destructive/20 transition-colors"
+                        >
+                          <Trash2 className="size-3" /> Remove
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Swipeable Desktop/Tablet Table with touch scrolling */}
+            <div className="hidden sm:block overflow-x-auto touch-pan-x -mx-4 sm:mx-0 px-4 sm:px-0">
+              <table className="w-full min-w-[600px] text-sm">
               <thead className="text-left text-xs uppercase text-muted-foreground border-b border-border">
                 <tr>
                   <th className="pb-3">Material Name</th>
@@ -230,6 +293,7 @@ function Stock() {
                 )}
               </tbody>
             </table>
+            </div>
           </div>
 
           <div className="surface-card p-5">

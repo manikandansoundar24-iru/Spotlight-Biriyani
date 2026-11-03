@@ -511,6 +511,28 @@ export function getDB(): DB {
     tmBranch.phone = "+91 98844 30710";
     needsPersist = true;
   }
+
+  // Auto-deduplicate dishes by normalized name (eliminates duplicate dishes in UI)
+  if (Array.isArray(cache.items) && cache.items.length > 0) {
+    const seen = new Map<string, Item>();
+    for (const item of cache.items) {
+      if (!item || !item.name) continue;
+      const key = item.name.trim().toLowerCase().replace(/\s+/g, " ");
+      if (!seen.has(key)) {
+        seen.set(key, item);
+      } else {
+        const prev = seen.get(key)!;
+        if (item.id.startsWith("slb-") && !prev.id.startsWith("slb-")) {
+          seen.set(key, item);
+        }
+        needsPersist = true;
+      }
+    }
+    if (seen.size !== cache.items.length) {
+      cache.items = Array.from(seen.values());
+      needsPersist = true;
+    }
+  }
   if (needsPersist) {
     persist();
   }

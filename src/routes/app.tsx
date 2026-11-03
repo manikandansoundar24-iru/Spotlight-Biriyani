@@ -103,43 +103,43 @@ function AppLayout() {
   return (
     <div className={`min-h-screen w-full max-w-full overflow-x-hidden bg-background text-foreground ${isDarkMode ? "dark" : ""}`}>
       <header className="sticky top-0 z-40 border-b border-border/80 bg-card/90 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 sm:px-6 lg:px-8 py-3">
-          <Link to="/app" className="flex items-center gap-2 group">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-gradient-ember shadow-ember group-hover:scale-105 transition-transform">
-              <Flame className="size-4 text-white" />
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-3 sm:px-6 lg:px-8 py-2.5">
+          <Link to="/app" className="flex items-center gap-2 group shrink-0">
+            <span className="flex size-7 sm:size-8 items-center justify-center rounded-lg bg-gradient-ember shadow-ember group-hover:scale-105 transition-transform">
+              <Flame className="size-3.5 sm:size-4 text-white" />
             </span>
-            <span className="font-display font-black text-lg tracking-wide">SPOT LIGHT MANAGER</span>
+            <span className="font-display font-black text-base sm:text-lg tracking-wide whitespace-nowrap">SPOT LIGHT MANAGER</span>
           </Link>
 
-          <div className="ml-auto flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
             {/* Active User Role Badge */}
             <div className="hidden md:flex items-center gap-1.5 rounded-full border border-border bg-muted/60 px-3 py-1 text-xs font-semibold text-muted-foreground">
               <ShieldCheck className="size-3.5 text-primary" />
               <span className="font-bold text-foreground">{currentUser}</span>
             </div>
 
-            {/* Royal White / Dark Mode Switcher */}
-            <button
-              onClick={toggleTheme}
-              className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-semibold text-foreground hover:border-primary transition-colors shadow-2xs"
-              title="Switch between Royal White (Toast & Square) and Night Kitchen (Dark)"
-            >
-              {isDarkMode ? <Moon className="size-3.5 text-primary" /> : <Sun className="size-3.5 text-amber-500" />}
-              <span className="hidden sm:inline">{isDarkMode ? "Dark Kitchen" : "Royal White"}</span>
-            </button>
-
             {/* Neon Cloud PostgreSQL Sync */}
             <button
               onClick={handleCloudSync}
               disabled={isSyncing}
-              className="flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-1.5 text-xs font-bold text-primary hover:bg-primary/20 transition-all shadow-2xs active:scale-98"
+              className="flex items-center gap-1 sm:gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-2 sm:px-2.5 py-1 sm:py-1.5 text-[11px] sm:text-xs font-bold text-primary hover:bg-primary/20 transition-all shadow-2xs active:scale-98"
               title="Sync with Neon Cloud PostgreSQL (pushes bills, pulls live dishes & prices)"
             >
-              <Database className={`size-3.5 ${isSyncing ? "animate-spin" : ""}`} />
-              <span className="hidden sm:inline">{isSyncing ? "Syncing..." : "Neon Cloud"}</span>
+              <Database className={`size-3 sm:size-3.5 ${isSyncing ? "animate-spin" : ""}`} />
+              <span>{isSyncing ? "Syncing..." : "Neon Cloud"}</span>
             </button>
 
-            <span className="text-xs text-muted-foreground font-semibold">Branch</span>
+            {/* Royal White / Dark Mode Switcher */}
+            <button
+              onClick={toggleTheme}
+              className="flex items-center gap-1 rounded-lg border border-border bg-card p-1.5 sm:px-2.5 sm:py-1.5 text-xs font-semibold text-foreground hover:border-primary transition-colors shadow-2xs"
+              title="Switch Theme"
+            >
+              {isDarkMode ? <Moon className="size-3.5 text-primary" /> : <Sun className="size-3.5 text-amber-500" />}
+              <span className="hidden sm:inline">{isDarkMode ? "Dark" : "Light"}</span>
+            </button>
+
+            {/* Branch Selector */}
             <select
               value={db?.settings.activeBranchId ?? ""}
               onChange={(e) =>
@@ -147,7 +147,7 @@ function AppLayout() {
                   d.settings.activeBranchId = e.target.value;
                 })
               }
-              className="rounded-lg border border-input bg-background px-3 py-1.5 text-xs font-semibold"
+              className="rounded-lg border border-input bg-background px-2 sm:px-3 py-1 sm:py-1.5 text-xs font-semibold max-w-[130px] sm:max-w-none truncate"
             >
               {(db ?? getDB()).branches.map((b) => (
                 <option key={b.id} value={b.id}>
@@ -159,7 +159,7 @@ function AppLayout() {
             {/* Logout Action */}
             <button
               onClick={handleLogout}
-              className="flex items-center gap-1.5 rounded-lg border border-destructive/30 bg-destructive/10 px-2.5 py-1.5 text-xs font-bold text-destructive hover:bg-destructive/20 transition-colors shadow-2xs"
+              className="flex items-center gap-1 rounded-lg border border-destructive/30 bg-destructive/10 p-1.5 sm:px-2.5 sm:py-1.5 text-xs font-bold text-destructive hover:bg-destructive/20 transition-colors shadow-2xs"
               title="Lock Terminal & Log Out"
             >
               <LogOut className="size-3.5" />

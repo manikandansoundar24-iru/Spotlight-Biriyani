@@ -28,6 +28,7 @@ import {
   Receipt,
   RotateCcw,
   Search,
+  ShoppingCart,
   Send,
   Soup,
   Sparkles,
@@ -987,20 +988,28 @@ function Billing() {
   return (
     <div className="space-y-4 w-full min-w-0 max-w-full">
       {/* Top Header Bar — Guaranteed Single Line, No Stair-Step Wrapping */}
-      <div className="flex items-center justify-between gap-3 pb-1">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-1">
         {/* Left: Terminal Brand & Actions */}
-        <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
+        <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-4 flex-wrap w-full sm:w-auto">
           <div className="flex flex-col justify-center">
             <p className="text-[10px] font-bold uppercase tracking-wider text-primary leading-none">Billing Terminal</p>
-            <h1 className="text-2xl sm:text-3xl font-display font-black tracking-tight leading-none mt-1">COUNTER POS</h1>
+            <h1 className="text-xl sm:text-3xl font-display font-black tracking-tight leading-none mt-1">COUNTER POS</h1>
           </div>
 
           <div className="h-9 w-px bg-border/60 hidden sm:block" />
 
-          <div className="flex items-center gap-2 sm:gap-2.5">
+          {/* Next Token on Mobile appears right next to COUNTER POS */}
+          <div
+            className="sm:hidden h-9 flex items-center gap-1.5 rounded-xl border border-primary/40 bg-primary/10 px-3 text-xs font-black text-primary shadow-2xs tracking-wide shrink-0"
+          >
+            <Ticket className="size-3.5 text-primary shrink-0" />
+            <span>Next Token #{todayToken}</span>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-2.5 w-full sm:w-auto mt-1 sm:mt-0">
             <button
               onClick={() => setOrderHistoryOpen(true)}
-              className="h-10 sm:h-11 flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 sm:px-5 text-xs sm:text-sm font-bold text-foreground hover:border-primary hover:text-primary transition-all shadow-2xs hover:shadow-xs active:scale-98"
+              className="flex-1 sm:flex-none h-10 sm:h-11 flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 sm:px-5 text-xs sm:text-sm font-bold text-foreground hover:border-primary hover:text-primary transition-all shadow-2xs active:scale-98"
               title="View today's past bills, reprint receipts, re-send WhatsApp, or correct wrong bills"
             >
               <History className="size-4 sm:size-4.5 text-primary shrink-0" />
@@ -1008,7 +1017,7 @@ function Billing() {
             </button>
             <button
               onClick={() => setCustomModalOpen(true)}
-              className="h-10 sm:h-11 flex items-center gap-2 rounded-xl border border-primary/40 bg-card px-3.5 sm:px-5 text-xs sm:text-sm font-bold text-foreground hover:border-primary hover:text-primary transition-all shadow-2xs hover:shadow-xs active:scale-98"
+              className="flex-1 sm:flex-none h-10 sm:h-11 flex items-center justify-center gap-2 rounded-xl border border-primary/40 bg-card px-3 sm:px-5 text-xs sm:text-sm font-bold text-foreground hover:border-primary hover:text-primary transition-all shadow-2xs active:scale-98"
               title="Add an unlisted custom item or special order to the bill"
             >
               <PlusCircle className="size-4 sm:size-4.5 text-primary shrink-0" />
@@ -1017,9 +1026,9 @@ function Billing() {
           </div>
         </div>
 
-        {/* Right: Next Token Dispatcher (Cleanly pinned directly above the cart) */}
+        {/* Right: Next Token Dispatcher (on desktop) */}
         <div
-          className="h-10 sm:h-11 flex items-center gap-2.5 rounded-xl border-2 border-primary/40 bg-gradient-to-r from-primary/10 via-primary/15 to-primary/10 px-4 sm:px-5 text-xs sm:text-sm font-black text-primary shadow-xs tracking-wide shrink-0"
+          className="hidden sm:flex h-10 sm:h-11 items-center gap-2.5 rounded-xl border-2 border-primary/40 bg-gradient-to-r from-primary/10 via-primary/15 to-primary/10 px-4 sm:px-5 text-xs sm:text-sm font-black text-primary shadow-xs tracking-wide shrink-0"
           title="Next live token ticket number to be printed"
         >
           <Ticket className="size-4 sm:size-4.5 text-primary shrink-0" />
@@ -1230,10 +1239,10 @@ function Billing() {
             </>
           ) : (
             /* Left Touch Rail Layout (Petpooja / Toast Style) */
-            <div className="mt-3 flex gap-3">
-              {/* Left Touch Rail */}
-              <div className="w-36 lg:w-40 shrink-0 flex flex-col gap-1 overflow-y-auto max-h-[640px] pr-1.5 border-r border-border/60">
-                <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground mb-0.5">
+            <div className="mt-3 flex flex-col sm:flex-row gap-3">
+              {/* Left Touch Rail (Horizontal scrollable chips on mobile, vertical sidebar on desktop) */}
+              <div className="w-full sm:w-36 lg:w-40 shrink-0 flex flex-row sm:flex-col gap-1.5 overflow-x-auto sm:overflow-y-auto sm:max-h-[640px] pb-2 sm:pb-0 sm:pr-1.5 border-b sm:border-b-0 sm:border-r border-border/60">
+                <span className="hidden sm:block text-[10px] font-black uppercase tracking-wider text-muted-foreground mb-0.5">
                   Categories
                 </span>
                 {allCategories.map((c) => {
@@ -1243,17 +1252,21 @@ function Billing() {
                     <button
                       key={c.id}
                       onClick={() => setCat(c.id)}
-                      className={`w-full flex items-center justify-between rounded-xl border p-2 text-left text-[11px] font-bold transition-all ${isSelected
+                      className={`shrink-0 sm:w-full flex items-center justify-between gap-2 rounded-xl border p-2 text-left text-[11px] font-bold transition-all ${
+                        isSelected
                           ? "border-primary bg-primary text-primary-foreground shadow-ember scale-[1.01]"
                           : "border-border bg-card text-muted-foreground hover:border-primary/50 hover:bg-muted/60 hover:text-foreground"
-                        }`}
+                      }`}
                     >
                       <div className="flex items-center gap-1.5 min-w-0">
                         <span className="shrink-0 text-primary">{renderCategoryIcon(c.id, "size-3.5")}</span>
-                        <span className="truncate">{c.label}</span>
+                        <span className="truncate whitespace-nowrap">{c.label}</span>
                       </div>
-                      <span className={`shrink-0 rounded-full px-1.5 py-0.2 text-[9px] font-bold ${isSelected ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
-                        }`}>
+                      <span
+                        className={`shrink-0 rounded-full px-1.5 py-0.2 text-[9px] font-bold ${
+                          isSelected ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
+                        }`}
+                      >
                         {count}
                       </span>
                     </button>
@@ -1262,7 +1275,7 @@ function Billing() {
               </div>
 
               {/* Dishes Grid (2 Columns in Rail Mode) */}
-              <div className="flex-1 min-w-0 grid gap-2.5 grid-cols-1 md:grid-cols-2 self-start">
+              <div className="flex-1 min-w-0 grid gap-2.5 grid-cols-1 sm:grid-cols-2 self-start">
                 {items.map((i) => {
                   const inCart = lines.find((l) => l.itemId === i.id);
                   return (
@@ -1286,7 +1299,7 @@ function Billing() {
         </div>
 
         {/* Cart / Order Summary */}
-        <aside className="surface-card h-fit p-4 lg:p-5 lg:sticky lg:top-24 w-full min-w-0 max-w-full overflow-hidden">
+        <aside id="pos-cart" className="surface-card h-fit p-4 lg:p-5 lg:sticky lg:top-24 w-full min-w-0 max-w-full overflow-hidden">
           {/* Order Service Type Toggle (Dine-in vs Takeaway/Parcel) */}
           <div className="flex gap-1.5 rounded-xl border border-border bg-card p-1 text-xs mb-2.5 shadow-2xs">
             <button
@@ -1739,6 +1752,31 @@ function Billing() {
         </aside>
       </div>
 
+      {/* Floating Sticky Mobile Cart Quick-Action (Only on mobile screens when items are in cart) */}
+      {lines.length > 0 && (
+        <div className="lg:hidden fixed bottom-3 left-3 right-3 z-40">
+          <button
+            type="button"
+            onClick={() => document.getElementById("pos-cart")?.scrollIntoView({ behavior: "smooth" })}
+            className="w-full flex items-center justify-between rounded-2xl bg-gradient-to-r from-primary via-orange-600 to-amber-600 p-3.5 text-white shadow-2xl shadow-primary/40 border border-white/20 active:scale-98 transition-all"
+          >
+            <div className="flex items-center gap-2">
+              <span className="flex size-8 items-center justify-center rounded-xl bg-white/25">
+                <ShoppingCart className="size-4.5 text-white" />
+              </span>
+              <div className="text-left">
+                <p className="text-xs font-black tracking-wide leading-none">{lines.reduce((s, l) => s + l.qty, 0)} Items Selected</p>
+                <p className="text-[10px] text-white/80 font-medium leading-none mt-1">Tap to review cart &amp; print</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-base font-black tracking-tight">₹{preview?.net ?? 0}</span>
+              <span className="rounded-xl bg-white text-primary px-3 py-1 text-xs font-black shadow-xs">Pay &gt;</span>
+            </div>
+          </button>
+        </div>
+      )}
+
       {/* Custom Item Popover / Modal */}
       {customModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
@@ -2142,7 +2180,7 @@ function Billing() {
                       <input
                         type="tel"
                         maxLength={10}
-                        placeholder="9884430710"
+                        placeholder="9876543210"
                         value={customerPhone}
                         onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, ""))}
                         className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm font-semibold tracking-wider text-foreground focus:border-emerald-500 focus:outline-none"
