@@ -1022,12 +1022,12 @@ function Billing() {
     }
   };
 
-  const handleQuickWhatsApp = () => {
+    const handleQuickWhatsApp = () => {
     if (!preview) return;
     const rawInput = quickPhone.trim() || customerPhone.trim();
     const cleanPhone = rawInput.replace(/\D/g, "");
     if (!cleanPhone || cleanPhone.length < 10) {
-      toast.error("Please enter a valid 10-digit customer mobile number before sending WhatsApp receipt");
+      toast.error("Please enter a valid 10-digit mobile number for WhatsApp receipt");
       return;
     }
     const validPhone = cleanPhone.slice(-10);
@@ -1036,11 +1036,33 @@ function Billing() {
 
     const businessName = db?.settings?.businessName || "Spot Light Biriyani";
     const branch = db?.branches.find((b) => b.id === target.branchId) || db?.branches[0];
-    const itemsText = target.lines.map((l) => `🍲 ${l.qty}x ${l.name} - ₹${l.price * l.qty}`).join("\n");
-    const orderTypeStr = target.orderType === "takeaway" ? "🥡 TAKEAWAY / PARCEL" : (target.tableId ? `🍽️ DINE-IN (${target.tableId})` : "🍽️ DINE-IN");
-    const msg = `Hi Customer, your ${businessName} bill is confirmed ✅\n\n*${businessName} — ${branch?.name || "Kitchen"}*\n📅 ${new Date(target.date).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}\n🔖 *${orderTypeStr}*\n${itemsText}\n💰 *₹${target.net}* · Paid via ${target.payment.toUpperCase()}\n📍 ${branch?.address || "Chennai"}\n📞 ${branch?.phone || ""}\nBill Ref: *#${target.id.slice(0, 6).toUpperCase()}*\n\n♨️ Thank you for dining with us! Visit again.`;
+    const itemsText = target.lines.map((l) => `* ${l.qty}x ${l.name} - ₹${l.price * l.qty}`).join("\n");
+    const orderTypeStr = target.orderType === "takeaway" ? "TAKEAWAY / PARCEL" : (target.tableId ? `DINE-IN (${target.tableId})` : "DINE-IN");
+    
+    const msg = [
+      `Hi Customer, your ${businessName} bill is confirmed!`,
+      `----------------------------------------`,
+      `*${businessName}* — ${branch?.name || "Kitchen"}`,
+      `Date: ${new Date(target.date).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}`,
+      `Order Type: *${orderTypeStr}*`,
+      `Bill Ref: *#${target.id.slice(0, 6).toUpperCase()}*`,
+      `----------------------------------------`,
+      `*ORDER ITEMS:*`,
+      itemsText,
+      `----------------------------------------`,
+      `*NET TOTAL: ₹${target.net}*`,
+      `Payment Method: ${target.payment.toUpperCase()}`,
+      `----------------------------------------`,
+      `Store Address: ${branch?.address || "Chennai"}`,
+      branch?.phone ? `Contact: ${branch.phone}` : "",
+      `Thank you for dining with us! Visit again.`
+    ].filter(Boolean).join("\n");
 
-    const whatsappUrl = `https://wa.me/91${validPhone}?text=${encodeURIComponent(msg)}`;
+    const isMobile = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const whatsappUrl = isMobile
+      ? `https://wa.me/91${validPhone}?text=${encodeURIComponent(msg)}`
+      : `https://web.whatsapp.com/send?phone=91${validPhone}&text=${encodeURIComponent(msg)}`;
+
     const w = window.open(whatsappUrl, "_blank");
     if (!w || w.closed || typeof w.closed === "undefined") {
       window.location.href = whatsappUrl;
@@ -1824,6 +1846,27 @@ function Billing() {
 
           {/* Save or Update Bill Action Bar */}
           <div className="mt-4 space-y-2">
+
+            {/* Phase 2: Instant Dynamic UPI QR Generator Button */}
+            {activeTenant.enabledModules.dynamicUpi && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (!preview || preview.net <= 0) {
+                    toast.info("Add dishes to the bill first, then click Dynamic UPI QR!");
+                    return;
+                  }
+                  setPayment("upi");
+                  setUpiQrModalOpen(true);
+                }}
+                className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 px-4 font-bold text-xs sm:text-sm bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 text-white shadow-md transition-all active:scale-[0.98]"
+                title="Generate instant customer-facing Dynamic UPI QR code with exact amount"
+              >
+                <QrCode className="size-4 shrink-0" />
+                <span>DYNAMIC UPI QR {preview && preview.net > 0 ? `(₹${preview.net})` : "(GPay / PhonePe / Paytm)"}</span>
+              </button>
+            )}
+
             {isCartOverDeg && (
               <div className="rounded-xl border border-rose-500/40 bg-rose-500/10 p-2.5 text-center text-xs font-bold text-rose-600 dark:text-rose-400 animate-pulse">
                 ⚠️ Cannot place order: {currentCartDegPlates} Deg plates in cart exceeds {liveBatch.platesLeft} available plates!
@@ -1871,7 +1914,7 @@ function Billing() {
             </div>
 
             {/* VIP Regular Loyalty Banner */}
-            {customerLoyalty && activeTenant.enabledModules.loyalty && (
+            {customerLoyalty && activeTenant.enabledModules.loyalty && customerLoyalty.visitCount > 0 && (
               <div className="flex items-center justify-between rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-900 dark:text-amber-200">
                 <div className="flex items-center gap-1.5 font-bold">
                   <Crown className="size-4 text-amber-500 shrink-0" />

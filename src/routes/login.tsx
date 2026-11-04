@@ -28,6 +28,7 @@ function LoginPage() {
   const [portalType, setPortalType] = useState<PortalType>("customer");
   const [customerMode, setCustomerMode] = useState<CustomerMode>("login");
   const [role, setRole] = useState<RoleTab>("owner");
+  const [selectedTenantId, setSelectedTenantId] = useState<string>("spotlight-biriyani");
 
   // Customer Form Fields
   const [custName, setCustName] = useState("");
@@ -86,6 +87,7 @@ function LoginPage() {
           switchClientTenant(matched.id);
         }
         const activeName = matched ? matched.businessName : "Restaurant";
+        sessionStorage.setItem("spotlight_session_active", "true");
         localStorage.setItem("spotlight_auth_role", "owner");
         localStorage.setItem("spotlight_auth_user", `${activeName} Owner`);
         navigate({ to: "/app", replace: true });
@@ -116,12 +118,14 @@ function LoginPage() {
       setDB((d) => {
         d.settings.activeBranchId = branchId;
       });
+      sessionStorage.setItem("spotlight_session_active", "true");
       localStorage.setItem("spotlight_auth_role", "cashier");
       localStorage.setItem("spotlight_auth_branch", branchId);
       localStorage.setItem("spotlight_auth_user", `${branchName} Cashier`);
       navigate({ to: "/app/billing", replace: true });
     } else if (role === "kitchen") {
       if (kitchenPin === "5555") {
+        sessionStorage.setItem("spotlight_session_active", "true");
         localStorage.setItem("spotlight_auth_role", "kitchen");
         localStorage.setItem("spotlight_auth_user", "Kitchen Head Chef");
         navigate({ to: "/app/stock", replace: true });
@@ -130,6 +134,7 @@ function LoginPage() {
       }
     } else if (role === "developer") {
       if (devKey === "dev@spotlight2026" || devKey === "admin" || devKey === "9999") {
+        sessionStorage.setItem("spotlight_session_active", "true");
         localStorage.setItem("spotlight_auth_role", "developer");
         localStorage.setItem("spotlight_auth_user", "System Architect & Super-Admin");
         navigate({ to: "/app/developer", replace: true });
@@ -220,9 +225,40 @@ function LoginPage() {
                 </span>
               </div>
               <span className="text-[10px] text-muted-foreground font-semibold">
-                Customer &amp; Online Order Portal · Powered by RestoPulse
-              </span>
-            </div>
+                  Enterprise Multi-Tenant Restaurant Gateway
+                </span>
+                
+                {role !== "developer" && (
+                  <div className="w-full mt-2 pt-2 border-t border-border/60 text-left">
+                    <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                      Select Client Restaurant / Tenant
+                    </label>
+                    <select
+                      value={selectedTenantId}
+                      onChange={(e) => {
+                        const tId = e.target.value;
+                        setSelectedTenantId(tId);
+                        switchClientTenant(tId);
+                        const dbInst = getDB();
+                        const curTenants = (dbInst && dbInst.tenants && dbInst.tenants.length > 0) ? dbInst.tenants : DEFAULT_TENANTS;
+                        const match = curTenants.find((t) => t.id === tId);
+                        if (match && match.loginUsername) {
+                          setOwnerEmail(match.loginUsername);
+                        }
+                        toast.info(`Switched to ${match?.businessName || "Restaurant"}`);
+                      }}
+                      className="w-full rounded-xl border border-primary/30 bg-background px-3 py-2 text-xs font-bold text-foreground focus:border-primary focus:outline-none"
+                    >
+                      {((getDB()?.tenants && (getDB()?.tenants?.length ?? 0) > 0) ? (getDB()?.tenants ?? DEFAULT_TENANTS) : DEFAULT_TENANTS).map((t) => (
+                        <option key={t.id} value={t.id}>
+                          🍽️ {t.businessName} ({t.activeBranchName || "Main"})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+              </div>
             <div className="flex rounded-xl bg-muted/60 p-1 mb-5 text-xs">
               <button
                 type="button"

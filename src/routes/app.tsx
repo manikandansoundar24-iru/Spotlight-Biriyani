@@ -101,8 +101,9 @@ function AppLayout() {
       if (localStorage.getItem("spotlight_pos_theme") === "dark") {
         setIsDarkMode(true);
       }
+      const sessionActive = sessionStorage.getItem("spotlight_session_active") === "true";
       const role = localStorage.getItem("spotlight_auth_role");
-      if (!role) {
+      if (!sessionActive || !role) {
         // Strict Auth Guard: redirect unauthenticated access directly to /login
         window.location.replace("/login");
         return;
@@ -124,6 +125,7 @@ function AppLayout() {
 
   const handleLogout = () => {
     if (typeof window !== "undefined") {
+      sessionStorage.removeItem("spotlight_session_active");
       localStorage.removeItem("spotlight_auth_role");
       localStorage.removeItem("spotlight_auth_user");
       window.location.href = "/login";
@@ -181,8 +183,8 @@ function AppLayout() {
                     Cloud POS
                   </span>
                 </div>
-                <span className="text-[11px] font-bold text-muted-foreground leading-tight mt-0.5 truncate max-w-[180px] sm:max-w-xs">
-                  🍽️ {(db?.settings?.businessName || activeTenant.businessName || "Spot Light Biriyani")} · {activeTenant.activeBranchName || "Chennai"}
+                <span className="text-[10px] font-semibold text-muted-foreground leading-tight mt-0.5 truncate">
+                  Enterprise Restaurant OS
                 </span>
               </div>
             </Link>
@@ -190,6 +192,13 @@ function AppLayout() {
 
           {/* RIGHT: Quick System Actions */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+            {/* Active Client Restaurant Badge */}
+            <div className="flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs shadow-2xs">
+              <span className="font-black text-foreground text-xs flex items-center gap-1">
+                🍽️ {db?.settings?.businessName || activeTenant.businessName || "Spot Light Biriyani"}
+              </span>
+            </div>
+
             {/* Multi-Branch Selector if enabled */}
             {activeTenant.enabledModules.multiBranch && (
               <div className="flex items-center rounded-lg border border-border bg-muted/40 px-2 py-1 text-xs">

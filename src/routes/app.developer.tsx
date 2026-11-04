@@ -103,6 +103,9 @@ export function DeveloperSuperAdminPage() {
       const storedRole = localStorage.getItem("spotlight_auth_role");
       if (storedRole === "developer") {
         setIsUnlocked(true);
+      } else if (storedRole) {
+        toast.error("Super-Admin Developer Privileges Required.");
+        window.location.replace("/app");
       }
     }
   }, []);
@@ -124,6 +127,7 @@ export function DeveloperSuperAdminPage() {
     e.preventDefault();
     if (pinInput === "dev@spotlight2026" || pinInput === "admin" || pinInput === "9999") {
       setIsUnlocked(true);
+      sessionStorage.setItem("spotlight_session_active", "true");
       localStorage.setItem("spotlight_auth_role", "developer");
       localStorage.setItem("spotlight_auth_user", "System Architect & Super-Admin");
       toast.success("Super-Admin Console Unlocked!");
