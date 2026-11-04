@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check, CheckSquare, Cpu, Eye, FileText, KeyRound, Lock, Plus, Printer, Scissors, ShieldAlert, ShieldCheck, Sparkles, Store, Utensils } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -84,6 +84,8 @@ function Settings() {
         loyalty: true,
         dynamicUpi: true,
         zReport: true,
+        multiBranch: true,
+        aggregators: true,
       },
     };
 
@@ -196,29 +198,14 @@ function Settings() {
             🛵 Aggregators &amp; Taxes
           </button>
 
-          {/* Developer Super-Admin Tab Button */}
-          {devUnlocked ? (
-            <button
-              type="button"
-              onClick={() => setActiveTab("developer")}
-              className={`rounded-lg px-3 py-1.5 text-xs font-black transition-all border ${
-                activeTab === "developer"
-                  ? "bg-red-600 text-white border-red-600 shadow-md"
-                  : "bg-red-500/10 text-red-600 border-red-500/30 hover:bg-red-500/20"
-              }`}
-            >
-              ⚡ Super-Admin Portal
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setShowDevModal(true)}
-              className="rounded-lg border border-border/80 bg-card px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:border-primary hover:text-primary transition-all flex items-center gap-1"
-              title="Unlock Developer Super-Admin Console"
-            >
-              <KeyRound className="size-3.5" /> Dev Mode
-            </button>
-          )}
+          {/* Dedicated Developer Super-Admin Console Link */}
+          <Link
+            to="/app/developer"
+            className="rounded-lg border border-red-500/40 bg-red-500/10 px-2.5 py-1.5 text-xs font-black text-red-600 dark:text-red-400 hover:bg-red-500/20 transition-all flex items-center gap-1.5 shadow-2xs"
+            title="Open dedicated Developer Setup & Configuration Screen"
+          >
+            <ShieldAlert className="size-3.5" /> ⚡ Super-Admin Console →
+          </Link>
         </div>
       </div>
 

@@ -55,6 +55,7 @@ import {
   CATEGORIES,
   DEFAULT_PRINTER_SETTINGS,
   DEFAULT_TABLES,
+  getActiveTenant,
   getCustomerLoyalty,
   getLiveBatchStatus,
   inr,
@@ -427,6 +428,7 @@ function DishCard({
 
 function Billing() {
   const db = useDB();
+  const activeTenant = getActiveTenant(db);
   const [cat, setCat] = useState<Category | "all">("biryani");
   const [lines, setLines] = useState<SaleLine[]>([]);
   const [channel, setChannel] = useState<ChannelId>("counter");
@@ -1114,23 +1116,27 @@ function Billing() {
               <span>Past Bills ({todaySales.length})</span>
             </button>
 
-            <button
-              onClick={() => setKdsModalOpen(true)}
-              className="flex-1 sm:flex-none h-10 sm:h-11 flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 sm:px-4 text-xs sm:text-sm font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-all shadow-2xs active:scale-98"
-              title="Open Kitchen Display System (KDS) for kitchen chefs and tablet display"
-            >
-              <ChefHat className="size-4 text-amber-600 shrink-0" />
-              <span>KDS Screen {((db?.kdsOrders || []).filter((o) => o.status !== "completed")).length > 0 && `(${((db?.kdsOrders || []).filter((o) => o.status !== "completed")).length})`}</span>
-            </button>
+            {activeTenant.enabledModules.kds && (
+              <button
+                onClick={() => setKdsModalOpen(true)}
+                className="flex-1 sm:flex-none h-10 sm:h-11 flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 sm:px-4 text-xs sm:text-sm font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-all shadow-2xs active:scale-98"
+                title="Open Kitchen Display System (KDS) for kitchen chefs and tablet display"
+              >
+                <ChefHat className="size-4 text-amber-600 shrink-0" />
+                <span>KDS Screen {((db?.kdsOrders || []).filter((o) => o.status !== "completed")).length > 0 && `(${((db?.kdsOrders || []).filter((o) => o.status !== "completed")).length})`}</span>
+              </button>
+            )}
 
-            <button
-              onClick={() => setZReportModalOpen(true)}
-              className="flex-1 sm:flex-none h-10 sm:h-11 flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 sm:px-4 text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-all shadow-2xs active:scale-98"
-              title="Perform Day-End Cashier Z-Close & Cash Drawer Reconciliation"
-            >
-              <FileText className="size-4 text-emerald-600 shrink-0" />
-              <span>Z-Report Day Close</span>
-            </button>
+            {activeTenant.enabledModules.zReport && (
+              <button
+                onClick={() => setZReportModalOpen(true)}
+                className="flex-1 sm:flex-none h-10 sm:h-11 flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 sm:px-4 text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-all shadow-2xs active:scale-98"
+                title="Perform Day-End Cashier Z-Close & Cash Drawer Reconciliation"
+              >
+                <FileText className="size-4 text-emerald-600 shrink-0" />
+                <span>Z-Report Day Close</span>
+              </button>
+            )}
 
             <button
               onClick={() => setCustomModalOpen(true)}
@@ -1175,103 +1181,105 @@ function Billing() {
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_350px] xl:grid-cols-[minmax(0,1fr)_380px] w-full min-w-0 max-w-full items-start">
         <div className="min-w-0 max-w-full">
           {/* Live Kitchen Deg Batch Availability Bar */}
-          <div className="overflow-hidden rounded-2xl border border-primary/30 bg-card p-3.5 shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-3 pb-2.5 border-b border-border/60">
-              <div className="flex items-center gap-2.5">
-                <span className="flex size-8 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
-                  <Flame className="size-4" />
-                </span>
-                <div>
-                  <h4 className="text-xs font-black uppercase tracking-wider text-foreground">
-                    Today's Fresh Kitchen Deg Batch
-                  </h4>
-                  <p className="text-[11px] text-muted-foreground">
-                    {liveBatch.platesLeft > 0 ? "Lunch Batch Active · Auto Decrements on Counter & Online Orders" : "Batch Sold Out · Next Cook Batch at 7:00 PM"}
-                  </p>
+          {(activeTenant.degBatchEnabled ?? true) && (
+            <div className="overflow-hidden rounded-2xl border border-primary/30 bg-card p-3.5 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-2.5 border-b border-border/60">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex size-8 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
+                    <Flame className="size-4" />
+                  </span>
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-foreground">
+                      Today's Fresh Kitchen Deg Batch
+                    </h4>
+                    <p className="text-[11px] text-muted-foreground">
+                      {liveBatch.platesLeft > 0 ? "Lunch Batch Active · Auto Decrements on Counter & Online Orders" : "Batch Sold Out · Next Cook Batch at 7:00 PM"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={openEditBatch}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3.5 py-1 text-xs font-black text-primary hover:bg-primary hover:text-white transition-all shadow-2xs"
+                    title="Enter or update today's cooked batch quantity (Chicken & Mutton Deg)"
+                  >
+                    <Pencil className="size-3" />
+                    <span>Edit Deg Capacity</span>
+                  </button>
+                  <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black ${liveBatch.platesLeft > 30
+                      ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                      : liveBatch.platesLeft > 10
+                        ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                        : "bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 animate-pulse"
+                    }`}>
+                    <span className="size-2 rounded-full bg-current animate-ping" />
+                    {liveBatch.platesLeft > 0 ? `${liveBatch.platesLeft} Plates Left in Deg` : "SOLD OUT"}
+                  </span>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={openEditBatch}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3.5 py-1 text-xs font-black text-primary hover:bg-primary hover:text-white transition-all shadow-2xs"
-                  title="Enter or update today's cooked batch quantity (Chicken & Mutton Deg)"
-                >
-                  <Pencil className="size-3" />
-                  <span>Edit Deg Capacity</span>
-                </button>
-                <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black ${liveBatch.platesLeft > 30
-                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+
+              {/* 3 Quick-Grip Visual Stats */}
+              <div className="mt-2.5 grid grid-cols-3 gap-2.5 text-center">
+                <div className="rounded-xl bg-muted/40 p-2 border border-border/50 text-center">
+                  <span className="text-[10px] font-bold uppercase text-muted-foreground block">Cooked in Deg</span>
+                  <span className="text-lg sm:text-xl font-black font-display text-foreground">{liveBatch.cap}</span>
+                  <span className="text-[10px] text-muted-foreground block">Plates</span>
+                </div>
+                <div className="rounded-xl bg-muted/40 p-2 border border-border/50">
+                  <span className="text-[10px] font-bold uppercase text-muted-foreground block">Sold Today</span>
+                  <span className="text-lg sm:text-xl font-black font-display text-primary">{liveBatch.soldToday}</span>
+                  <span className="text-[10px] text-muted-foreground block">Counter + Online</span>
+                </div>
+                <div className={`rounded-xl p-2 border ${liveBatch.platesLeft > 30
+                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
                     : liveBatch.platesLeft > 10
-                      ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
-                      : "bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 animate-pulse"
+                      ? "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400"
+                      : "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400"
                   }`}>
-                  <span className="size-2 rounded-full bg-current animate-ping" />
-                  {liveBatch.platesLeft > 0 ? `${liveBatch.platesLeft} Plates Left in Deg` : "SOLD OUT"}
-                </span>
+                  <span className="text-[10px] font-black uppercase tracking-wider block">Remaining Stock</span>
+                  <span className="text-lg sm:text-xl font-black font-display">{liveBatch.platesLeft}</span>
+                  <span className="text-[10px] font-bold block">Plates Available</span>
+                </div>
               </div>
-            </div>
 
-            {/* 3 Quick-Grip Visual Stats */}
-            <div className="mt-2.5 grid grid-cols-3 gap-2.5 text-center">
-              <div className="rounded-xl bg-muted/40 p-2 border border-border/50 text-center">
-                <span className="text-[10px] font-bold uppercase text-muted-foreground block">Cooked in Deg</span>
-                <span className="text-lg sm:text-xl font-black font-display text-foreground">{liveBatch.cap}</span>
-                <span className="text-[10px] text-muted-foreground block">Plates</span>
+              {/* Visual Meter Bar */}
+              <div className="mt-2.5 space-y-1">
+                <div className="flex justify-between text-[10px] font-bold text-muted-foreground">
+                  <span>Depletion Rate: {liveBatch.soldToday} of {liveBatch.cap} plates sold</span>
+                  <span className="font-mono text-foreground font-black">{Math.round((liveBatch.soldToday / liveBatch.cap) * 100)}% Consumed</span>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-muted border border-border/40">
+                  <div
+                    className={`h-full transition-all duration-500 rounded-full ${liveBatch.platesLeft > 30 ? "bg-emerald-500" : liveBatch.platesLeft > 10 ? "bg-amber-500" : "bg-rose-500"
+                      }`}
+                    style={{ width: `${Math.min(100, Math.round((liveBatch.soldToday / liveBatch.cap) * 100))}%` }}
+                  />
+                </div>
               </div>
-              <div className="rounded-xl bg-muted/40 p-2 border border-border/50">
-                <span className="text-[10px] font-bold uppercase text-muted-foreground block">Sold Today</span>
-                <span className="text-lg sm:text-xl font-black font-display text-primary">{liveBatch.soldToday}</span>
-                <span className="text-[10px] text-muted-foreground block">Counter + Online</span>
-              </div>
-              <div className={`rounded-xl p-2 border ${liveBatch.platesLeft > 30
-                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
-                  : liveBatch.platesLeft > 10
-                    ? "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400"
-                    : "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400"
-                }`}>
-                <span className="text-[10px] font-black uppercase tracking-wider block">Remaining Stock</span>
-                <span className="text-lg sm:text-xl font-black font-display">{liveBatch.platesLeft}</span>
-                <span className="text-[10px] font-bold block">Plates Available</span>
-              </div>
-            </div>
 
-            {/* Visual Meter Bar */}
-            <div className="mt-2.5 space-y-1">
-              <div className="flex justify-between text-[10px] font-bold text-muted-foreground">
-                <span>Depletion Rate: {liveBatch.soldToday} of {liveBatch.cap} plates sold</span>
-                <span className="font-mono text-foreground font-black">{Math.round((liveBatch.soldToday / liveBatch.cap) * 100)}% Consumed</span>
-              </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-muted border border-border/40">
-                <div
-                  className={`h-full transition-all duration-500 rounded-full ${liveBatch.platesLeft > 30 ? "bg-emerald-500" : liveBatch.platesLeft > 10 ? "bg-amber-500" : "bg-rose-500"
-                    }`}
-                  style={{ width: `${Math.min(100, Math.round((liveBatch.soldToday / liveBatch.cap) * 100))}%` }}
-                />
-              </div>
+              {/* Deg Segment Breakdown: Chicken, Mutton, Egg, Kushka */}
+              {liveBatch.breakdown && (
+                <div className="mt-2.5 flex flex-wrap items-center gap-2 pt-2 border-t border-border/40 text-[11px]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                    <Flame className="size-3 text-primary" /> Deg Breakdown:
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-0.5 font-medium border border-border/40">
+                    <span className="font-bold text-foreground">Chicken Biriyani:</span> {liveBatch.breakdown.chickenSold} sold · <span className="text-primary font-bold">{liveBatch.breakdown.chickenLeft} left</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-0.5 font-medium border border-border/40">
+                    <span className="font-bold text-foreground">Mutton Biriyani:</span> {liveBatch.breakdown.muttonSold} sold · <span className="text-primary font-bold">{liveBatch.breakdown.muttonLeft} left</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-0.5 font-medium border border-border/40">
+                    <span className="font-bold text-foreground">Egg Biriyani:</span> {liveBatch.breakdown.eggSold} sold
+                  </span>
+                  <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-0.5 font-medium border border-border/40">
+                    <span className="font-bold text-foreground">Kushka Portions:</span> {liveBatch.breakdown.kushkaSold} sold
+                  </span>
+                </div>
+              )}
             </div>
-
-            {/* Deg Segment Breakdown: Chicken, Mutton, Egg, Kushka */}
-            {liveBatch.breakdown && (
-              <div className="mt-2.5 flex flex-wrap items-center gap-2 pt-2 border-t border-border/40 text-[11px]">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                  <Flame className="size-3 text-primary" /> Deg Breakdown:
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-0.5 font-medium border border-border/40">
-                  <span className="font-bold text-foreground">Chicken Biriyani:</span> {liveBatch.breakdown.chickenSold} sold · <span className="text-primary font-bold">{liveBatch.breakdown.chickenLeft} left</span>
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-0.5 font-medium border border-border/40">
-                  <span className="font-bold text-foreground">Mutton Biriyani:</span> {liveBatch.breakdown.muttonSold} sold · <span className="text-primary font-bold">{liveBatch.breakdown.muttonLeft} left</span>
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-0.5 font-medium border border-border/40">
-                  <span className="font-bold text-foreground">Egg Biriyani:</span> {liveBatch.breakdown.eggSold} sold
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-0.5 font-medium border border-border/40">
-                  <span className="font-bold text-foreground">Kushka Portions:</span> {liveBatch.breakdown.kushkaSold} sold
-                </span>
-              </div>
-            )}
-          </div>
+          )}
 
           {/* Action Header & Category Layout Switcher */}
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
@@ -1445,7 +1453,7 @@ function Billing() {
           </div>
 
           {/* Dine-in Interactive Floor Plan & Table Bar */}
-          {orderType === "dinein" && (
+          {orderType === "dinein" && activeTenant.enabledModules.tables && (
             <div className="mb-2.5 rounded-xl border border-primary/30 bg-primary/5 p-2 space-y-1.5">
               <div className="flex items-center justify-between text-[11px] font-bold">
                 <span className="flex items-center gap-1 text-primary uppercase tracking-wider">
@@ -1783,13 +1791,15 @@ function Billing() {
                 VPA: {db.settings.upiId || "spotlightbiriyani@oksbi"}
               </p>
 
-              <button
-                type="button"
-                onClick={() => setUpiQrModalOpen(true)}
-                className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
-              >
-                <Maximize2 className="size-3" /> Show Customer Full Screen QR
-              </button>
+              {activeTenant.enabledModules.dynamicUpi && (
+                <button
+                  type="button"
+                  onClick={() => setUpiQrModalOpen(true)}
+                  className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
+                >
+                  <Maximize2 className="size-3" /> Show Customer Full Screen QR
+                </button>
+              )}
             </div>
           )}
 
@@ -1861,7 +1871,7 @@ function Billing() {
             </div>
 
             {/* VIP Regular Loyalty Banner */}
-            {customerLoyalty && (
+            {customerLoyalty && activeTenant.enabledModules.loyalty && (
               <div className="flex items-center justify-between rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-900 dark:text-amber-200">
                 <div className="flex items-center gap-1.5 font-bold">
                   <Crown className="size-4 text-amber-500 shrink-0" />

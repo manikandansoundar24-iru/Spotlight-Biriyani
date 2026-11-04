@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { SiteShell } from "@/components/site/SiteShell";
-import { getDB, setDB } from "@/lib/pos-store";
+import { DEFAULT_TENANTS, getDB, setDB, switchClientTenant } from "@/lib/pos-store";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -73,9 +73,21 @@ function LoginPage() {
     e.preventDefault();
 
     if (role === "owner") {
-      if (ownerPassword === "spotlight2026" || ownerPassword === "9999") {
+      const db = getDB();
+      const tenants = db.tenants && db.tenants.length > 0 ? db.tenants : DEFAULT_TENANTS;
+      const matched = tenants.find(
+        (t) =>
+          (t.loginPassword && ownerPassword === t.loginPassword) ||
+          (t.loginUsername && ownerEmail.trim().toLowerCase() === t.loginUsername.toLowerCase() && ownerPassword === t.loginPassword)
+      );
+
+      if (ownerPassword === "spotlight2026" || ownerPassword === "9999" || matched) {
+        if (matched) {
+          switchClientTenant(matched.id);
+        }
+        const activeName = matched ? matched.businessName : "Restaurant";
         localStorage.setItem("spotlight_auth_role", "owner");
-        localStorage.setItem("spotlight_auth_user", "Restaurant Owner (Admin)");
+        localStorage.setItem("spotlight_auth_user", `${activeName} Owner`);
         navigate({ to: "/app", replace: true });
       } else {
         toast.error("Invalid owner credentials. Please check your password or PIN.");
@@ -117,11 +129,10 @@ function LoginPage() {
         toast.error("Incorrect Kitchen PIN. Please verify your chef PIN.");
       }
     } else if (role === "developer") {
-      if (devKey === "dev@spotlight2026" || devKey === "admin") {
+      if (devKey === "dev@spotlight2026" || devKey === "admin" || devKey === "9999") {
         localStorage.setItem("spotlight_auth_role", "developer");
-        localStorage.setItem("spotlight_auth_user", "System Architect & Developer");
-        setIsDevUnlocked(true);
-        setDbJson(JSON.stringify(getDB(), null, 2));
+        localStorage.setItem("spotlight_auth_user", "System Architect & Super-Admin");
+        navigate({ to: "/app/developer", replace: true });
       } else {
         toast.error("Invalid Developer Security Key.");
       }

@@ -1,9 +1,9 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
-import { BarChart3, Boxes, Database, Flame, LayoutDashboard, LogOut, Moon, Receipt, Settings, ShieldCheck, Sun, UtensilsCrossed } from "lucide-react";
+import { BarChart3, Boxes, Database, Flame, LayoutDashboard, LogOut, Moon, Receipt, Settings, ShieldAlert, ShieldCheck, Sun, UtensilsCrossed } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { getDB, setDB, useDB } from "@/lib/pos-store";
+import { getActiveTenant, getDB, setDB, TenantModules, useDB } from "@/lib/pos-store";
 import { performFullSync } from "@/lib/neon-sync";
 
 export const Route = createFileRoute("/app")({
@@ -23,14 +23,24 @@ export const Route = createFileRoute("/app")({
   component: AppLayout,
 });
 
-const LINKS = [
+type NavLinkItem = {
+  to: string;
+  label: string;
+  icon: any;
+  exact?: boolean;
+  roles: readonly string[];
+  module?: keyof TenantModules;
+};
+
+const LINKS: readonly NavLinkItem[] = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true, roles: ["owner", "developer"] },
-  { to: "/app/billing", label: "Billing & Floor POS", icon: Receipt, roles: ["owner", "cashier", "developer"] },
-  { to: "/app/reports", label: "Reports & Forecast", icon: BarChart3, roles: ["owner", "developer"] },
-  { to: "/app/stock", label: "Stock & Deg", icon: Boxes, roles: ["owner", "kitchen", "developer"] },
-  { to: "/app/items", label: "Menu & Costs", icon: UtensilsCrossed, roles: ["owner", "developer"] },
+  { to: "/app/billing", label: "Billing & Floor POS", icon: Receipt, roles: ["owner", "cashier", "developer"], module: "billing" },
+  { to: "/app/reports", label: "Reports & Forecast", icon: BarChart3, roles: ["owner", "developer"], module: "reports" },
+  { to: "/app/stock", label: "Stock & Deg", icon: Boxes, roles: ["owner", "kitchen", "developer"], module: "stock" },
+  { to: "/app/items", label: "Menu & Costs", icon: UtensilsCrossed, roles: ["owner", "developer"], module: "menu" },
   { to: "/app/settings", label: "Settings", icon: Settings, roles: ["owner", "developer"] },
-] as const;
+  { to: "/app/developer", label: "⚡ Developer Console", icon: ShieldAlert, roles: ["developer"] },
+];
 
 function AppLayout() {
   const db = useDB();
@@ -128,7 +138,15 @@ function AppLayout() {
     });
   };
 
-  const visibleLinks = LINKS.filter((l) => (l.roles as readonly string[]).includes(currentRole));
+  const activeTenant = getActiveTenant(db);
+  const visibleLinks = LINKS.filter((l) => {
+    if (!l.roles.includes(currentRole)) return false;
+    if (currentRole === "developer") return true;
+    if (l.module && activeTenant.enabledModules && activeTenant.enabledModules[l.module] === false) {
+      return false;
+    }
+    return true;
+  });
 
   if (!isAuthenticated) {
     return (
@@ -170,34 +188,44 @@ function AppLayout() {
             <div className="flex items-center gap-1.5 rounded-lg border border-border/70 bg-muted/40 px-2 sm:px-2.5 py-1 text-xs min-w-0">
               <span className="text-xs shrink-0">🍽️</span>
               <span className="font-black text-foreground truncate max-w-[110px] sm:max-w-[160px] md:max-w-xs text-xs">
-                {(db?.settings?.businessName || "Spot Light Biriyani").toUpperCase()}
+                {(db?.settings?.businessName || activeTenant.businessName || "Spot Light Biriyani").toUpperCase()}
               </span>
               <span className="text-border shrink-0">·</span>
-              <select
-                value={db?.settings.activeBranchId ?? ""}
-                onChange={(e) =>
-                  setDB((d) => {
-                    d.settings.activeBranchId = e.target.value;
-                  })
-                }
-                className="rounded border-none bg-transparent py-0 text-[11px] sm:text-xs font-bold text-primary focus:outline-none cursor-pointer shrink-0"
-                title="Select restaurant branch"
-              >
-                {(db ?? getDB()).branches.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    📍 {b.name}
-                  </option>
-                ))}
-              </select>
+              {activeTenant.enabledModules.multiBranch ? (
+                <select
+                  value={db?.settings.activeBranchId ?? ""}
+                  onChange={(e) =>
+                    setDB((d) => {
+                      d.settings.activeBranchId = e.target.value;
+                    })
+                  }
+                  className="rounded border-none bg-transparent py-0 text-[11px] sm:text-xs font-bold text-primary focus:outline-none cursor-pointer shrink-0"
+                  title="Select restaurant branch"
+                >
+                  {(db ?? getDB()).branches.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      📍 {b.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <span className="text-[11px] sm:text-xs font-bold text-primary truncate max-w-[100px] sm:max-w-[140px]">
+                  📍 {activeTenant.activeBranchName || "Main Kitchen"}
+                </span>
+              )}
             </div>
           </div>
 
           {/* RIGHT: Quick System Actions */}
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             {currentRole === "developer" && (
-              <span className="hidden lg:inline-flex items-center gap-1 rounded-full bg-red-500/10 border border-red-500/30 px-2.5 py-0.5 text-[10px] font-black text-red-600 dark:text-red-400">
+              <Link
+                to="/app/developer"
+                className="inline-flex items-center gap-1 rounded-full bg-red-500/15 border border-red-500/40 px-2.5 py-1 text-[10px] font-black text-red-600 dark:text-red-400 hover:bg-red-500/25 transition-all shadow-2xs"
+                title="Open Master Developer Control Plane"
+              >
                 ⚡ SUPER-ADMIN
-              </span>
+              </Link>
             )}
 
             {/* Active User Badge (Hidden on small mobile) */}

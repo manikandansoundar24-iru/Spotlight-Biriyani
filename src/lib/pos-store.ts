@@ -165,6 +165,20 @@ export type ShiftDayClose = {
   note?: string;
 };
 
+export type TenantModules = {
+  billing: boolean;
+  tables: boolean;
+  kds: boolean;
+  stock: boolean;
+  reports: boolean;
+  menu: boolean;
+  loyalty: boolean;
+  dynamicUpi: boolean;
+  zReport: boolean;
+  multiBranch: boolean;
+  aggregators: boolean;
+};
+
 export type TenantConfig = {
   id: string;
   businessName: string;
@@ -176,17 +190,14 @@ export type TenantConfig = {
   fssai: string;
   upiId: string;
   gstPct: number;
-  enabledModules: {
-    billing: boolean;
-    tables: boolean;
-    kds: boolean;
-    stock: boolean;
-    reports: boolean;
-    menu: boolean;
-    loyalty: boolean;
-    dynamicUpi: boolean;
-    zReport: boolean;
-  };
+  cuisineType?: string | undefined;
+  degBatchEnabled?: boolean | undefined;
+  currencySymbol?: string | undefined;
+  loginUsername?: string | undefined;
+  loginPassword?: string | undefined;
+  cashierPin?: string | undefined;
+  kitchenPin?: string | undefined;
+  enabledModules: TenantModules;
 };
 
 export const DEFAULT_TABLES: TableSession[] = [
@@ -214,6 +225,13 @@ export const DEFAULT_TENANTS: TenantConfig[] = [
     fssai: "12424008000456",
     upiId: "spotlightbiriyani@oksbi",
     gstPct: 5,
+    cuisineType: "Biriyani Special",
+    degBatchEnabled: true,
+    currencySymbol: "₹",
+    loginUsername: "owner@spotlight.in",
+    loginPassword: "spotlight2026",
+    cashierPin: "1234",
+    kitchenPin: "5555",
     enabledModules: {
       billing: true,
       tables: true,
@@ -224,6 +242,8 @@ export const DEFAULT_TENANTS: TenantConfig[] = [
       loyalty: true,
       dynamicUpi: true,
       zReport: true,
+      multiBranch: true,
+      aggregators: true,
     },
   },
   {
@@ -237,6 +257,13 @@ export const DEFAULT_TENANTS: TenantConfig[] = [
     fssai: "12424008000999",
     upiId: "cskbiriyani@okaxis",
     gstPct: 5,
+    cuisineType: "Biriyani & Fast Food",
+    degBatchEnabled: true,
+    currencySymbol: "₹",
+    loginUsername: "owner@cskbiriyani.in",
+    loginPassword: "csk2026",
+    cashierPin: "1001",
+    kitchenPin: "5555",
     enabledModules: {
       billing: true,
       tables: true,
@@ -247,6 +274,8 @@ export const DEFAULT_TENANTS: TenantConfig[] = [
       loyalty: true,
       dynamicUpi: true,
       zReport: true,
+      multiBranch: true,
+      aggregators: true,
     },
   },
   {
@@ -260,6 +289,13 @@ export const DEFAULT_TENANTS: TenantConfig[] = [
     fssai: "12424008000888",
     upiId: "maduraistar@okicici",
     gstPct: 5,
+    cuisineType: "Seeraga Samba Biriyani",
+    degBatchEnabled: true,
+    currencySymbol: "₹",
+    loginUsername: "owner@maduraistar.in",
+    loginPassword: "star2026",
+    cashierPin: "2001",
+    kitchenPin: "5555",
     enabledModules: {
       billing: true,
       tables: true,
@@ -270,6 +306,40 @@ export const DEFAULT_TENANTS: TenantConfig[] = [
       loyalty: true,
       dynamicUpi: true,
       zReport: true,
+      multiBranch: false,
+      aggregators: true,
+    },
+  },
+  {
+    id: "royal-brew-cafe",
+    businessName: "Royal Brew Cafe & Bistro",
+    tagline: "Artisan Coffee, Sandwiches & Desserts",
+    activeBranchName: "Nungambakkam High Road",
+    phone: "+91 98410 99887",
+    address: "88, Nungambakkam High Road, Chennai - 600034",
+    gstin: "33DEFGH9876C1Z3",
+    fssai: "12424008000777",
+    upiId: "royalbrew@okhdfcbank",
+    gstPct: 5,
+    cuisineType: "Cafe & Bistro",
+    degBatchEnabled: false,
+    currencySymbol: "₹",
+    loginUsername: "owner@royalbrew.in",
+    loginPassword: "royal2026",
+    cashierPin: "3001",
+    kitchenPin: "5555",
+    enabledModules: {
+      billing: true,
+      tables: true,
+      kds: true,
+      stock: true,
+      reports: true,
+      menu: true,
+      loyalty: true,
+      dynamicUpi: true,
+      zReport: true,
+      multiBranch: false,
+      aggregators: true,
     },
   },
 ];
@@ -747,6 +817,34 @@ export function getDB(): DB {
   if (!cache.tenants || !Array.isArray(cache.tenants) || cache.tenants.length === 0) {
     cache.tenants = [...DEFAULT_TENANTS];
     needsPersist = true;
+  } else {
+    // Migration: ensure every tenant has complete module flags
+    cache.tenants.forEach((t) => {
+      if (!t.enabledModules) {
+        t.enabledModules = {
+          billing: true,
+          tables: true,
+          kds: true,
+          stock: true,
+          reports: true,
+          menu: true,
+          loyalty: true,
+          dynamicUpi: true,
+          zReport: true,
+          multiBranch: true,
+          aggregators: true,
+        };
+        needsPersist = true;
+      }
+      if (t.enabledModules.multiBranch === undefined) {
+        t.enabledModules.multiBranch = true;
+        needsPersist = true;
+      }
+      if (t.enabledModules.aggregators === undefined) {
+        t.enabledModules.aggregators = true;
+        needsPersist = true;
+      }
+    });
   }
   if (!cache.kdsOrders || !Array.isArray(cache.kdsOrders)) {
     cache.kdsOrders = [];
@@ -1019,11 +1117,22 @@ export function recordShiftClose(close: Omit<ShiftDayClose, "id" | "closedAt">) 
 }
 
 /**
+ * Get the currently active TenantConfig.
+ */
+export function getActiveTenant(db?: DB | null): TenantConfig {
+  const currentDB = db ?? getDB();
+  const tenants = currentDB.tenants && currentDB.tenants.length > 0 ? currentDB.tenants : DEFAULT_TENANTS;
+  const activeId = currentDB.activeTenantId || "spotlight-biriyani";
+  const found = tenants.find((t) => t.id === activeId);
+  return found ?? tenants[0] ?? DEFAULT_TENANTS[0]!;
+}
+
+/**
  * Multi-Tenant Switcher (Used exclusively by Developer Super-Admin).
  */
 export function switchClientTenant(tenantId: string) {
   setDB((d) => {
-    if (!d.tenants) d.tenants = [...DEFAULT_TENANTS];
+    if (!d.tenants || d.tenants.length === 0) d.tenants = [...DEFAULT_TENANTS];
     const tenant = d.tenants.find((t) => t.id === tenantId);
     if (tenant) {
       d.activeTenantId = tenant.id;
@@ -1039,6 +1148,89 @@ export function switchClientTenant(tenantId: string) {
         d.settings.printerSettings.gstin = tenant.gstin;
         d.settings.printerSettings.fssaiNumber = tenant.fssai;
       }
+    }
+  });
+}
+
+/**
+ * Update an existing Tenant's profile, credentials, and modules.
+ */
+export function updateTenant(updated: TenantConfig) {
+  setDB((d) => {
+    if (!d.tenants) d.tenants = [...DEFAULT_TENANTS];
+    const idx = d.tenants.findIndex((t) => t.id === updated.id);
+    if (idx >= 0) {
+      d.tenants[idx] = { ...updated };
+    } else {
+      d.tenants.push({ ...updated });
+    }
+    // If updating active tenant, update active settings as well
+    if (d.activeTenantId === updated.id) {
+      d.settings.businessName = updated.businessName;
+      d.settings.gstPct = updated.gstPct;
+      if (updated.upiId) d.settings.upiId = updated.upiId;
+      if (d.branches && d.branches[0]) {
+        d.branches[0].name = updated.activeBranchName;
+        d.branches[0].phone = updated.phone;
+        d.branches[0].address = updated.address;
+      }
+      if (d.settings.printerSettings) {
+        d.settings.printerSettings.gstin = updated.gstin;
+        d.settings.printerSettings.fssaiNumber = updated.fssai;
+      }
+    }
+  });
+}
+
+/**
+ * Provision a new client restaurant tenant.
+ */
+export function addTenant(newTenant: TenantConfig) {
+  setDB((d) => {
+    if (!d.tenants) d.tenants = [...DEFAULT_TENANTS];
+    d.tenants.push(newTenant);
+  });
+}
+
+/**
+ * Delete a client restaurant tenant (prevent deleting if only 1 remains).
+ */
+export function deleteTenant(tenantId: string): boolean {
+  let deleted = false;
+  setDB((d) => {
+    if (!d.tenants) d.tenants = [...DEFAULT_TENANTS];
+    if (d.tenants.length <= 1) return;
+    d.tenants = d.tenants.filter((t) => t.id !== tenantId);
+    if (d.activeTenantId === tenantId) {
+      d.activeTenantId = d.tenants[0]?.id || "spotlight-biriyani";
+      const nextTenant = d.tenants[0];
+      if (nextTenant) {
+        d.settings.businessName = nextTenant.businessName;
+      }
+    }
+    deleted = true;
+  });
+  return deleted;
+}
+
+/**
+ * Update master SaaS brand name (e.g. RestoPulse, DinePulse, RestoSwift).
+ */
+export function setSaasBrand(brandName: string) {
+  setDB((d) => {
+    d.saasPlatformName = brandName.trim();
+  });
+}
+
+/**
+ * Toggle a feature module for a specific tenant.
+ */
+export function toggleTenantModule(tenantId: string, moduleKey: keyof TenantModules) {
+  setDB((d) => {
+    if (!d.tenants) d.tenants = [...DEFAULT_TENANTS];
+    const tenant = d.tenants.find((t) => t.id === tenantId);
+    if (tenant && tenant.enabledModules) {
+      tenant.enabledModules[moduleKey] = !tenant.enabledModules[moduleKey];
     }
   });
 }

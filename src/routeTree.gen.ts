@@ -14,11 +14,13 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as BranchesRouteImport } from './routes/branches'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as DemoRouteImport } from './routes/demo'
+import { Route as DeveloperRouteImport } from './routes/developer'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MenuRouteImport } from './routes/menu'
 import { Route as PlatformRouteImport } from './routes/platform'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppBillingRouteImport } from './routes/app.billing'
+import { Route as AppDeveloperRouteImport } from './routes/app.developer'
 import { Route as AppItemsRouteImport } from './routes/app.items'
 import { Route as AppReportsRouteImport } from './routes/app.reports'
 import { Route as AppSettingsRouteImport } from './routes/app.settings'
@@ -49,6 +51,11 @@ const DemoRoute = DemoRouteImport.update({
   path: '/demo',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DeveloperRoute = DeveloperRouteImport.update({
+  id: '/developer',
+  path: '/developer',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -72,6 +79,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
 const AppBillingRoute = AppBillingRouteImport.update({
   id: '/billing',
   path: '/billing',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDeveloperRoute = AppDeveloperRouteImport.update({
+  id: '/developer',
+  path: '/developer',
   getParentRoute: () => AppRoute,
 } as any)
 const AppItemsRoute = AppItemsRouteImport.update({
@@ -101,10 +113,12 @@ export interface FileRoutesByFullPath {
   '/branches': typeof BranchesRoute
   '/contact': typeof ContactRoute
   '/demo': typeof DemoRoute
+  '/developer': typeof DeveloperRoute
   '/login': typeof LoginRoute
   '/menu': typeof MenuRoute
   '/platform': typeof PlatformRoute
   '/app/billing': typeof AppBillingRoute
+  '/app/developer': typeof AppDeveloperRoute
   '/app/items': typeof AppItemsRoute
   '/app/reports': typeof AppReportsRoute
   '/app/settings': typeof AppSettingsRoute
@@ -116,10 +130,12 @@ export interface FileRoutesByTo {
   '/branches': typeof BranchesRoute
   '/contact': typeof ContactRoute
   '/demo': typeof DemoRoute
+  '/developer': typeof DeveloperRoute
   '/login': typeof LoginRoute
   '/menu': typeof MenuRoute
   '/platform': typeof PlatformRoute
   '/app/billing': typeof AppBillingRoute
+  '/app/developer': typeof AppDeveloperRoute
   '/app/items': typeof AppItemsRoute
   '/app/reports': typeof AppReportsRoute
   '/app/settings': typeof AppSettingsRoute
@@ -133,10 +149,12 @@ export interface FileRoutesById {
   '/branches': typeof BranchesRoute
   '/contact': typeof ContactRoute
   '/demo': typeof DemoRoute
+  '/developer': typeof DeveloperRoute
   '/login': typeof LoginRoute
   '/menu': typeof MenuRoute
   '/platform': typeof PlatformRoute
   '/app/billing': typeof AppBillingRoute
+  '/app/developer': typeof AppDeveloperRoute
   '/app/items': typeof AppItemsRoute
   '/app/reports': typeof AppReportsRoute
   '/app/settings': typeof AppSettingsRoute
@@ -151,10 +169,12 @@ export interface FileRouteTypes {
     | '/branches'
     | '/contact'
     | '/demo'
+    | '/developer'
     | '/login'
     | '/menu'
     | '/platform'
     | '/app/billing'
+    | '/app/developer'
     | '/app/items'
     | '/app/reports'
     | '/app/settings'
@@ -166,10 +186,12 @@ export interface FileRouteTypes {
     | '/branches'
     | '/contact'
     | '/demo'
+    | '/developer'
     | '/login'
     | '/menu'
     | '/platform'
     | '/app/billing'
+    | '/app/developer'
     | '/app/items'
     | '/app/reports'
     | '/app/settings'
@@ -182,10 +204,12 @@ export interface FileRouteTypes {
     | '/branches'
     | '/contact'
     | '/demo'
+    | '/developer'
     | '/login'
     | '/menu'
     | '/platform'
     | '/app/billing'
+    | '/app/developer'
     | '/app/items'
     | '/app/reports'
     | '/app/settings'
@@ -199,6 +223,7 @@ export interface RootRouteChildren {
   BranchesRoute: typeof BranchesRoute
   ContactRoute: typeof ContactRoute
   DemoRoute: typeof DemoRoute
+  DeveloperRoute: typeof DeveloperRoute
   LoginRoute: typeof LoginRoute
   MenuRoute: typeof MenuRoute
   PlatformRoute: typeof PlatformRoute
@@ -241,6 +266,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/developer': {
+      id: '/developer'
+      path: '/developer'
+      fullPath: '/developer'
+      preLoaderRoute: typeof DeveloperRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -276,6 +308,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBillingRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/developer': {
+      id: '/app/developer'
+      path: '/developer'
+      fullPath: '/app/developer'
+      preLoaderRoute: typeof AppDeveloperRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/items': {
       id: '/app/items'
       path: '/items'
@@ -309,6 +348,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppBillingRoute: typeof AppBillingRoute
+  AppDeveloperRoute: typeof AppDeveloperRoute
   AppItemsRoute: typeof AppItemsRoute
   AppReportsRoute: typeof AppReportsRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -318,6 +358,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppBillingRoute: AppBillingRoute,
+  AppDeveloperRoute: AppDeveloperRoute,
   AppItemsRoute: AppItemsRoute,
   AppReportsRoute: AppReportsRoute,
   AppSettingsRoute: AppSettingsRoute,
@@ -333,6 +374,7 @@ const rootRouteChildren: RootRouteChildren = {
   BranchesRoute: BranchesRoute,
   ContactRoute: ContactRoute,
   DemoRoute: DemoRoute,
+  DeveloperRoute: DeveloperRoute,
   LoginRoute: LoginRoute,
   MenuRoute: MenuRoute,
   PlatformRoute: PlatformRoute,
