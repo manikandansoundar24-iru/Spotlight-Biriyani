@@ -12,3 +12,4 @@ function DeveloperRedirect() {
   }, [navigate]);
   return null;
 }
+

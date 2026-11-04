@@ -165,33 +165,34 @@ function AppLayout() {
     <div className={`min-h-screen w-full max-w-full overflow-x-hidden bg-background text-foreground ${isDarkMode ? "dark" : ""}`}>
       <header className="sticky top-0 z-40 border-b border-border/80 bg-card/95 backdrop-blur-xl shadow-xs">
         {/* TOP BAR: Single Sleek Line, zero staircase wrap */}
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 sm:px-6 lg:px-8 h-14">
-          {/* LEFT: SaaS Platform Brand + Active Restaurant Pill */}
-          <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
-            <Link to="/app" className="flex items-center gap-2 group shrink-0">
-              <span className="flex size-8 items-center justify-center rounded-xl bg-gradient-to-tr from-amber-500 via-orange-600 to-red-600 shadow-md group-hover:scale-105 transition-transform text-white">
-                <Flame className="size-4" />
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-3 sm:px-6 lg:px-8 h-14">
+          {/* LEFT: SaaS Platform Brand + Active Restaurant */}
+          <div className="flex items-center gap-3 min-w-0">
+            <Link to="/app" className="flex items-center gap-2.5 group shrink-0">
+              <span className="flex size-9 items-center justify-center rounded-xl bg-gradient-to-tr from-amber-500 via-orange-600 to-red-600 shadow-md group-hover:scale-105 transition-transform text-white">
+                <Flame className="size-5" />
               </span>
               <div className="flex flex-col">
-                <span className="font-display font-black text-xs sm:text-sm tracking-wide leading-none text-foreground">
-                  {db?.saasPlatformName || "RESTOPULSE"}
-                </span>
-                <span className="text-[9px] font-bold text-primary leading-none mt-0.5 hidden xs:inline">
-                  Cloud POS &amp; ERP
+                <div className="flex items-center gap-1.5">
+                  <span className="font-display font-black text-sm sm:text-base tracking-wide leading-none text-foreground">
+                    {db?.saasPlatformName || "RESTOPULSE"}
+                  </span>
+                  <span className="text-[10px] font-bold text-primary bg-primary/10 border border-primary/20 rounded px-1.5 py-0.2 leading-tight">
+                    Cloud POS
+                  </span>
+                </div>
+                <span className="text-[11px] font-bold text-muted-foreground leading-tight mt-0.5 truncate max-w-[180px] sm:max-w-xs">
+                  🍽️ {(db?.settings?.businessName || activeTenant.businessName || "Spot Light Biriyani")} · {activeTenant.activeBranchName || "Chennai"}
                 </span>
               </div>
             </Link>
+          </div>
 
-            <div className="h-4 w-px bg-border/80 shrink-0" />
-
-            {/* Client Restaurant Pill */}
-            <div className="flex items-center gap-1.5 rounded-lg border border-border/70 bg-muted/40 px-2 sm:px-2.5 py-1 text-xs min-w-0">
-              <span className="text-xs shrink-0">🍽️</span>
-              <span className="font-black text-foreground truncate max-w-[110px] sm:max-w-[160px] md:max-w-xs text-xs">
-                {(db?.settings?.businessName || activeTenant.businessName || "Spot Light Biriyani").toUpperCase()}
-              </span>
-              <span className="text-border shrink-0">·</span>
-              {activeTenant.enabledModules.multiBranch ? (
+          {/* RIGHT: Quick System Actions */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+            {/* Multi-Branch Selector if enabled */}
+            {activeTenant.enabledModules.multiBranch && (
+              <div className="flex items-center rounded-lg border border-border bg-muted/40 px-2 py-1 text-xs">
                 <select
                   value={db?.settings.activeBranchId ?? ""}
                   onChange={(e) =>
@@ -199,7 +200,7 @@ function AppLayout() {
                       d.settings.activeBranchId = e.target.value;
                     })
                   }
-                  className="rounded border-none bg-transparent py-0 text-[11px] sm:text-xs font-bold text-primary focus:outline-none cursor-pointer shrink-0"
+                  className="rounded border-none bg-transparent py-0 text-xs font-bold text-primary focus:outline-none cursor-pointer"
                   title="Select restaurant branch"
                 >
                   {(db ?? getDB()).branches.map((b) => (
@@ -208,20 +209,13 @@ function AppLayout() {
                     </option>
                   ))}
                 </select>
-              ) : (
-                <span className="text-[11px] sm:text-xs font-bold text-primary truncate max-w-[100px] sm:max-w-[140px]">
-                  📍 {activeTenant.activeBranchName || "Main Kitchen"}
-                </span>
-              )}
-            </div>
-          </div>
+              </div>
+            )}
 
-          {/* RIGHT: Quick System Actions */}
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             {currentRole === "developer" && (
               <Link
                 to="/app/developer"
-                className="inline-flex items-center gap-1 rounded-full bg-red-500/15 border border-red-500/40 px-2.5 py-1 text-[10px] font-black text-red-600 dark:text-red-400 hover:bg-red-500/25 transition-all shadow-2xs"
+                className="inline-flex items-center gap-1 rounded-full bg-red-500/15 border border-red-500/40 px-2.5 py-1 text-[11px] font-black text-red-600 dark:text-red-400 hover:bg-red-500/25 transition-all shadow-2xs"
                 title="Open Master Developer Control Plane"
               >
                 ⚡ SUPER-ADMIN
@@ -229,7 +223,7 @@ function AppLayout() {
             )}
 
             {/* Active User Badge (Hidden on small mobile) */}
-            <div className="hidden md:flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/50 px-2.5 py-1 text-xs text-muted-foreground">
+            <div className="hidden sm:flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/50 px-2.5 py-1 text-xs text-muted-foreground">
               <ShieldCheck className="size-3.5 text-primary" />
               <span className="font-bold text-foreground text-[11px]">{currentUser}</span>
             </div>
@@ -238,11 +232,11 @@ function AppLayout() {
             <button
               onClick={handleCloudSync}
               disabled={isSyncing}
-              className="flex items-center gap-1 rounded-lg border border-primary/30 bg-primary/10 px-2 sm:px-2.5 py-1 text-xs font-bold text-primary hover:bg-primary/20 transition-all shadow-2xs active:scale-98"
+              className="flex items-center gap-1 rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary hover:bg-primary/20 transition-all shadow-2xs active:scale-98"
               title="Sync with Neon Cloud PostgreSQL"
             >
-              <Database className={`size-3 sm:size-3.5 ${isSyncing ? "animate-spin" : ""}`} />
-              <span className="hidden sm:inline">{isSyncing ? "Syncing..." : "Neon Cloud"}</span>
+              <Database className={`size-3.5 ${isSyncing ? "animate-spin" : ""}`} />
+              <span className="hidden md:inline">{isSyncing ? "Syncing..." : "Neon Cloud"}</span>
             </button>
 
             {/* Dark / Light Mode Switcher */}
