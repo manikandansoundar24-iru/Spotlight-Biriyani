@@ -39,7 +39,6 @@ const LINKS: readonly NavLinkItem[] = [
   { to: "/app/stock", label: "Stock & Deg", icon: Boxes, roles: ["owner", "kitchen", "developer"], module: "stock" },
   { to: "/app/items", label: "Menu & Costs", icon: UtensilsCrossed, roles: ["owner", "developer"], module: "menu" },
   { to: "/app/settings", label: "Settings", icon: Settings, roles: ["owner", "developer"] },
-  { to: "/app/developer", label: "⚡ Developer Console", icon: ShieldAlert, roles: ["developer"] },
 ];
 
 function AppLayout() {
@@ -190,51 +189,30 @@ function AppLayout() {
             </Link>
           </div>
 
-          {/* RIGHT: Quick System Actions */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-            {/* Active Client Restaurant Badge */}
-            <div className="flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs shadow-2xs">
-              <span className="font-black text-foreground text-xs flex items-center gap-1">
+          {/* RIGHT: Unified Client Restaurant & Branch Selector */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Unified Restaurant + Branch Dropdown Pill */}
+            <div className="flex items-center rounded-xl border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs shadow-2xs">
+              <span className="font-black text-foreground text-xs flex items-center gap-1.5 mr-2">
                 🍽️ {db?.settings?.businessName || activeTenant.businessName || "Spot Light Biriyani"}
               </span>
-            </div>
-
-            {/* Multi-Branch Selector if enabled */}
-            {activeTenant.enabledModules.multiBranch && (
-              <div className="flex items-center rounded-lg border border-border bg-muted/40 px-2 py-1 text-xs">
-                <select
-                  value={db?.settings.activeBranchId ?? ""}
-                  onChange={(e) =>
-                    setDB((d) => {
-                      d.settings.activeBranchId = e.target.value;
-                    })
-                  }
-                  className="rounded border-none bg-transparent py-0 text-xs font-bold text-primary focus:outline-none cursor-pointer"
-                  title="Select restaurant branch"
-                >
-                  {(db ?? getDB()).branches.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      📍 {b.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {currentRole === "developer" && (
-              <Link
-                to="/app/developer"
-                className="inline-flex items-center gap-1 rounded-full bg-red-500/15 border border-red-500/40 px-2.5 py-1 text-[11px] font-black text-red-600 dark:text-red-400 hover:bg-red-500/25 transition-all shadow-2xs"
-                title="Open Master Developer Control Plane"
+              <span className="text-muted-foreground mr-1.5">·</span>
+              <select
+                value={db?.settings.activeBranchId ?? ""}
+                onChange={(e) =>
+                  setDB((d) => {
+                    d.settings.activeBranchId = e.target.value;
+                  })
+                }
+                className="rounded-lg border-none bg-transparent py-0 text-xs font-bold text-primary focus:outline-none cursor-pointer"
+                title="Select active restaurant branch"
               >
-                ⚡ SUPER-ADMIN
-              </Link>
-            )}
-
-            {/* Active User Badge (Hidden on small mobile) */}
-            <div className="hidden sm:flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/50 px-2.5 py-1 text-xs text-muted-foreground">
-              <ShieldCheck className="size-3.5 text-primary" />
-              <span className="font-bold text-foreground text-[11px]">{currentUser}</span>
+                {(db ?? getDB()).branches.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    📍 {b.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Neon Cloud PostgreSQL Sync */}

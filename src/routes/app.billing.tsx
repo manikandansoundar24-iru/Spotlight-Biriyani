@@ -1540,7 +1540,7 @@ function Billing() {
                       setTableOrder(selectedTableId, preview.lines, quickPhone, orderNote);
                       printKOT(selectedTableId, currentTable?.name || selectedTableId, preview.lines, orderNote);
                       addKdsOrder({
-                        id: `kot_${Date.now()}`,
+                        id: `kot_${selectedTableId}_${Date.now()}`,
                         tokenNum: todayToken,
                         tableId: selectedTableId,
                         orderType: "dinein",
@@ -1549,7 +1549,11 @@ function Billing() {
                         notes: orderNote,
                       });
                       playChime("print", soundStyle);
-                      toast.success(`KOT printed & sent to kitchen for ${selectedTableId}! Tab is saved.`);
+                      toast.success(`KOT sent to Kitchen for ${selectedTableId}! Table is now OCCUPIED. Cart cleared for next order.`);
+                      setLines([]);
+                      setDiscount(0);
+                      setCashTendered("");
+                      setSelectedTableId(null);
                     }}
                     className="rounded bg-orange-600 hover:bg-orange-700 text-white font-bold px-2 py-0.5 text-[10px] flex items-center gap-1 shadow-2xs disabled:opacity-40"
                   >
@@ -1845,7 +1849,28 @@ function Billing() {
           )}
 
           {/* Save or Update Bill Action Bar */}
-          <div className="mt-4 space-y-2">
+          <div className="mt-4 space-y-2 sticky bottom-0 bg-card/95 backdrop-blur-md p-2 rounded-xl border border-border shadow-lg z-20">
+
+            {/* If a Table is currently open, show dedicated Settle & Vacate Table Button */}
+            {selectedTableId && (
+              <button
+                type="button"
+                onClick={() => {
+                  const target = saveOrUpdate();
+                  if (target) {
+                    vacateTable(selectedTableId);
+                    toast.success(`Table ${selectedTableId} settled & marked VACANT! Ready for next guests.`);
+                    setSelectedTableId(null);
+                  }
+                }}
+                disabled={!preview || preview.lines.length === 0}
+                className="w-full flex items-center justify-center gap-2 rounded-xl py-3 px-4 font-black text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-md transition-all active:scale-[0.98]"
+              >
+                <CheckCircle2 className="size-4 shrink-0" />
+                <span>SETTLE BILL &amp; VACATE TABLE ({selectedTableId})</span>
+              </button>
+            )}
+
 
             {/* Phase 2: Instant Dynamic UPI QR Generator Button */}
             {activeTenant.enabledModules.dynamicUpi && (

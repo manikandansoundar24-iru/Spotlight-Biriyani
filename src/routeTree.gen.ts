@@ -16,6 +16,7 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as DemoRouteImport } from './routes/demo'
 import { Route as DeveloperRouteImport } from './routes/developer'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as ManamRouteImport } from './routes/manam'
 import { Route as MenuRouteImport } from './routes/menu'
 import { Route as PlatformRouteImport } from './routes/platform'
 import { Route as AppIndexRouteImport } from './routes/app.index'
@@ -59,6 +60,11 @@ const DeveloperRoute = DeveloperRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ManamRoute = ManamRouteImport.update({
+  id: '/manam',
+  path: '/manam',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MenuRoute = MenuRouteImport.update({
@@ -115,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/demo': typeof DemoRoute
   '/developer': typeof DeveloperRoute
   '/login': typeof LoginRoute
+  '/manam': typeof ManamRoute
   '/menu': typeof MenuRoute
   '/platform': typeof PlatformRoute
   '/app/billing': typeof AppBillingRoute
@@ -132,6 +139,7 @@ export interface FileRoutesByTo {
   '/demo': typeof DemoRoute
   '/developer': typeof DeveloperRoute
   '/login': typeof LoginRoute
+  '/manam': typeof ManamRoute
   '/menu': typeof MenuRoute
   '/platform': typeof PlatformRoute
   '/app/billing': typeof AppBillingRoute
@@ -151,6 +159,7 @@ export interface FileRoutesById {
   '/demo': typeof DemoRoute
   '/developer': typeof DeveloperRoute
   '/login': typeof LoginRoute
+  '/manam': typeof ManamRoute
   '/menu': typeof MenuRoute
   '/platform': typeof PlatformRoute
   '/app/billing': typeof AppBillingRoute
@@ -171,6 +180,7 @@ export interface FileRouteTypes {
     | '/demo'
     | '/developer'
     | '/login'
+    | '/manam'
     | '/menu'
     | '/platform'
     | '/app/billing'
@@ -188,6 +198,7 @@ export interface FileRouteTypes {
     | '/demo'
     | '/developer'
     | '/login'
+    | '/manam'
     | '/menu'
     | '/platform'
     | '/app/billing'
@@ -206,6 +217,7 @@ export interface FileRouteTypes {
     | '/demo'
     | '/developer'
     | '/login'
+    | '/manam'
     | '/menu'
     | '/platform'
     | '/app/billing'
@@ -225,6 +237,7 @@ export interface RootRouteChildren {
   DemoRoute: typeof DemoRoute
   DeveloperRoute: typeof DeveloperRoute
   LoginRoute: typeof LoginRoute
+  ManamRoute: typeof ManamRoute
   MenuRoute: typeof MenuRoute
   PlatformRoute: typeof PlatformRoute
 }
@@ -278,6 +291,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/manam': {
+      id: '/manam'
+      path: '/manam'
+      fullPath: '/manam'
+      preLoaderRoute: typeof ManamRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/menu': {
@@ -376,6 +396,7 @@ const rootRouteChildren: RootRouteChildren = {
   DemoRoute: DemoRoute,
   DeveloperRoute: DeveloperRoute,
   LoginRoute: LoginRoute,
+  ManamRoute: ManamRoute,
   MenuRoute: MenuRoute,
   PlatformRoute: PlatformRoute,
 }

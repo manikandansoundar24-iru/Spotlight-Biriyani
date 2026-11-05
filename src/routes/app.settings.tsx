@@ -14,6 +14,7 @@ function Settings() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [role, setRole] = useState<string>("owner");
   const [activeTab, setActiveTab] = useState<"store" | "printer" | "aggregators">("store");
+  const [selectedBranchId, setSelectedBranchId] = useState<string>("taramani");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -25,7 +26,7 @@ function Settings() {
   if (!db) return <p className="text-sm text-muted-foreground">Loading…</p>;
 
   const printer = db.settings.printerSettings ?? DEFAULT_PRINTER_SETTINGS;
-  const currentBranch = db.branches[0];
+  const currentBranch = db.branches.find((b) => b.id === (selectedBranchId || db.settings.activeBranchId)) || db.branches[0];
 
   const testPrint = () => {
     const is58 = printer.paperWidth === "58mm";
@@ -138,6 +139,41 @@ function Settings() {
               </div>
             </div>
 
+            
+            {/* Multi-Branch Selector Tabs */}
+            <div className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1">
+                  📍 Edit Specific Branch Outlet Details:
+                </span>
+                <span className="text-[11px] text-muted-foreground">
+                  Switch branch below to inspect &amp; edit its exact phone and address
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {db.branches.map((b) => (
+                  <button
+                    key={b.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedBranchId(b.id);
+                      setDB((d) => {
+                        d.settings.activeBranchId = b.id;
+                      });
+                      toast.info(`Viewing & editing ${b.name} details`);
+                    }}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all border ${
+                      (currentBranch?.id === b.id)
+                        ? "bg-primary text-white border-primary shadow-xs"
+                        : "bg-card text-muted-foreground border-border hover:text-foreground"
+                    }`}
+                  >
+                    📍 {b.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <label className="text-xs font-bold text-muted-foreground">
                 Restaurant Trade Name
@@ -159,7 +195,7 @@ function Settings() {
                   value={currentBranch?.name || ""}
                   onChange={(e) =>
                     setDB((d) => {
-                      if (d.branches[0]) d.branches[0].name = e.target.value;
+                      const b = d.branches.find((br) => br.id === (selectedBranchId || d.settings.activeBranchId)) || d.branches[0]; if (b) b.name = e.target.value;
                     })
                   }
                   placeholder="e.g. Taramani (Flagship)"
@@ -173,7 +209,7 @@ function Settings() {
                   value={currentBranch?.phone || ""}
                   onChange={(e) =>
                     setDB((d) => {
-                      if (d.branches[0]) d.branches[0].phone = e.target.value;
+                      const b = d.branches.find((br) => br.id === (selectedBranchId || d.settings.activeBranchId)) || d.branches[0]; if (b) b.phone = e.target.value;
                     })
                   }
                   placeholder="+91 98844 30710"
@@ -187,7 +223,7 @@ function Settings() {
                   value={currentBranch?.address || ""}
                   onChange={(e) =>
                     setDB((d) => {
-                      if (d.branches[0]) d.branches[0].address = e.target.value;
+                      const b = d.branches.find((br) => br.id === (selectedBranchId || d.settings.activeBranchId)) || d.branches[0]; if (b) b.address = e.target.value;
                     })
                   }
                   placeholder="10, Kaikankuppam, Kazhikundram, Taramani, Chennai"

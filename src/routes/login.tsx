@@ -391,9 +391,34 @@ function LoginPage() {
                     Cloud ERP
                   </span>
                 </div>
-                <span className="text-[10px] text-muted-foreground font-semibold">
-                  <strong className="text-foreground">{typeof window !== "undefined" ? (getDB()?.settings?.businessName || "Spot Light Biriyani") : "Spot Light Biriyani"}</strong> · Active Tenant
-                </span>
+                <div className="w-full mt-2 pt-2 border-t border-border/60 text-left">
+                  <label className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                    Active Client Restaurant / Tenant
+                  </label>
+                  <select
+                    value={selectedTenantId}
+                    onChange={(e) => {
+                      const tId = e.target.value;
+                      setSelectedTenantId(tId);
+                      switchClientTenant(tId);
+                      const dbInst = getDB();
+                      const curTenants = (dbInst && dbInst.tenants && dbInst.tenants.length > 0) ? dbInst.tenants : DEFAULT_TENANTS;
+                      const match = curTenants.find((t) => t.id === tId);
+                      if (match && match.loginUsername) {
+                        setOwnerEmail(match.loginUsername);
+                        if (match.loginPassword) setOwnerPassword(match.loginPassword);
+                      }
+                      toast.info(`Switched to ${match?.businessName || "Restaurant"}`);
+                    }}
+                    className="w-full rounded-xl border border-primary/30 bg-background px-3 py-2 text-xs font-bold text-foreground focus:border-primary focus:outline-none"
+                  >
+                    {((getDB()?.tenants && (getDB()?.tenants?.length ?? 0) > 0) ? (getDB()?.tenants ?? DEFAULT_TENANTS) : DEFAULT_TENANTS).map((t) => (
+                      <option key={t.id} value={t.id}>
+                        🍽️ {t.businessName} ({t.activeBranchName || "Main"})
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
               {!isDevUnlocked ? (
                 <form onSubmit={handleLogin} className="space-y-4">
