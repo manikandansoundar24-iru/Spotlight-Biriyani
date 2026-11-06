@@ -322,10 +322,10 @@ function DishCard({
   return (
     <div
       className={`surface-card group relative p-3.5 text-left transition-all min-w-0 max-w-full overflow-hidden ${isSoldOut
-          ? "opacity-60 bg-muted/20 border-border/40"
-          : isInCart
-            ? "border-primary/90 bg-primary/5 shadow-ember"
-            : "hover:-translate-y-0.5 hover:border-primary/60 hover:shadow-card"
+        ? "opacity-60 bg-muted/20 border-border/40"
+        : isInCart
+          ? "border-primary/90 bg-primary/5 shadow-ember"
+          : "hover:-translate-y-0.5 hover:border-primary/60 hover:shadow-card"
         }`}
     >
       <div
@@ -341,10 +341,10 @@ function DishCard({
             {isDeg && (
               <span
                 className={`mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${liveBatch.platesLeft > 30
-                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                    : liveBatch.platesLeft > 10
-                      ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-                      : "bg-rose-500/15 text-rose-600 dark:text-rose-400 font-black animate-pulse"
+                  ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                  : liveBatch.platesLeft > 10
+                    ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                    : "bg-rose-500/15 text-rose-600 dark:text-rose-400 font-black animate-pulse"
                   }`}
               >
                 <Flame className="size-2.5" />
@@ -513,13 +513,16 @@ function Billing() {
     return null;
   }, [quickPhone, customerPhone, db?.sales]);
 
-  // Today's Sales History (most recent first for active branch)
+  // Today's Sales History (most recent first for active branch & tenant)
   const todaySales = useMemo(() => {
     if (!db || !Array.isArray(db.sales)) return [];
     const activeBranch = db.settings.activeBranchId || "taramani";
+    const currentTenantId = db.activeTenantId || "spotlight-biriyani";
     return db.sales
       .filter((s) => {
         if (!s || typeof s.date !== "string") return false;
+        const matchTenant = s.tenantId ? s.tenantId === currentTenantId : currentTenantId === "spotlight-biriyani";
+        if (!matchTenant) return false;
         const matchBranch =
           s.branchId === activeBranch ||
           !s.branchId ||
@@ -547,7 +550,10 @@ function Billing() {
   const drawerVariance = countedPhysicalCash === "" ? 0 : countedNum - expectedCashInDrawer;
 
   const filteredHistory = useMemo(() => {
-    const rawSales = Array.isArray(db?.sales) ? db.sales : [];
+    const currentTenantId = db?.activeTenantId || "spotlight-biriyani";
+    const rawSales = Array.isArray(db?.sales)
+      ? db.sales.filter((s) => s && (s.tenantId ? s.tenantId === currentTenantId : currentTenantId === "spotlight-biriyani"))
+      : [];
     const source = (historySearch && historySearch.trim().length > 0)
       ? rawSales.slice().reverse()
       : todaySales;
@@ -962,6 +968,7 @@ function Billing() {
       const newSale: Sale = {
         ...currentPreview,
         id: currentPreview.id || Math.random().toString(36).slice(2, 10),
+        tenantId: db.activeTenantId || "spotlight-biriyani",
         date: new Date().toISOString(),
         branchId: activeBranch,
         orderType,
@@ -1022,7 +1029,7 @@ function Billing() {
     }
   };
 
-    const handleQuickWhatsApp = () => {
+  const handleQuickWhatsApp = () => {
     if (!preview) return;
     const rawInput = quickPhone.trim() || customerPhone.trim();
     const cleanPhone = rawInput.replace(/\D/g, "");
@@ -1038,7 +1045,7 @@ function Billing() {
     const branch = db?.branches.find((b) => b.id === target.branchId) || db?.branches[0];
     const itemsText = target.lines.map((l) => `* ${l.qty}x ${l.name} - ₹${l.price * l.qty}`).join("\n");
     const orderTypeStr = target.orderType === "takeaway" ? "TAKEAWAY / PARCEL" : (target.tableId ? `DINE-IN (${target.tableId})` : "DINE-IN");
-    
+
     const msg = [
       `Hi Customer, your ${businessName} bill is confirmed!`,
       `----------------------------------------`,
@@ -1230,10 +1237,10 @@ function Billing() {
                     <span>Edit Deg Capacity</span>
                   </button>
                   <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black ${liveBatch.platesLeft > 30
-                      ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
-                      : liveBatch.platesLeft > 10
-                        ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
-                        : "bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 animate-pulse"
+                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                    : liveBatch.platesLeft > 10
+                      ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                      : "bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 animate-pulse"
                     }`}>
                     <span className="size-2 rounded-full bg-current animate-ping" />
                     {liveBatch.platesLeft > 0 ? `${liveBatch.platesLeft} Plates Left in Deg` : "SOLD OUT"}
@@ -1254,10 +1261,10 @@ function Billing() {
                   <span className="text-[10px] text-muted-foreground block">Counter + Online</span>
                 </div>
                 <div className={`rounded-xl p-2 border ${liveBatch.platesLeft > 30
-                    ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
-                    : liveBatch.platesLeft > 10
-                      ? "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400"
-                      : "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400"
+                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                  : liveBatch.platesLeft > 10
+                    ? "bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400"
+                    : "bg-rose-500/10 border-rose-500/30 text-rose-600 dark:text-rose-400"
                   }`}>
                   <span className="text-[10px] font-black uppercase tracking-wider block">Remaining Stock</span>
                   <span className="text-lg sm:text-xl font-black font-display">{liveBatch.platesLeft}</span>
@@ -1347,8 +1354,8 @@ function Billing() {
                         key={c.id}
                         onClick={() => setCat(c.id)}
                         className={`shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-bold transition-all ${isSelected
-                            ? "border-primary bg-primary text-primary-foreground shadow-ember scale-[1.02]"
-                            : "border-border bg-card/70 text-muted-foreground hover:border-border hover:bg-card hover:text-foreground"
+                          ? "border-primary bg-primary text-primary-foreground shadow-ember scale-[1.02]"
+                          : "border-border bg-card/70 text-muted-foreground hover:border-border hover:bg-card hover:text-foreground"
                           }`}
                       >
                         <span className="shrink-0">{renderCategoryIcon(c.id, "size-3.5")}</span>
@@ -1399,20 +1406,18 @@ function Billing() {
                     <button
                       key={c.id}
                       onClick={() => setCat(c.id)}
-                      className={`shrink-0 sm:w-full flex items-center justify-between gap-2 rounded-xl border p-2 text-left text-[11px] font-bold transition-all ${
-                        isSelected
+                      className={`shrink-0 sm:w-full flex items-center justify-between gap-2 rounded-xl border p-2 text-left text-[11px] font-bold transition-all ${isSelected
                           ? "border-primary bg-primary text-primary-foreground shadow-ember scale-[1.01]"
                           : "border-border bg-card text-muted-foreground hover:border-primary/50 hover:bg-muted/60 hover:text-foreground"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-1.5 min-w-0">
                         <span className="shrink-0 text-primary">{renderCategoryIcon(c.id, "size-3.5")}</span>
                         <span className="truncate whitespace-nowrap">{c.label}</span>
                       </div>
                       <span
-                        className={`shrink-0 rounded-full px-1.5 py-0.2 text-[9px] font-bold ${
-                          isSelected ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
-                        }`}
+                        className={`shrink-0 rounded-full px-1.5 py-0.2 text-[9px] font-bold ${isSelected ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
+                          }`}
                       >
                         {count}
                       </span>
@@ -1453,8 +1458,8 @@ function Billing() {
               type="button"
               onClick={() => setOrderType("dinein")}
               className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-bold transition-all ${orderType === "dinein"
-                  ? "bg-primary text-white shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
+                ? "bg-primary text-white shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
                 }`}
             >
               🍽️ Dine-in
@@ -1464,10 +1469,13 @@ function Billing() {
               onClick={() => {
                 setOrderType("takeaway");
                 setSelectedTableId(null);
+                setLines([]);
+                setQuickPhone("");
+                setOrderNote("");
               }}
               className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-1.5 font-bold transition-all ${orderType === "takeaway"
-                  ? "bg-amber-600 text-white shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
+                ? "bg-amber-600 text-white shadow-xs"
+                : "text-muted-foreground hover:text-foreground"
                 }`}
             >
               🥡 Takeaway / Parcel
@@ -1500,23 +1508,29 @@ function Billing() {
                       onClick={() => {
                         if (isSelected) {
                           setSelectedTableId(null);
+                          setLines([]);
+                          setQuickPhone("");
+                          setOrderNote("");
                         } else {
                           setSelectedTableId(tbl.id);
                           if (tbl.lines && tbl.lines.length > 0) {
-                            setLines(tbl.lines);
-                            if (tbl.customerPhone) setQuickPhone(tbl.customerPhone);
-                            if (tbl.notes) setOrderNote(tbl.notes);
+                            setLines([...tbl.lines]);
+                            setQuickPhone(tbl.customerPhone || "");
+                            setOrderNote(tbl.notes || "");
                             toast.info(`Loaded active tab for ${tbl.name}`);
+                          } else {
+                            setLines([]);
+                            setQuickPhone("");
+                            setOrderNote("");
                           }
                         }
                       }}
-                      className={`rounded-lg py-1 px-1 text-center font-bold text-xs transition-all border flex flex-col items-center justify-center ${
-                        isSelected
+                      className={`rounded-lg py-1 px-1 text-center font-bold text-xs transition-all border flex flex-col items-center justify-center ${isSelected
                           ? "bg-primary text-white border-primary shadow-xs"
                           : isOccupied
-                          ? "bg-rose-500/10 text-rose-600 border-rose-500/40 hover:bg-rose-500/20"
-                          : "bg-card text-foreground border-border hover:border-primary/50"
-                      }`}
+                            ? "bg-rose-500/10 text-rose-600 border-rose-500/40 hover:bg-rose-500/20"
+                            : "bg-card text-foreground border-border hover:border-primary/50"
+                        }`}
                       title={`${tbl.name} (${tbl.capacity} seats) · ${isOccupied ? "Occupied" : "Free"}`}
                     >
                       <span>{tbl.id}</span>
@@ -1571,8 +1585,8 @@ function Billing() {
                 key={c.id}
                 onClick={() => changeChannel(c.id)}
                 className={`flex-1 rounded-lg px-2 py-1.5 text-xs font-bold transition-all ${channel === c.id
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
                   }`}
               >
                 {c.id === "counter" ? "Counter / Dine-in" : c.name}
@@ -1597,8 +1611,8 @@ function Billing() {
                   key={s.id}
                   onClick={() => changeSound(s.id as "kaching" | "triad" | "click" | "mute")}
                   className={`rounded px-1.5 py-0.5 text-[10px] font-semibold transition-all ${soundStyle === s.id
-                      ? "bg-primary text-primary-foreground font-bold shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
+                    ? "bg-primary text-primary-foreground font-bold shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
                     }`}
                   title={`Select ${s.label} sound on billing`}
                 >
@@ -1767,8 +1781,8 @@ function Billing() {
                       key={amt}
                       onClick={() => setCashTendered(amt)}
                       className={`flex-1 rounded-md border border-border py-1 text-xs font-semibold transition-colors ${cashTendered === amt
-                          ? "border-primary bg-primary/20 text-primary"
-                          : "bg-muted/40 text-muted-foreground hover:border-primary/50 hover:text-foreground"
+                        ? "border-primary bg-primary/20 text-primary"
+                        : "bg-muted/40 text-muted-foreground hover:border-primary/50 hover:text-foreground"
                         }`}
                     >
                       {amt === preview.net ? "Exact" : `₹${amt}`}
@@ -2049,8 +2063,8 @@ function Billing() {
                         <button
                           onClick={() => startEditPastBill(sale)}
                           className={`rounded-lg border p-1.5 transition-colors ${isSelectedForEdit
-                              ? "border-amber-500 bg-amber-500 text-white font-bold"
-                              : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20"
+                            ? "border-amber-500 bg-amber-500 text-white font-bold"
+                            : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20"
                             }`}
                           title="Load into cart to correct wrong quantities or items"
                         >
@@ -2330,8 +2344,8 @@ function Billing() {
                     key={ch}
                     onClick={() => setHistoryChannelFilter(ch)}
                     className={`rounded-md px-2.5 py-1 text-xs font-semibold capitalize transition-all ${historyChannelFilter === ch
-                        ? "bg-primary text-primary-foreground font-bold shadow-xs"
-                        : "text-muted-foreground hover:text-foreground"
+                      ? "bg-primary text-primary-foreground font-bold shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
                       }`}
                   >
                     {ch === "all" ? "All Channels" : ch}
@@ -2600,7 +2614,7 @@ function Billing() {
                         const itemsText = activeBill.lines.map((l) => `🍲 ${l.qty}x ${l.name} - ₹${l.price * l.qty}`).join("\n");
                         const orderTypeStr = activeBill.orderType === "takeaway" ? "🥡 TAKEAWAY / PARCEL" : "🍽️ DINE-IN";
                         const msg = `Hi ${customerName || "Customer"}, your ${businessName} bill is confirmed ✅\n\n*${businessName} — ${branch?.name || "Kitchen"}*\n📅 ${new Date(activeBill.date).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}\n🔖 *${orderTypeStr}*\n${itemsText}\n💰 *₹${activeBill.net}* · Paid via ${activeBill.payment.toUpperCase()}\n📍 ${branch?.address || "Chennai"}\n📞 ${branch?.phone || ""}\nBill Ref: *#${activeBill.id.slice(0, 6).toUpperCase()}*\n\n♨️ Thank you! Visit again.`;
-                        
+
                         const whatsappUrl = `https://wa.me/91${validPhone}?text=${encodeURIComponent(msg)}`;
                         const w = window.open(whatsappUrl, "_blank");
                         if (!w || w.closed || typeof w.closed === "undefined") {
@@ -2645,18 +2659,22 @@ function Billing() {
 
               <div className="flex items-center gap-2">
                 <div className="flex rounded-lg border border-border bg-muted/60 p-0.5 text-xs">
-                  {(["all", "pending", "preparing", "ready"] as const).map((status) => (
+                  {([
+                    { id: "all", label: `All (${(db?.kdsOrders || []).filter((o) => o.status !== "completed").length})` },
+                    { id: "pending", label: `Pending (${(db?.kdsOrders || []).filter((o) => o.status === "pending").length})` },
+                    { id: "preparing", label: `Preparing (${(db?.kdsOrders || []).filter((o) => o.status === "preparing").length})` },
+                    { id: "ready", label: `Ready (${(db?.kdsOrders || []).filter((o) => o.status === "ready").length})` },
+                  ] as const).map((tab) => (
                     <button
-                      key={status}
+                      key={tab.id}
                       type="button"
-                      onClick={() => setKdsFilter(status)}
-                      className={`rounded px-2.5 py-1 font-bold capitalize transition-all ${
-                        kdsFilter === status
+                      onClick={() => setKdsFilter(tab.id as any)}
+                      className={`rounded px-2.5 py-1 font-bold transition-all ${kdsFilter === tab.id
                           ? "bg-primary text-white shadow-xs"
                           : "text-muted-foreground hover:text-foreground"
-                      }`}
+                        }`}
                     >
-                      {status}
+                      {tab.label}
                     </button>
                   ))}
                 </div>
@@ -2675,7 +2693,7 @@ function Billing() {
               {((db?.kdsOrders || []).filter((o) => (kdsFilter === "all" ? o.status !== "completed" : o.status === kdsFilter))).length === 0 ? (
                 <div className="col-span-full py-16 text-center text-muted-foreground">
                   <UtensilsCrossed className="size-10 mx-auto text-muted-foreground/40 mb-2" />
-                  <p className="font-bold text-sm">No Active Kitchen Orders</p>
+                  <p className="font-bold text-sm">No Active Kitchen Orders in {kdsFilter.toUpperCase()}</p>
                   <p className="text-xs text-muted-foreground/80 mt-1">Orders sent from Counter Billing or Table KOT will appear here automatically.</p>
                 </div>
               ) : (
@@ -2688,15 +2706,16 @@ function Billing() {
                     return (
                       <div
                         key={order.id}
-                        className={`rounded-2xl border p-4 shadow-sm flex flex-col justify-between transition-all ${
-                          order.status === "ready"
+                        className={`rounded-2xl border p-4 shadow-sm flex flex-col justify-between transition-all ${order.status === "ready"
                             ? "border-emerald-500/40 bg-emerald-500/5"
-                            : isUrgent
-                            ? "border-rose-500/60 bg-rose-500/10 animate-pulse"
-                            : isMedium
-                            ? "border-amber-500/50 bg-amber-500/5"
-                            : "border-border bg-card"
-                        }`}
+                            : order.status === "preparing"
+                              ? "border-amber-500/50 bg-amber-500/5"
+                              : isUrgent
+                                ? "border-rose-500/60 bg-rose-500/10 animate-pulse"
+                                : isMedium
+                                  ? "border-amber-500/50 bg-amber-500/5"
+                                  : "border-border bg-card"
+                          }`}
                       >
                         <div>
                           <div className="flex items-center justify-between border-b border-border/60 pb-2">
@@ -2709,30 +2728,47 @@ function Billing() {
                               </span>
                             </div>
                             <span
-                              className={`rounded-full px-2 py-0.5 text-[10px] font-black tracking-wide ${
-                                isUrgent
+                              className={`rounded-full px-2 py-0.5 text-[10px] font-black tracking-wide ${isUrgent
                                   ? "bg-rose-600 text-white"
                                   : isMedium
-                                  ? "bg-amber-500 text-white"
-                                  : "bg-emerald-600 text-white"
-                              }`}
+                                    ? "bg-amber-500 text-white"
+                                    : "bg-emerald-600 text-white"
+                                }`}
                             >
                               ⏱ {elapsedMins}m ago
                             </span>
                           </div>
 
+                          {/* Status Badge */}
+                          <div className="mt-2 flex items-center gap-1.5 text-[11px] font-bold">
+                            {order.status === "pending" && (
+                              <span className="text-amber-500 flex items-center gap-1">
+                                🟡 Waiting for Kitchen Accept
+                              </span>
+                            )}
+                            {order.status === "preparing" && (
+                              <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                                🍳 Cooking in Progress ({order.lines.filter((l) => l.done).length}/{order.lines.length} Done)
+                              </span>
+                            )}
+                            {order.status === "ready" && (
+                              <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                                ✅ Ready for Serving / Pickup
+                              </span>
+                            )}
+                          </div>
+
                           {/* Items Checklist */}
-                          <div className="mt-3 space-y-2">
+                          <div className="mt-2.5 space-y-1.5">
                             {order.lines.map((line, idx) => (
                               <button
                                 key={idx}
                                 type="button"
                                 onClick={() => toggleKdsLineDone(order.id, idx)}
-                                className={`w-full flex items-center justify-between text-left p-1.5 rounded-lg border transition-all ${
-                                  line.done
+                                className={`w-full flex items-center justify-between text-left p-1.5 rounded-lg border transition-all ${line.done
                                     ? "border-emerald-500/30 bg-emerald-500/10 line-through text-muted-foreground opacity-60"
                                     : "border-border/60 bg-muted/40 text-foreground"
-                                }`}
+                                  }`}
                               >
                                 <span className="font-bold text-xs flex items-center gap-1.5">
                                   {line.done ? <CheckSquare className="size-3.5 text-emerald-600 shrink-0" /> : <Square className="size-3.5 text-muted-foreground shrink-0" />}
@@ -2753,8 +2789,34 @@ function Billing() {
                         </div>
 
                         {/* Status Actions */}
-                        <div className="mt-4 pt-2 border-t border-border/60 flex gap-2">
-                          {order.status !== "ready" ? (
+                        <div className="mt-4 pt-2 border-t border-border/60 flex flex-col sm:flex-row gap-2">
+                          {order.status === "pending" && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  updateKdsStatus(order.id, "preparing");
+                                  toast.info(`Started cooking Order ${order.orderNumber || order.tableId || order.id}! Moved to Preparing.`);
+                                }}
+                                className="flex-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-black font-black py-2 text-xs shadow-xs transition-all flex items-center justify-center gap-1"
+                              >
+                                <Flame className="size-3.5" /> Start Cooking (Preparing)
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  updateKdsStatus(order.id, "ready");
+                                  playChime("cash", soundStyle);
+                                  toast.success(`Order ${order.orderNumber || order.tableId || order.id} marked Ready!`);
+                                }}
+                                className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 text-xs shadow-xs transition-all flex items-center justify-center gap-1"
+                              >
+                                <CheckCircle2 className="size-3.5" /> Ready
+                              </button>
+                            </>
+                          )}
+
+                          {order.status === "preparing" && (
                             <button
                               type="button"
                               onClick={() => {
@@ -2764,9 +2826,11 @@ function Billing() {
                               }}
                               className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 text-xs shadow-md transition-all flex items-center justify-center gap-1.5"
                             >
-                              <CheckCircle2 className="size-3.5" /> Mark Ready (Ding Bell)
+                              <CheckCircle2 className="size-3.5" /> Mark All Ready (Ding Bell)
                             </button>
-                          ) : (
+                          )}
+
+                          {order.status === "ready" && (
                             <button
                               type="button"
                               onClick={() => {
@@ -2775,7 +2839,7 @@ function Billing() {
                               }}
                               className="w-full rounded-xl bg-muted hover:bg-muted/80 text-foreground font-bold py-2 text-xs border border-border transition-all"
                             >
-                              Clear from Screen
+                              ✨ Handover &amp; Clear
                             </button>
                           )}
                         </div>
@@ -2868,21 +2932,20 @@ function Billing() {
 
                 {countedPhysicalCash !== "" && (
                   <div
-                    className={`rounded-lg p-2 font-bold flex justify-between items-center text-xs ${
-                      drawerVariance === 0
+                    className={`rounded-lg p-2 font-bold flex justify-between items-center text-xs ${drawerVariance === 0
                         ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/30"
                         : drawerVariance > 0
-                        ? "bg-blue-500/10 text-blue-600 border border-blue-500/30"
-                        : "bg-rose-500/10 text-rose-600 border border-rose-500/30"
-                    }`}
+                          ? "bg-blue-500/10 text-blue-600 border border-blue-500/30"
+                          : "bg-rose-500/10 text-rose-600 border border-rose-500/30"
+                      }`}
                   >
                     <span>Cash Drawer Variance:</span>
                     <span>
                       {drawerVariance === 0
                         ? "✅ Exact Match (₹0 Variance)"
                         : drawerVariance > 0
-                        ? `+₹${drawerVariance} (Cash Surplus / Over)`
-                        : `-₹${Math.abs(drawerVariance)} (Cash Shortage)`}
+                          ? `+₹${drawerVariance} (Cash Surplus / Over)`
+                          : `-₹${Math.abs(drawerVariance)} (Cash Shortage)`}
                     </span>
                   </div>
                 )}

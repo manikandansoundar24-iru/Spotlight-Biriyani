@@ -52,6 +52,7 @@ export type SaleLine = { itemId: string; name: string; qty: number; price: numbe
 
 export type Sale = {
   id: string;
+  tenantId?: string | undefined;
   /** ISO datetime */
   date: string;
   branchId: string;
@@ -197,6 +198,7 @@ export type TenantConfig = {
   loginPassword?: string | undefined;
   cashierPin?: string | undefined;
   kitchenPin?: string | undefined;
+  branches?: Branch[] | undefined;
   enabledModules: TenantModules;
 };
 
@@ -232,6 +234,14 @@ export const DEFAULT_TENANTS: TenantConfig[] = [
     loginPassword: "manam2026",
     cashierPin: "4001",
     kitchenPin: "5555",
+    branches: [
+      {
+        id: "velachery-phoenix",
+        name: "Velachery (Opp. Phoenix Market City)",
+        address: "1st Floor, Nagendran Nagar, No 53, Velachery Main Rd, Opp. PHOENIX MARKET CITY, Velachery, Chennai - 600042",
+        phone: "+91 98400 99887",
+      },
+    ],
     enabledModules: {
       billing: true,
       tables: true,
@@ -264,6 +274,16 @@ export const DEFAULT_TENANTS: TenantConfig[] = [
     loginPassword: "spotlight2026",
     cashierPin: "1234",
     kitchenPin: "5555",
+    branches: [
+      {
+        id: "taramani",
+        name: "Taramani (Flagship)",
+        address: "No 6/31, Kazhikundram, Tharamani, Chennai 600113",
+        phone: "+91 98844 30710",
+      },
+      { id: "adyar", name: "Adyar", address: "Lattice Bridge Road, Adyar, Chennai", phone: "+91 90000 00002" },
+      { id: "velachery", name: "Velachery", address: "100 Feet Road, Velachery, Chennai", phone: "+91 90000 00003" },
+    ],
     enabledModules: {
       billing: true,
       tables: true,
@@ -296,6 +316,14 @@ export const DEFAULT_TENANTS: TenantConfig[] = [
     loginPassword: "csk2026",
     cashierPin: "1001",
     kitchenPin: "5555",
+    branches: [
+      {
+        id: "tnagar",
+        name: "T. Nagar (Main)",
+        address: "45, Usman Road, T. Nagar, Chennai - 600017",
+        phone: "+91 98765 43210",
+      },
+    ],
     enabledModules: {
       billing: true,
       tables: true,
@@ -682,6 +710,7 @@ function seed(): DB {
 
 export function buildSale(input: {
   date?: string;
+  tenantId?: string;
   branchId: string;
   channel: ChannelId;
   lines: SaleLine[];
@@ -697,6 +726,7 @@ export function buildSale(input: {
   const packaging = ch.packagingCost || 0;
   return {
     id: id(),
+    tenantId: input.tenantId || (cache?.activeTenantId || "spotlight-biriyani"),
     date: input.date ?? new Date().toISOString(),
     branchId: input.branchId || "taramani",
     channel: input.channel,
@@ -850,8 +880,29 @@ export function getDB(): DB {
     cache.tenants = [...DEFAULT_TENANTS];
     needsPersist = true;
   } else {
+    const tenantsList = cache.tenants;
+    // Migration: ensure every default tenant (like Manam) is present and synced
+    DEFAULT_TENANTS.forEach((dt) => {
+      const cur = tenantsList.find((t) => t.id === dt.id);
+      if (!cur) {
+        tenantsList.push({ ...dt });
+        needsPersist = true;
+      } else {
+        let changed = false;
+        if (!cur.loginUsername) { cur.loginUsername = dt.loginUsername; changed = true; }
+        if (!cur.loginPassword) { cur.loginPassword = dt.loginPassword; changed = true; }
+        if (!cur.cashierPin) { cur.cashierPin = dt.cashierPin; changed = true; }
+        if (!cur.kitchenPin) { cur.kitchenPin = dt.kitchenPin; changed = true; }
+        if (!cur.branches || cur.branches.length === 0) { cur.branches = dt.branches; changed = true; }
+        if (!cur.address && dt.address) { cur.address = dt.address; changed = true; }
+        if (!cur.phone && dt.phone) { cur.phone = dt.phone; changed = true; }
+        if (!cur.activeBranchName && dt.activeBranchName) { cur.activeBranchName = dt.activeBranchName; changed = true; }
+        if (changed) needsPersist = true;
+      }
+    });
+
     // Migration: ensure every tenant has complete module flags
-    cache.tenants.forEach((t) => {
+    tenantsList.forEach((t) => {
       if (!t.enabledModules) {
         t.enabledModules = {
           billing: true,
@@ -1128,6 +1179,13 @@ export function toggleKdsLineDone(orderId: string, lineIndex: number) {
     const order = d.kdsOrders.find((o) => o.id === orderId);
     if (order && order.lines[lineIndex]) {
       order.lines[lineIndex].done = !order.lines[lineIndex].done;
+      if (order.status === "pending") {
+        order.status = "preparing";
+      }
+      const allDone = order.lines.every((l) => l.done);
+      if (allDone && order.status !== "ready" && order.status !== "completed") {
+        order.status = "ready";
+      }
     }
   });
 }
@@ -1171,10 +1229,14 @@ export function switchClientTenant(tenantId: string) {
       d.settings.businessName = tenant.businessName;
       d.settings.gstPct = tenant.gstPct;
       if (tenant.upiId) d.settings.upiId = tenant.upiId;
-      if (d.branches && d.branches[0]) {
+      if (tenant.branches && tenant.branches.length > 0 && tenant.branches[0]) {
+        d.branches = [...tenant.branches];
+        d.settings.activeBranchId = tenant.branches[0].id;
+      } else if (d.branches && d.branches[0]) {
         d.branches[0].name = tenant.activeBranchName;
         d.branches[0].phone = tenant.phone;
         d.branches[0].address = tenant.address;
+        d.settings.activeBranchId = d.branches[0].id;
       }
       if (d.settings.printerSettings) {
         d.settings.printerSettings.gstin = tenant.gstin;
