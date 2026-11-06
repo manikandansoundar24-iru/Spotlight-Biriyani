@@ -93,6 +93,12 @@ export function DeveloperSuperAdminPage() {
   // Selected Tenant Profile Edit State
   const [editTenant, setEditTenant] = useState<TenantConfig | null>(null);
 
+  // Branch Management State
+  const [newBranchLabel, setNewBranchLabel] = useState("");
+  const [newBranchLoc, setNewBranchLoc] = useState("");
+  const [newBranchPhone, setNewBranchPhone] = useState("");
+  const [showAddBranchForm, setShowAddBranchForm] = useState(false);
+
   const currentDB = db ?? getDB();
   const activeTenant = getActiveTenant(currentDB);
   const tenants = currentDB.tenants && currentDB.tenants.length > 0 ? currentDB.tenants : DEFAULT_TENANTS;
@@ -118,10 +124,10 @@ export function DeveloperSuperAdminPage() {
 
   useEffect(() => {
     const target = tenants.find((t) => t.id === selectedTenantId) || activeTenant;
-    if (target) {
+    if (target && (!editTenant || editTenant.id !== target.id)) {
       setEditTenant({ ...target });
     }
-  }, [selectedTenantId, db]);
+  }, [selectedTenantId]);
 
   const handleUnlock = (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,6 +178,69 @@ export function DeveloperSuperAdminPage() {
     toast.success(`Saved configuration and credentials for ${editTenant.businessName}!`, {
       icon: <CheckCircle2 className="size-4 text-emerald-600" />,
     });
+  };
+
+  const handleAddBranchToTenant = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editTenant) return;
+    if (!newBranchLabel.trim()) {
+      toast.error("Please enter a branch name");
+      return;
+    }
+    const slug = newBranchLabel.trim().toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-");
+    const currentBranches = editTenant.branches && editTenant.branches.length > 0
+      ? editTenant.branches
+      : [{ id: "main", name: editTenant.activeBranchName || "Main Kitchen", address: editTenant.address, phone: editTenant.phone }];
+
+    if (currentBranches.some((b) => b.id === slug)) {
+      toast.error("A branch with this name already exists");
+      return;
+    }
+
+    const newBranch = {
+      id: slug,
+      name: newBranchLabel.trim(),
+      address: newBranchLoc.trim() || editTenant.address,
+      phone: newBranchPhone.trim() || editTenant.phone,
+    };
+
+    const updatedBranches = [...currentBranches, newBranch];
+    const updatedTenant: TenantConfig = {
+      ...editTenant,
+      branches: updatedBranches,
+      activeBranchName: updatedBranches[0]?.name || editTenant.activeBranchName,
+    };
+
+    setEditTenant(updatedTenant);
+    updateTenant(updatedTenant);
+    setNewBranchLabel("");
+    setNewBranchLoc("");
+    setNewBranchPhone("");
+    setShowAddBranchForm(false);
+    toast.success(`Branch "${newBranch.name}" created for ${editTenant.businessName}!`, {
+      icon: <Building2 className="size-4 text-emerald-600" />,
+    });
+  };
+
+  const handleRemoveBranchFromTenant = (branchId: string) => {
+    if (!editTenant) return;
+    const currentBranches = editTenant.branches || [];
+    if (currentBranches.length <= 1) {
+      toast.error("Each restaurant must have at least one branch.");
+      return;
+    }
+    const branch = currentBranches.find((b) => b.id === branchId);
+    if (confirm(`Are you sure you want to delete branch "${branch?.name || branchId}"?`)) {
+      const updatedBranches = currentBranches.filter((b) => b.id !== branchId);
+      const updatedTenant: TenantConfig = {
+        ...editTenant,
+        branches: updatedBranches,
+        activeBranchName: updatedBranches[0]?.name || editTenant.activeBranchName,
+      };
+      setEditTenant(updatedTenant);
+      updateTenant(updatedTenant);
+      toast.success("Branch removed successfully.");
+    }
   };
 
   const handleApplyPresetPlan = (plan: "starter" | "standard" | "biriyani_pro" | "enterprise") => {
@@ -1033,6 +1102,90 @@ export function DeveloperSuperAdminPage() {
                     className="w-full rounded-xl border border-input bg-background px-3 py-2 font-mono text-[11px] focus:border-primary focus:outline-none"
                   />
                 </div>
+              </div>
+
+              {/* Branch Outlets Manager */}
+              <div className="rounded-2xl border border-border bg-muted/20 p-3 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="font-bold text-foreground block text-xs">
+                      Restaurant Branches ({editTenant.branches?.length || 1})
+                    </label>
+                    <span className="text-[10px] text-muted-foreground">Multiple branches for this client</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddBranchForm(!showAddBranchForm)}
+                    className="flex items-center gap-1 rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary hover:bg-primary/20 transition-all"
+                  >
+                    <Plus className="size-3" />
+                    <span>{showAddBranchForm ? "Cancel" : "Add Branch"}</span>
+                  </button>
+                </div>
+
+                {/* Branch Cards */}
+                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                  {(editTenant.branches && editTenant.branches.length > 0
+                    ? editTenant.branches
+                    : [{ id: "main", name: editTenant.activeBranchName || "Main Kitchen", address: editTenant.address, phone: editTenant.phone }]
+                  ).map((b) => (
+                    <div
+                      key={b.id}
+                      className="flex items-center justify-between p-2 rounded-xl border border-border bg-card text-[11px]"
+                    >
+                      <div className="min-w-0 pr-2">
+                        <span className="font-black text-foreground block truncate">📍 {b.name}</span>
+                        <span className="text-[10px] text-muted-foreground block truncate">{b.address}</span>
+                        <span className="text-[10px] font-mono text-primary">{b.phone}</span>
+                      </div>
+                      {(editTenant.branches?.length ?? 1) > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveBranchFromTenant(b.id)}
+                          className="p-1 text-muted-foreground hover:text-destructive transition-colors shrink-0"
+                          title="Delete branch"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Inline Add Branch Form */}
+                {showAddBranchForm && (
+                  <div className="mt-2 p-2.5 rounded-xl border border-primary/40 bg-card space-y-2 animate-in fade-in">
+                    <span className="text-[11px] font-bold text-primary block">New Branch Outlet Details</span>
+                    <input
+                      type="text"
+                      placeholder="Branch Name (e.g. Adyar Flagship, Velachery Hub)"
+                      value={newBranchLabel}
+                      onChange={(e) => setNewBranchLabel(e.target.value)}
+                      className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs focus:border-primary focus:outline-none"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Branch Address"
+                      value={newBranchLoc}
+                      onChange={(e) => setNewBranchLoc(e.target.value)}
+                      className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs focus:border-primary focus:outline-none"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Branch Phone Number"
+                      value={newBranchPhone}
+                      onChange={(e) => setNewBranchPhone(e.target.value)}
+                      className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs font-mono focus:border-primary focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddBranchToTenant}
+                      className="w-full rounded-lg bg-primary py-1.5 text-xs font-bold text-white shadow-xs hover:bg-primary/90"
+                    >
+                      Create &amp; Attach Branch
+                    </button>
+                  </div>
+                )}
               </div>
 
               <button

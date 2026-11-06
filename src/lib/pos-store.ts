@@ -217,25 +217,125 @@ export const DEFAULT_TABLES: TableSession[] = [
 ];
 
 export const MANAM_DEFAULT_ITEMS: Item[] = [
-  { id: "mnm-1", name: "Manam Special Chicken Dum Biriyani", category: "biryani", price: 220, onlinePrice: 269, cost: 110, active: true },
-  { id: "mnm-2", name: "Velachery Mutton Dum Biriyani", category: "biryani", price: 310, onlinePrice: 379, cost: 175, active: true },
-  { id: "mnm-3", name: "Fragrant Kushka with Salna", category: "kushka", price: 110, onlinePrice: 145, cost: 42, active: true },
-  { id: "mnm-4", name: "Egg Dum Biriyani", category: "biryani", price: 150, onlinePrice: 189, cost: 65, active: true },
-  { id: "mnm-5", name: "Chicken 65 (Boneless)", category: "starter", price: 210, onlinePrice: 259, cost: 95, active: true },
-  { id: "mnm-6", name: "Tandoori Chicken (Half)", category: "starter", price: 240, onlinePrice: 299, cost: 115, active: true },
-  { id: "mnm-7", name: "Dragon Chicken", category: "chinese", price: 230, onlinePrice: 289, cost: 105, active: true },
-  { id: "mnm-8", name: "Chettinad Pepper Mutton Fry", category: "starter", price: 320, onlinePrice: 399, cost: 180, active: true },
-  { id: "mnm-9", name: "Paneer Tikka (Tandoori)", category: "starter", price: 190, onlinePrice: 239, cost: 85, active: true },
-  { id: "mnm-10", name: "Butter Chicken Masala", category: "curry", price: 240, onlinePrice: 299, cost: 110, active: true },
-  { id: "mnm-11", name: "Kadai Chicken Wok Gravy", category: "curry", price: 230, onlinePrice: 289, cost: 105, active: true },
-  { id: "mnm-12", name: "Chettinad Mutton Chukka Gravy", category: "curry", price: 330, onlinePrice: 410, cost: 185, active: true },
-  { id: "mnm-13", name: "Butter Garlic Naan", category: "bread", price: 65, onlinePrice: 85, cost: 22, active: true },
-  { id: "mnm-14", name: "Kerala Flaky Parotta (2 Pcs)", category: "bread", price: 60, onlinePrice: 79, cost: 20, active: true },
-  { id: "mnm-15", name: "Chilli Parotta Street Style", category: "bread", price: 150, onlinePrice: 189, cost: 58, active: true },
-  { id: "mnm-16", name: "Schezwan Chicken Fried Rice", category: "chinese", price: 190, onlinePrice: 240, cost: 80, active: true },
-  { id: "mnm-17", name: "Traditional Hot Bread Halwa", category: "dessert", price: 80, onlinePrice: 110, cost: 28, active: true },
-  { id: "mnm-18", name: "Elaneer Payasam", category: "dessert", price: 110, onlinePrice: 145, cost: 45, active: true },
-  { id: "mnm-19", name: "Fresh Mint Lime Mojito", category: "beverage", price: 90, onlinePrice: 120, cost: 24, active: true },
+  // --- BIRIYANI VARIETIES (Seeraga Samba Traditional) ---
+  { id: "mnm-bir-1", name: "Seeraga Samba Plain Biriyani / Kushka (Half)", category: "biryani", price: 120, onlinePrice: 155, cost: 45, active: true },
+  { id: "mnm-bir-2", name: "Seeraga Samba Plain Biriyani / Kushka (Full)", category: "biryani", price: 140, onlinePrice: 179, cost: 55, active: true },
+  { id: "mnm-bir-3", name: "Egg Biriyani (Half)", category: "biryani", price: 140, onlinePrice: 179, cost: 55, active: true },
+  { id: "mnm-bir-4", name: "Egg Biriyani (Full)", category: "biryani", price: 160, onlinePrice: 199, cost: 65, active: true },
+  { id: "mnm-bir-5", name: "Chicken Biriyani (Seeraga Samba)", category: "biryani", price: 200, onlinePrice: 249, cost: 95, active: true },
+  { id: "mnm-bir-6", name: "Chicken 65 Biriyani", category: "biryani", price: 220, onlinePrice: 269, cost: 105, active: true },
+  { id: "mnm-bir-7", name: "Kadai 65 Biriyani", category: "biryani", price: 200, onlinePrice: 249, cost: 95, active: true },
+  { id: "mnm-bir-8", name: "Mutton Seeraga Samba Biriyani", category: "biryani", price: 280, onlinePrice: 349, cost: 155, active: true },
+
+  // --- MEALS & THALI ---
+  { id: "mnm-mls-1", name: "Non-Veg Meals (Fish, Chicken & Mutton Gravies)", category: "meals", price: 180, onlinePrice: 229, cost: 80, active: true },
+  { id: "mnm-mls-2", name: "Plain Meals (Steamed Rice, Sambar, Rasam, Curd)", category: "meals", price: 90, onlinePrice: 119, cost: 35, active: true },
+
+  // --- PAROTTA VARIETIES ---
+  { id: "mnm-prt-1", name: "Plain Parotta (1 Pc)", category: "parotta", price: 32, onlinePrice: 42, cost: 10, active: true },
+  { id: "mnm-prt-2", name: "Chapathi (2 Pcs)", category: "parotta", price: 40, onlinePrice: 55, cost: 12, active: true },
+  { id: "mnm-prt-3", name: "Nool Parotta", category: "parotta", price: 40, onlinePrice: 55, cost: 14, active: true },
+  { id: "mnm-prt-4", name: "Veechu Parotta (Plain)", category: "parotta", price: 50, onlinePrice: 65, cost: 18, active: true },
+  { id: "mnm-prt-5", name: "Veechu Parotta (Egg)", category: "parotta", price: 80, onlinePrice: 105, cost: 30, active: true },
+  { id: "mnm-prt-6", name: "Lappa (Egg)", category: "parotta", price: 140, onlinePrice: 179, cost: 50, active: true },
+  { id: "mnm-prt-7", name: "Lappa (Non-Veg / Chicken)", category: "parotta", price: 210, onlinePrice: 260, cost: 90, active: true },
+  { id: "mnm-prt-8", name: "Ceylon Parotta (Egg)", category: "parotta", price: 120, onlinePrice: 155, cost: 45, active: true },
+  { id: "mnm-prt-9", name: "Ceylon Parotta (Chicken / Mutton)", category: "parotta", price: 185, onlinePrice: 235, cost: 80, active: true },
+  { id: "mnm-prt-10", name: "Kothu Parotta (Veg)", category: "parotta", price: 130, onlinePrice: 165, cost: 45, active: true },
+  { id: "mnm-prt-11", name: "Kothu Parotta (Egg)", category: "parotta", price: 165, onlinePrice: 209, cost: 60, active: true },
+  { id: "mnm-prt-12", name: "Kothu Parotta (Chicken)", category: "parotta", price: 220, onlinePrice: 269, cost: 95, active: true },
+  { id: "mnm-prt-13", name: "Kothu Parotta (Mutton)", category: "parotta", price: 250, onlinePrice: 310, cost: 120, active: true },
+
+  // --- NON-VEGETARIAN STARTER & GRAVY ---
+  { id: "mnm-nv-1", name: "Chicken 65 (Boneless)", category: "starter", price: 180, onlinePrice: 229, cost: 80, active: true },
+  { id: "mnm-nv-2", name: "Kadai 65", category: "starter", price: 170, onlinePrice: 219, cost: 75, active: true },
+  { id: "mnm-nv-3", name: "Chicken Lollipop", category: "starter", price: 210, onlinePrice: 265, cost: 90, active: true },
+  { id: "mnm-nv-4", name: "Chettinad Chicken Chukka (Dry / Gravy)", category: "starter", price: 220, onlinePrice: 275, cost: 95, active: true },
+  { id: "mnm-nv-5", name: "Chicken Pepper Roast / Gravy", category: "starter", price: 220, onlinePrice: 275, cost: 95, active: true },
+  { id: "mnm-nv-6", name: "Chicken Ghee Roast", category: "starter", price: 230, onlinePrice: 289, cost: 105, active: true },
+  { id: "mnm-nv-7", name: "Madurai Chicken Kulambu", category: "curry", price: 220, onlinePrice: 275, cost: 95, active: true },
+  { id: "mnm-nv-8", name: "Naatukozhi Chukka", category: "starter", price: 260, onlinePrice: 320, cost: 125, active: true },
+  { id: "mnm-nv-9", name: "Naatukozhi Pepper Roast", category: "starter", price: 260, onlinePrice: 320, cost: 125, active: true },
+  { id: "mnm-nv-10", name: "Nallaennai Naatukozhi Kulambu", category: "curry", price: 260, onlinePrice: 320, cost: 125, active: true },
+  { id: "mnm-nv-11", name: "Pichupotta Naatukozhi Roast", category: "starter", price: 260, onlinePrice: 320, cost: 125, active: true },
+  { id: "mnm-nv-12", name: "Madurai Mutton Chukka", category: "starter", price: 240, onlinePrice: 299, cost: 120, active: true },
+  { id: "mnm-nv-13", name: "Mutton Ellumbu Kulambu", category: "curry", price: 240, onlinePrice: 299, cost: 110, active: true },
+  { id: "mnm-nv-14", name: "Madurai Mutton Kulambu", category: "curry", price: 240, onlinePrice: 299, cost: 115, active: true },
+  { id: "mnm-nv-15", name: "Vanchiram Fish Fry", category: "starter", price: 210, onlinePrice: 269, cost: 95, active: true },
+  { id: "mnm-nv-16", name: "Fish Kulambu", category: "curry", price: 140, onlinePrice: 179, cost: 60, active: true },
+  { id: "mnm-nv-17", name: "Prawn 65", category: "starter", price: 210, onlinePrice: 269, cost: 95, active: true },
+  { id: "mnm-nv-18", name: "Prawn Masala (Gravy / Dry)", category: "curry", price: 240, onlinePrice: 299, cost: 110, active: true },
+
+  // --- VEGETARIAN STARTER & GRAVY ---
+  { id: "mnm-vg-1", name: "Gobi 65", category: "starter", price: 110, onlinePrice: 145, cost: 40, active: true },
+  { id: "mnm-vg-2", name: "Paneer 65", category: "starter", price: 150, onlinePrice: 189, cost: 60, active: true },
+  { id: "mnm-vg-3", name: "Mushroom 65", category: "starter", price: 140, onlinePrice: 179, cost: 55, active: true },
+  { id: "mnm-vg-4", name: "Paneer / Mushroom Gravy", category: "curry", price: 190, onlinePrice: 239, cost: 75, active: true },
+  { id: "mnm-vg-5", name: "Crispy Baby Corn", category: "starter", price: 150, onlinePrice: 189, cost: 60, active: true },
+
+  // --- DOSA VARIETIES ---
+  { id: "mnm-dos-1", name: "Plain Dosa / Kal Dosa", category: "dosa", price: 70, onlinePrice: 95, cost: 22, active: true },
+  { id: "mnm-dos-2", name: "Podi / Onion / Egg Roast", category: "dosa", price: 110, onlinePrice: 145, cost: 38, active: true },
+  { id: "mnm-dos-3", name: "Uthappam", category: "dosa", price: 80, onlinePrice: 105, cost: 26, active: true },
+  { id: "mnm-dos-4", name: "Ghee Roast Dosa", category: "dosa", price: 120, onlinePrice: 155, cost: 42, active: true },
+  { id: "mnm-dos-5", name: "Chicken Kari Dosa", category: "dosa", price: 240, onlinePrice: 299, cost: 105, active: true },
+  { id: "mnm-dos-6", name: "Mutton Kari Dosa", category: "dosa", price: 240, onlinePrice: 299, cost: 115, active: true },
+
+  // --- EGG VARIETIES ---
+  { id: "mnm-egg-1", name: "Kalakki (Plain / Masala / Onion)", category: "egg", price: 40, onlinePrice: 55, cost: 14, active: true },
+  { id: "mnm-egg-2", name: "Half Boil / Full Boil", category: "egg", price: 20, onlinePrice: 30, cost: 8, active: true },
+  { id: "mnm-egg-3", name: "Chicken Omelette (2 Eggs)", category: "egg", price: 85, onlinePrice: 110, cost: 32, active: true },
+
+  // --- RICE & NOODLES ---
+  { id: "mnm-chn-1", name: "Fried Rice (Veg)", category: "chinese", price: 140, onlinePrice: 179, cost: 50, active: true },
+  { id: "mnm-chn-2", name: "Fried Rice (Egg)", category: "chinese", price: 170, onlinePrice: 215, cost: 65, active: true },
+  { id: "mnm-chn-3", name: "Fried Rice (Mushroom / Paneer)", category: "chinese", price: 170, onlinePrice: 215, cost: 68, active: true },
+  { id: "mnm-chn-4", name: "Fried Rice (Chicken)", category: "chinese", price: 200, onlinePrice: 249, cost: 85, active: true },
+  { id: "mnm-chn-5", name: "Noodles (Veg)", category: "chinese", price: 140, onlinePrice: 179, cost: 50, active: true },
+  { id: "mnm-chn-6", name: "Noodles (Egg)", category: "chinese", price: 160, onlinePrice: 205, cost: 60, active: true },
+  { id: "mnm-chn-7", name: "Noodles (Chicken)", category: "chinese", price: 200, onlinePrice: 249, cost: 85, active: true },
+  { id: "mnm-chn-8", name: "Schezwan Rice / Noodles (Chicken Extra)", category: "chinese", price: 220, onlinePrice: 275, cost: 95, active: true },
+
+  // --- GRILL CHICKEN (Manam Special Menu) ---
+  { id: "mnm-grl-1", name: "Half Grill Chicken", category: "grill", price: 200, onlinePrice: 255, cost: 90, active: true },
+  { id: "mnm-grl-2", name: "Full Grill Chicken", category: "grill", price: 350, onlinePrice: 429, cost: 165, active: true },
+
+  // --- SHAWARMA ROLLS (Manam Special Menu) ---
+  { id: "mnm-shw-1", name: "Regular Shawarma Roll", category: "shawarma", price: 99, onlinePrice: 129, cost: 40, active: true },
+  { id: "mnm-shw-2", name: "Peri Peri Shawarma Roll", category: "shawarma", price: 109, onlinePrice: 139, cost: 44, active: true },
+  { id: "mnm-shw-3", name: "Schezwan Shawarma Roll", category: "shawarma", price: 109, onlinePrice: 139, cost: 44, active: true },
+  { id: "mnm-shw-4", name: "Cheese Shawarma Roll", category: "shawarma", price: 119, onlinePrice: 149, cost: 48, active: true },
+  { id: "mnm-shw-5", name: "Full Meat Shawarma Roll", category: "shawarma", price: 130, onlinePrice: 165, cost: 55, active: true },
+
+  // --- SHAWARMA PLATTERS ---
+  { id: "mnm-shw-6", name: "Regular Shawarma Platter", category: "shawarma", price: 160, onlinePrice: 205, cost: 68, active: true },
+  { id: "mnm-shw-7", name: "Peri Peri Shawarma Platter", category: "shawarma", price: 179, onlinePrice: 225, cost: 75, active: true },
+  { id: "mnm-shw-8", name: "Schezwan Shawarma Platter", category: "shawarma", price: 179, onlinePrice: 225, cost: 75, active: true },
+  { id: "mnm-shw-9", name: "Cheese Shawarma Platter", category: "shawarma", price: 189, onlinePrice: 239, cost: 80, active: true },
+  { id: "mnm-shw-10", name: "Full Meat Shawarma Platter", category: "shawarma", price: 199, onlinePrice: 249, cost: 85, active: true },
+
+  // --- DIPS ---
+  { id: "mnm-dip-1", name: "Extra Garlic Mayonnaise Dip", category: "dips", price: 20, onlinePrice: 25, cost: 6, active: true },
+  { id: "mnm-dip-2", name: "Manam OG House Dip", category: "dips", price: 20, onlinePrice: 25, cost: 6, active: true },
+  { id: "mnm-dip-3", name: "Peri Peri Spicy Dip", category: "dips", price: 20, onlinePrice: 25, cost: 6, active: true },
+
+  // --- BEVERAGES & SODAS ---
+  { id: "mnm-bev-1", name: "Packaged Mineral Water Bottle (1L)", category: "beverage", price: 20, onlinePrice: 20, cost: 10, active: true },
+  { id: "mnm-bev-2", name: "Pepsi / Coke Can", category: "beverage", price: 40, onlinePrice: 45, cost: 25, active: true },
+  { id: "mnm-bev-3", name: "Fresh Pineapple Soda", category: "beverage", price: 40, onlinePrice: 55, cost: 12, active: true },
+  { id: "mnm-bev-4", name: "Blueberry Soda", category: "beverage", price: 40, onlinePrice: 55, cost: 14, active: true },
+  { id: "mnm-bev-5", name: "Orange Soda", category: "beverage", price: 40, onlinePrice: 55, cost: 12, active: true },
+  { id: "mnm-bev-6", name: "Grape Soda", category: "beverage", price: 40, onlinePrice: 55, cost: 12, active: true },
+  { id: "mnm-bev-7", name: "Mango Soda", category: "beverage", price: 40, onlinePrice: 55, cost: 12, active: true },
+  { id: "mnm-bev-8", name: "Traditional Paneer Soda", category: "beverage", price: 40, onlinePrice: 55, cost: 12, active: true },
+  { id: "mnm-bev-9", name: "Fresh Lemon Soda", category: "beverage", price: 40, onlinePrice: 50, cost: 10, active: true },
+  { id: "mnm-bev-10", name: "Ginger Soda", category: "beverage", price: 40, onlinePrice: 55, cost: 12, active: true },
+
+  // --- DESSERTS & ICE CREAMS ---
+  { id: "mnm-ice-1", name: "Tender Coconut Ice Cream", category: "dessert", price: 60, onlinePrice: 79, cost: 22, active: true },
+  { id: "mnm-ice-2", name: "Sitaphal (Custard Apple) Ice Cream", category: "dessert", price: 60, onlinePrice: 79, cost: 22, active: true },
+  { id: "mnm-ice-3", name: "Fig & Honey Ice Cream", category: "dessert", price: 70, onlinePrice: 89, cost: 25, active: true },
+  { id: "mnm-ice-4", name: "Traditional Hot Bread Halwa", category: "dessert", price: 80, onlinePrice: 105, cost: 28, active: true },
 ];
 
 export const DEFAULT_TENANTS: TenantConfig[] = [
@@ -459,13 +559,20 @@ const id = () => Math.random().toString(36).slice(2, 10);
 export const CATEGORIES: { id: Category; label: string }[] = [
   { id: "biryani", label: "Biriyani" },
   { id: "kushka", label: "Kushka" },
-  { id: "starter", label: "Starters" },
+  { id: "parotta", label: "Parotta Varieties" },
+  { id: "starter", label: "Starters & Fry" },
+  { id: "curry", label: "Curries & Gravies" },
+  { id: "grill", label: "Grill & Tandoori" },
+  { id: "shawarma", label: "Shawarma & Rolls" },
+  { id: "dosa", label: "Dosa Varieties" },
+  { id: "meals", label: "Meals & Thali" },
+  { id: "egg", label: "Egg Varieties" },
   { id: "chinese", label: "Chinese & Noodles" },
   { id: "rice", label: "Fried Rice & Fast Food" },
-  { id: "curry", label: "Curries & Gravies" },
   { id: "bread", label: "Breads" },
-  { id: "dessert", label: "Desserts" },
-  { id: "beverage", label: "Beverages" },
+  { id: "dessert", label: "Desserts & Ice Cream" },
+  { id: "beverage", label: "Beverages & Sodas" },
+  { id: "dips", label: "Dips & Sauces" },
   { id: "combos", label: "Combos & Buckets" },
 ];
 
@@ -920,11 +1027,11 @@ export function getDB(): DB {
         if (!cur.loginPassword) { cur.loginPassword = dt.loginPassword; changed = true; }
         if (!cur.cashierPin) { cur.cashierPin = dt.cashierPin; changed = true; }
         if (!cur.kitchenPin) { cur.kitchenPin = dt.kitchenPin; changed = true; }
-        if (!cur.branches || cur.branches.length === 0) { cur.branches = dt.branches; changed = true; }
+        if (!cur.branches || cur.branches.length < (dt.branches?.length || 0)) { cur.branches = dt.branches; changed = true; }
         if (!cur.address && dt.address) { cur.address = dt.address; changed = true; }
         if (!cur.phone && dt.phone) { cur.phone = dt.phone; changed = true; }
         if (!cur.activeBranchName && dt.activeBranchName) { cur.activeBranchName = dt.activeBranchName; changed = true; }
-        if (!cur.items || cur.items.length === 0) { if (dt.items) cur.items = dt.items; changed = true; }
+        if (!cur.items || cur.items.length < (dt.items?.length || 0)) { if (dt.items) cur.items = [...dt.items]; changed = true; }
         if (cur.degBatchEnabled !== dt.degBatchEnabled) { cur.degBatchEnabled = dt.degBatchEnabled; changed = true; }
         if (changed) needsPersist = true;
       }
@@ -1237,19 +1344,60 @@ export function recordShiftClose(close: Omit<ShiftDayClose, "id" | "closedAt">) 
 
 /**
  * Get the currently active TenantConfig.
+ * 1. URL search parameter (?tenant=xxx) — HIGHEST PRIORITY & 100% TAB-ISOLATED
+ * 2. Tab-isolated sessionStorage ("restopulse_session_tenant")
+ * 3. Fallback to currentDB.activeTenantId
  */
 export function getActiveTenant(db?: DB | null): TenantConfig {
   const currentDB = db ?? getDB();
   const tenants = currentDB.tenants && currentDB.tenants.length > 0 ? currentDB.tenants : DEFAULT_TENANTS;
-  let activeId = currentDB.activeTenantId || "spotlight-biriyani";
+  let activeId: string | null = null;
   if (typeof window !== "undefined") {
-    const sessionTenant = sessionStorage.getItem("restopulse_session_tenant") || localStorage.getItem("spotlight_auth_tenant");
-    if (sessionTenant && tenants.some((t) => t.id === sessionTenant)) {
-      activeId = sessionTenant;
+    // 1. Highest priority: URL query param (?tenant=xxx) — completely immune to cross-tab pollution
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const paramTenant = searchParams.get("tenant");
+      if (paramTenant && tenants.some((t) => t.id === paramTenant)) {
+        activeId = paramTenant;
+        sessionStorage.setItem("restopulse_session_tenant", paramTenant);
+      }
+    } catch {
+      // ignore SSR or URL parsing errors
     }
+
+    if (!activeId) {
+      // 2. Tab-isolated sessionStorage
+      const sessionTenant = sessionStorage.getItem("restopulse_session_tenant");
+      if (sessionTenant && tenants.some((t) => t.id === sessionTenant)) {
+        activeId = sessionTenant;
+      }
+    }
+  }
+  if (!activeId) {
+    activeId = currentDB.activeTenantId || "spotlight-biriyani";
   }
   const found = tenants.find((t) => t.id === activeId);
   return found ?? tenants[0] ?? DEFAULT_TENANTS[0]!;
+}
+
+/**
+ * Get items strictly for the active tenant.
+ * Guarantees that each client restaurant's unique menu is isolated per tab.
+ */
+export function getTenantItems(db?: DB | null, tenant?: TenantConfig): Item[] {
+  const activeT = tenant || getActiveTenant(db);
+  if (activeT.items && activeT.items.length > 0) {
+    return activeT.items;
+  }
+  const currentDB = db ?? getDB();
+  if (activeT.id === "spotlight-biriyani") {
+    return currentDB.items && currentDB.items.length > 0 ? currentDB.items : [];
+  }
+  const defaultMatch = DEFAULT_TENANTS.find((t) => t.id === activeT.id);
+  if (defaultMatch?.items && defaultMatch.items.length > 0) {
+    return defaultMatch.items;
+  }
+  return currentDB.items && currentDB.items.length > 0 ? currentDB.items : [];
 }
 
 /**
@@ -1258,7 +1406,6 @@ export function getActiveTenant(db?: DB | null): TenantConfig {
 export function switchClientTenant(tenantId: string) {
   if (typeof window !== "undefined") {
     sessionStorage.setItem("restopulse_session_tenant", tenantId);
-    localStorage.setItem("spotlight_auth_tenant", tenantId);
   }
   setDB((d) => {
     if (!d.tenants || d.tenants.length === 0) d.tenants = [...DEFAULT_TENANTS];

@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
-import { BarChart3, Boxes, Database, Flame, LayoutDashboard, LogOut, Moon, Receipt, Settings, ShieldAlert, ShieldCheck, Sun, UtensilsCrossed } from "lucide-react";
+import { BarChart3, Boxes, Database, Flame, LayoutDashboard, LogOut, MapPin, Moon, Receipt, Settings, ShieldAlert, ShieldCheck, Sun, UtensilsCrossed } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -191,12 +191,20 @@ function AppLayout() {
 
           {/* RIGHT: Unified Client Restaurant & Branch Selector */}
           <div className="flex items-center gap-2 shrink-0">
-            {/* Unified Restaurant + Branch Dropdown Pill */}
-            <div className="flex items-center rounded-xl border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs shadow-2xs">
-              <span className="font-black text-foreground text-xs flex items-center gap-1.5 mr-2">
-                🍽️ {activeTenant.businessName || db?.settings?.businessName || "Restaurant"}
+            {/* 1. Distinct Restaurant Brand Badge */}
+            <div className="flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs shadow-2xs">
+              <span className="relative flex h-2 w-2 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
-              <span className="text-muted-foreground mr-1.5">·</span>
+              <span className="font-extrabold text-foreground tracking-tight whitespace-nowrap">
+                {activeTenant.businessName || db?.settings?.businessName || "Restaurant"}
+              </span>
+            </div>
+
+            {/* 2. Independent Branch Location Selector */}
+            <div className="flex items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/10 px-2.5 sm:px-3 py-1.5 text-xs shadow-2xs">
+              <MapPin className="size-3.5 text-primary shrink-0" />
               <select
                 value={db?.settings.activeBranchId ?? ""}
                 onChange={(e) =>
@@ -204,15 +212,15 @@ function AppLayout() {
                     d.settings.activeBranchId = e.target.value;
                   })
                 }
-                className="rounded-lg border-none bg-transparent py-0 text-xs font-bold text-primary focus:outline-none cursor-pointer"
+                className="rounded-md border-none bg-transparent py-0 text-xs font-bold text-primary focus:outline-none cursor-pointer max-w-[125px] sm:max-w-[170px] truncate"
                 title="Select active restaurant branch"
               >
                 {(activeTenant.branches && activeTenant.branches.length > 0
                   ? activeTenant.branches
                   : (db ?? getDB()).branches
                 ).map((b) => (
-                  <option key={b.id} value={b.id}>
-                    📍 {b.name}
+                  <option key={b.id} value={b.id} className="bg-card text-foreground font-medium">
+                    {b.name}
                   </option>
                 ))}
               </select>

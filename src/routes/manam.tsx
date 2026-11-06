@@ -2,6 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Award, CheckCircle2, ChevronRight, Clock, Compass, Download, ExternalLink, Flame, Heart, MapPin, MessageCircle, MessageSquare, Phone, ShieldCheck, Sparkles, Star, TrendingUp, Users, Utensils, Zap } from "lucide-react";
 import { useState } from "react";
 
+import { ChennaiLeafletMap, MANAM_KITCHENS } from "@/components/map/ChennaiLeafletMap";
+import { ManamAssistant } from "@/components/site/ManamAssistant";
+
 import heroImg from "@/assets/hero-biriyani.jpg";
 import chickenRealImg from "@/assets/chicken-biriyani-real.jpg";
 import muttonRealImg from "@/assets/mutton-biriyani-real.jpg";
@@ -618,6 +621,44 @@ function ManamShowcasePage() {
         </div>
       </section>
 
+      {/* Live South Chennai GPS Radar · Velachery Phoenix Hub */}
+      <section className="border-t border-slate-800 bg-[#080d1a] py-16 px-4">
+        <div className="mx-auto max-w-6xl">
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-xs font-bold text-emerald-400">
+                <span className="size-2 rounded-full bg-emerald-400 animate-pulse" /> Live South Chennai GPS Radar
+              </span>
+              <h2 className="mt-2 text-3xl sm:text-4xl font-display font-black text-white">
+                VELACHERY PHOENIX RESTAURANT HUB
+              </h2>
+              <p className="mt-1 text-xs text-slate-400 max-w-xl">
+                Serving Velachery, Guindy, Madipakkam, OMR IT Corridor &amp; Adyar. Real-time GPS location opposite Phoenix Market City.
+              </p>
+            </div>
+            <a
+              href="https://maps.app.goo.gl/nFAipTWvd2V2BdeZA"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-xs font-bold text-amber-400 hover:bg-amber-500/20 transition-all"
+            >
+              <MapPin className="size-3.5" />
+              <span>Open in Google Maps App &rarr;</span>
+            </a>
+          </div>
+
+          <ChennaiLeafletMap
+            kitchens={MANAM_KITCHENS}
+            height="480px"
+            title="MANAM RESTAURANT · VELACHERY HUB"
+            subtitle="Live South Chennai GPS Radar · Opp. Phoenix Market City"
+            googleMapsUrl="https://maps.app.goo.gl/nFAipTWvd2V2BdeZA"
+            initialCenter={[12.9936, 80.2182]}
+            initialZoom={14}
+          />
+        </div>
+      </section>
+
       {/* Real Diner Reviews & Social Proof */}
       <section className="py-12 border-b border-slate-800 bg-[#090d14] px-4">
         <div className="mx-auto max-w-6xl">
@@ -713,6 +754,9 @@ function ManamShowcasePage() {
           </div>
         </div>
       </footer>
+
+      {/* Floating Interactive Manam Restaurant Assistant */}
+      <ManamAssistant />
     </div>
   );
 }

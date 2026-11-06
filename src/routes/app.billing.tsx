@@ -58,6 +58,7 @@ import {
   getActiveTenant,
   getCustomerLoyalty,
   getLiveBatchStatus,
+  getTenantItems,
   inr,
   isSameDay,
   normalizeCategory,
@@ -88,6 +89,18 @@ function renderCategoryIcon(catId: string, className = "size-3.5") {
       return <Flame className={className} />;
     case "kushka":
       return <UtensilsCrossed className={className} />;
+    case "parotta":
+      return <Layers className={className} />;
+    case "shawarma":
+      return <Utensils className={className} />;
+    case "grill":
+      return <Flame className={className} />;
+    case "dosa":
+      return <UtensilsCrossed className={className} />;
+    case "meals":
+      return <Soup className={className} />;
+    case "egg":
+      return <Sparkles className={className} />;
     case "starter":
       return <Sparkles className={className} />;
     case "chinese":
@@ -102,6 +115,8 @@ function renderCategoryIcon(catId: string, className = "size-3.5") {
       return <IceCream className={className} />;
     case "beverage":
       return <Coffee className={className} />;
+    case "dips":
+      return <Sparkles className={className} />;
     case "combos":
       return <Package className={className} />;
     case "all":
@@ -587,36 +602,40 @@ function Billing() {
     });
   }, [db, todaySales, historyChannelFilter, historySearch]);
 
-  const allCategories = useMemo(() => {
-    const list: { id: Category | "all"; label: string }[] = [
-      { id: "all", label: "All Dishes" },
-      ...CATEGORIES,
-    ];
-    if (db?.items) {
-      db.items.forEach((it) => {
-        const normCat = normalizeCategory(it.category);
-        if (!list.some((c) => c.id === normCat)) {
-          const formattedLabel = normCat.charAt(0).toUpperCase() + normCat.slice(1);
-          list.push({ id: normCat, label: formattedLabel });
-        }
-      });
-    }
-    return list;
-  }, [db]);
+  const tenantItems = useMemo(() => {
+    return getTenantItems(db, activeTenant);
+  }, [db, activeTenant]);
 
   const categoryItemCounts = useMemo(() => {
     const counts: Record<string, number> = { all: 0 };
-    if (db?.items) {
-      db.items.forEach((it) => {
-        if (it.active) {
-          counts["all"] = (counts["all"] || 0) + 1;
-          const c = normalizeCategory(it.category || "other");
-          counts[c] = (counts[c] || 0) + 1;
-        }
-      });
-    }
+    tenantItems.forEach((it) => {
+      if (it.active) {
+        counts["all"] = (counts["all"] || 0) + 1;
+        const c = normalizeCategory(it.category || "other");
+        counts[c] = (counts[c] || 0) + 1;
+      }
+    });
     return counts;
-  }, [db]);
+  }, [tenantItems]);
+
+  const allCategories = useMemo(() => {
+    const list: { id: Category | "all"; label: string }[] = [
+      { id: "all", label: "All Dishes" },
+    ];
+    CATEGORIES.forEach((c) => {
+      if ((categoryItemCounts[c.id] || 0) > 0) {
+        list.push(c);
+      }
+    });
+    tenantItems.forEach((it) => {
+      const normCat = normalizeCategory(it.category);
+      if (!list.some((c) => c.id === normCat) && (categoryItemCounts[normCat] || 0) > 0) {
+        const formattedLabel = normCat.charAt(0).toUpperCase() + normCat.slice(1);
+        list.push({ id: normCat, label: formattedLabel });
+      }
+    });
+    return list;
+  }, [tenantItems, categoryItemCounts]);
 
   const liveBatch = useMemo(() => {
     if (!db) {
@@ -1099,10 +1118,9 @@ function Billing() {
   }, [preview, saveOrUpdate]);
 
   const items = useMemo(() => {
-    if (!db?.items) return [];
-    const sanitized = sanitizeAndDeduplicateItems(db.items);
+    const sanitized = sanitizeAndDeduplicateItems(tenantItems);
     return sanitized.filter((i) => (cat === "all" ? true : normalizeCategory(i.category) === cat) && i.active);
-  }, [db?.items, cat]);
+  }, [tenantItems, cat]);
 
   // Cash change computation
   const tenderNum = Number(cashTendered) || 0;
@@ -1125,7 +1143,7 @@ function Billing() {
         <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-4 flex-wrap w-full sm:w-auto">
           <div className="flex flex-col justify-center">
             <p className="text-[10px] font-bold uppercase tracking-wider text-primary leading-none">
-              {db?.settings?.businessName || "Spot Light Biriyani"} · Billing Terminal
+              {activeTenant.businessName || db?.settings?.businessName || "Restaurant"} · Billing Terminal
             </p>
             <h1 className="text-xl sm:text-3xl font-display font-black tracking-tight leading-none mt-1">COUNTER POS</h1>
           </div>
@@ -1211,8 +1229,8 @@ function Billing() {
         </div>
       )}
 
-      {/* Main 2-Column POS Workspace: Left = Kitchen Deg & Dishes, Right = Cart (Both Starting at Same Parallel Top) */}
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_350px] xl:grid-cols-[minmax(0,1fr)_380px] w-full min-w-0 max-w-full items-start">
+      {/* Main 2-Column POS Workspace: Left = Kitchen Deg & Dishes, Right = Cart (Tablet & Desktop Side-by-Side) */}
+      <div className="grid gap-4 sm:gap-5 md:grid-cols-[minmax(0,1fr)_330px] lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_390px] w-full min-w-0 max-w-full items-start pb-24 md:pb-6">
         <div className="min-w-0 max-w-full">
           {/* Live Kitchen Deg Batch Availability Bar */}
           {(activeTenant.degBatchEnabled === true) && (
@@ -1457,8 +1475,8 @@ function Billing() {
           )}
         </div>
 
-        {/* Cart / Order Summary */}
-        <aside id="pos-cart" className="surface-card h-fit p-4 lg:p-5 lg:sticky lg:top-24 w-full min-w-0 max-w-full overflow-hidden">
+        {/* Cart / Order Summary (Sticky on Tablet & Desktop) */}
+        <aside id="pos-cart" className="surface-card h-fit p-4 lg:p-5 md:sticky md:top-20 w-full min-w-0 max-w-full overflow-hidden">
           {/* Order Service Type Toggle (Dine-in vs Takeaway/Parcel) */}
           <div className="flex gap-1.5 rounded-xl border border-border bg-card p-1 text-xs mb-2.5 shadow-2xs">
             <button
@@ -2095,9 +2113,9 @@ function Billing() {
         </aside>
       </div>
 
-      {/* Floating Sticky Mobile Cart Quick-Action (Only on mobile screens when items are in cart) */}
+      {/* Floating Sticky Mobile Cart Quick-Action (Only on mobile screens < 768px when items are in cart) */}
       {lines.length > 0 && (
-        <div className="lg:hidden fixed bottom-3 left-3 right-3 z-40">
+        <div className="md:hidden fixed bottom-3 left-3 right-3 z-40">
           <button
             type="button"
             onClick={() => document.getElementById("pos-cart")?.scrollIntoView({ behavior: "smooth" })}

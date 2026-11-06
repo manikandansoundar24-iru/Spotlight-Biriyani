@@ -54,24 +54,54 @@ export const CHENNAI_KITCHENS: BranchPin[] = [
   },
 ];
 
+export const MANAM_KITCHENS: BranchPin[] = [
+  {
+    id: "velachery-phoenix",
+    name: "Manam Restaurant — Velachery Main Road",
+    landmark: "Opposite Phoenix Market City, Velachery Main Rd",
+    area: "Velachery Phoenix Junction, Chennai 600042",
+    lat: 12.9936,
+    lng: 80.2182,
+    phone: "+91 98400 99887",
+    status: "Late-Night Dining & Kitchen Active · Open Till 4:00 AM",
+    highlight: "Family Diner & Late Night Hub (Opp. Phoenix)",
+    platesLeft: 45,
+  },
+];
+
 interface ChennaiLeafletMapProps {
   activeId?: string;
   onSelectBranch?: (id: string) => void;
   height?: string;
   showDetailsCard?: boolean;
+  kitchens?: BranchPin[];
+  title?: string;
+  subtitle?: string;
+  googleMapsUrl?: string;
+  initialCenter?: [number, number];
+  initialZoom?: number;
 }
 
 export function ChennaiLeafletMap({
-  activeId = "taramani",
+  activeId,
   onSelectBranch,
   height = "460px",
   showDetailsCard = true,
+  kitchens,
+  title,
+  subtitle,
+  googleMapsUrl,
+  initialCenter,
+  initialZoom,
 }: ChennaiLeafletMapProps) {
   const liveDb = useDB();
   const db = liveDb ?? getDB();
 
+  const sourcePins = kitchens || CHENNAI_KITCHENS;
+  const defaultSelectedId = activeId || (sourcePins[0] ? sourcePins[0].id : "taramani");
+
   const dynamicKitchens = useMemo(() => {
-    return CHENNAI_KITCHENS.map((k) => {
+    return sourcePins.map((k) => {
       const live = getLiveBatchStatus(db, k.id);
       const branchFromDb = db?.branches?.find((b) => {
         const bId = b.id.toLowerCase().replace(/h/g, "");
@@ -82,20 +112,20 @@ export function ChennaiLeafletMap({
       });
       return {
         ...k,
-        name: branchFromDb ? `${branchFromDb.name} Flagship Kitchen` : k.name,
+        name: branchFromDb ? `${branchFromDb.name} Kitchen` : k.name,
         landmark: branchFromDb?.address || k.landmark,
         phone: branchFromDb?.phone || k.phone,
-        status: live.status,
-        platesLeft: live.platesLeft,
+        status: live.status || k.status,
+        platesLeft: live.platesLeft ?? k.platesLeft,
       };
     });
-  }, [db]);
+  }, [db, sourcePins]);
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<{ [key: string]: any }>({});
   const circlesRef = useRef<{ [key: string]: any }>({});
-  const [selectedId, setSelectedId] = useState(activeId);
+  const [selectedId, setSelectedId] = useState(defaultSelectedId);
   const [mapType, setMapType] = useState<"dark" | "streets" | "satellite">("dark");
   const [mapReady, setMapReady] = useState(false);
 
@@ -150,10 +180,12 @@ export function ChennaiLeafletMap({
         mapInstanceRef.current = null;
       }
 
-      // Initialize map centered between Tharamani, Adyar, and Velachery
+      // Initialize map centered between Tharamani, Adyar, and Velachery or custom center
+      const centerCoord: [number, number] = initialCenter || (dynamicKitchens.length > 0 && dynamicKitchens[0] ? [dynamicKitchens[0].lat, dynamicKitchens[0].lng] : [12.9878, 80.2403]);
+      const zoomLevel = initialZoom || (dynamicKitchens.length === 1 ? 14 : 13);
       const map = L.map(mapContainerRef.current, {
-        center: [12.9878, 80.2403],
-        zoom: 13,
+        center: centerCoord,
+        zoom: zoomLevel,
         zoomControl: false,
         attributionControl: false,
       });
@@ -177,7 +209,7 @@ export function ChennaiLeafletMap({
       L.tileLayer(tileUrl, tileOptions).addTo(map);
 
       // Add Markers and 5km Delivery Radius Circles
-      CHENNAI_KITCHENS.forEach((k) => {
+      dynamicKitchens.forEach((k) => {
         // Delivery radius circle
         const circle = L.circle([k.lat, k.lng], {
           color: k.id === selectedId ? "#ea580c" : "#10b981",
@@ -254,10 +286,10 @@ export function ChennaiLeafletMap({
           <div className="flex items-center gap-2">
             <span className="flex size-2 rounded-full bg-emerald-400 animate-pulse" />
             <span className="text-[11px] font-bold uppercase tracking-wider text-primary">
-              Live South Chennai GPS Radar
+              {subtitle || "Live South Chennai GPS Radar"}
             </span>
           </div>
-          <h3 className="text-xl sm:text-2xl font-display">AUTHENTIC CHENNAI METRO HUBS</h3>
+          <h3 className="text-xl sm:text-2xl font-display">{title || "AUTHENTIC CHENNAI METRO HUBS"}</h3>
         </div>
 
         {/* Layer Selector & Controls */}
@@ -309,16 +341,18 @@ export function ChennaiLeafletMap({
           </button>
         ))}
 
-        <button
-          onClick={() => {
-            if (mapInstanceRef.current) {
-              mapInstanceRef.current.flyTo([12.9878, 80.2403], 12.5, { duration: 1.2 });
-            }
-          }}
-          className="ml-auto text-xs text-primary font-semibold hover:underline flex items-center gap-1"
-        >
-          <span>Show All 3 Kitchens</span>
-        </button>
+        {dynamicKitchens.length > 1 && (
+          <button
+            onClick={() => {
+              if (mapInstanceRef.current) {
+                mapInstanceRef.current.flyTo([12.9878, 80.2403], 12.5, { duration: 1.2 });
+              }
+            }}
+            className="ml-auto text-xs text-primary font-semibold hover:underline flex items-center gap-1"
+          >
+            <span>Show All Kitchens</span>
+          </button>
+        )}
       </div>
 
       {/* Main Grid: Real Leaflet Map + Branch Details */}
@@ -381,9 +415,12 @@ export function ChennaiLeafletMap({
 
             <div className="mt-4 pt-4 border-t border-border/60 space-y-2">
               <a
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                  `Spot Light Biriyani ${selected.name} ${selected.landmark}`,
-                )}`}
+                href={
+                  googleMapsUrl ||
+                  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                    `${selected.name} ${selected.landmark}`,
+                  )}`
+                }
                 target="_blank"
                 rel="noreferrer"
                 className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-ember py-2.5 text-xs font-bold text-primary-foreground shadow-ember hover:scale-[1.02] transition-transform"
