@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, redirect } from "@tanstack/react-router";
 import { BarChart3, Boxes, Database, Flame, LayoutDashboard, LogOut, MapPin, Moon, Receipt, Settings, ShieldAlert, ShieldCheck, Sun, UtensilsCrossed } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -7,16 +7,25 @@ import { getActiveTenant, getDB, setDB, TenantModules, useDB } from "@/lib/pos-s
 import { performFullSync } from "@/lib/neon-sync";
 
 export const Route = createFileRoute("/app")({
+  beforeLoad: () => {
+    if (typeof window !== "undefined") {
+      const sessionActive = sessionStorage.getItem("spotlight_session_active") === "true";
+      const role = localStorage.getItem("spotlight_auth_role");
+      if (!sessionActive || !role) {
+        throw redirect({ to: "/login" });
+      }
+    }
+  },
   head: () => ({
     meta: [
-      { title: "Spot Light Manager — Billing, Stock & Profit" },
+      { title: "RestoPulse Cloud ERP & POS Terminal" },
       {
         name: "description",
         content:
-          "Owner app for Spot Light Biriyani: counter billing, live stock, item-wise plate counts, Swiggy/Zomato commission and true profit per order across all branches.",
+          "Multi-tenant restaurant terminal for counter billing, kitchen KDS, dynamic UPI QR, live deg stock, and multi-branch operations.",
       },
-      { property: "og:title", content: "Spot Light Manager" },
-      { property: "og:description", content: "Billing, stock and real profit tracking for a multi-branch biriyani shop." },
+      { property: "og:title", content: "RestoPulse POS Terminal" },
+      { property: "og:description", content: "Billing, stock and real profit tracking for restaurant operators." },
       { name: "robots", content: "noindex" },
     ],
   }),

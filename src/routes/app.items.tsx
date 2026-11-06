@@ -3,7 +3,7 @@ import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { CATEGORIES, inr, sanitizeAndDeduplicateItems, setDB, useDB, type Category } from "@/lib/pos-store";
+import { CATEGORIES, inr, sanitizeAndDeduplicateItems, setDB, useDB, getActiveTenant, getTenantItems, type Category } from "@/lib/pos-store";
 
 export const Route = createFileRoute("/app/items")({
   component: Items,
@@ -11,6 +11,7 @@ export const Route = createFileRoute("/app/items")({
 
 function Items() {
   const db = useDB();
+  const activeTenant = getActiveTenant(db);
   const [draft, setDraft] = useState({
     name: "",
     category: "biryani" as Category,
@@ -22,18 +23,32 @@ function Items() {
 
   if (!db) return <p className="text-sm text-muted-foreground">Loading…</p>;
 
-  const displayItems = sanitizeAndDeduplicateItems(db.items);
+  const tenantItems = getTenantItems(db, activeTenant);
+  const displayItems = sanitizeAndDeduplicateItems(tenantItems);
 
   const update = (id: string, patch: Partial<{ price: number; onlinePrice: number; cost: number; active: boolean }>) =>
     setDB((d) => {
       const it = d.items.find((i) => i.id === id);
       if (it) Object.assign(it, patch);
+      if (d.tenants) {
+        const t = d.tenants.find((tenant) => tenant.id === activeTenant.id);
+        if (t && t.items) {
+          const tItem = t.items.find((i) => i.id === id);
+          if (tItem) Object.assign(tItem, patch);
+        }
+      }
     });
 
   const removeItem = (id: string, name: string) => {
-    const itemToDelete = db?.items.find((it) => it.id === id);
+    const itemToDelete = tenantItems.find((it) => it.id === id);
     setDB((d) => {
       d.items = d.items.filter((item) => item.id !== id);
+      if (d.tenants) {
+        const t = d.tenants.find((tenant) => tenant.id === activeTenant.id);
+        if (t && t.items) {
+          t.items = t.items.filter((item) => item.id !== id);
+        }
+      }
     });
     toast.success(`Deleted "${name}" from menu`, {
       action: itemToDelete
@@ -42,6 +57,13 @@ function Items() {
             onClick: () => {
               setDB((d) => {
                 d.items.push(itemToDelete);
+                if (d.tenants) {
+                  const t = d.tenants.find((tenant) => tenant.id === activeTenant.id);
+                  if (t) {
+                    if (!t.items) t.items = [];
+                    t.items.push(itemToDelete);
+                  }
+                }
               });
               toast.info(`Restored "${name}"`);
             },
@@ -57,16 +79,25 @@ function Items() {
     }
     const finalCategory = draft.category === "custom" ? (customCat.trim().toLowerCase() || "specials") : draft.category;
 
+    const newItem = {
+      id: `${activeTenant.id.slice(0, 3)}-${Date.now()}`,
+      name: draft.name.trim(),
+      category: finalCategory,
+      price: Number(draft.price),
+      onlinePrice: Number(draft.onlinePrice) || Math.round(Number(draft.price) * 1.28),
+      cost: Number(draft.cost) || Math.round(Number(draft.price) * 0.45),
+      active: true,
+    };
+
     setDB((d) => {
-      d.items.push({
-        id: Math.random().toString(36).slice(2, 10),
-        name: draft.name.trim(),
-        category: finalCategory,
-        price: Number(draft.price),
-        onlinePrice: Number(draft.onlinePrice) || Math.round(Number(draft.price) * 1.28),
-        cost: Number(draft.cost) || Math.round(Number(draft.price) * 0.45),
-        active: true,
-      });
+      d.items.push(newItem);
+      if (d.tenants) {
+        const t = d.tenants.find((tenant) => tenant.id === activeTenant.id);
+        if (t) {
+          if (!t.items) t.items = [];
+          t.items.push(newItem);
+        }
+      }
     });
     setDraft({ name: "", category: "biryani", price: "", onlinePrice: "", cost: "" });
     setCustomCat("");

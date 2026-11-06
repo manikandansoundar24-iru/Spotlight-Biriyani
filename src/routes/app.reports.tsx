@@ -9,6 +9,8 @@ import {
   itemBreakdown,
   totals,
   useDB,
+  getActiveTenant,
+  getTenantItems,
   type ChannelId,
 } from "@/lib/pos-store";
 
@@ -34,7 +36,7 @@ function Reports() {
     const header = "Item,Plates sold,Revenue,Profit,Profit per plate,Suggested prep tomorrow";
     const body = rows
       .map((r) => {
-        const item = db.items.find((i) => i.name.toLowerCase() === r.name.toLowerCase() || i.id === r.itemId);
+        const item = (getTenantItems(db, getActiveTenant(db))).find((i) => i.name.toLowerCase() === r.name.toLowerCase() || i.id === r.itemId) || db.items.find((i) => i.name.toLowerCase() === r.name.toLowerCase() || i.id === r.itemId);
         const f = forecastQty(allSales, item?.id || r.name, new Date(Date.now() + 864e5));
         return [r.name, r.qty, Math.round(r.revenue), Math.round(r.profit), Math.round(r.profit / r.qty), f].join(",");
       })
@@ -194,7 +196,7 @@ function Reports() {
           </thead>
           <tbody className="divide-y divide-border/60">
             {rows.map((r) => {
-              const item = db.items.find((i) => i.name.toLowerCase() === r.name.toLowerCase() || i.id === r.itemId);
+              const item = (getTenantItems(db, getActiveTenant(db))).find((i) => i.name.toLowerCase() === r.name.toLowerCase() || i.id === r.itemId) || db.items.find((i) => i.name.toLowerCase() === r.name.toLowerCase() || i.id === r.itemId);
               const f = forecastQty(allSales, item?.id || r.name, new Date(Date.now() + 864e5));
               return (
                 <tr key={r.name}>

@@ -47,6 +47,20 @@ function LoginPage() {
   const [isDevUnlocked, setIsDevUnlocked] = useState(false);
   const [dbJson, setDbJson] = useState("");
 
+  // Helper to ensure all default tenants (including Manam) are always present even with old local cache
+  const getMergedTenants = (dbTenants?: TenantConfig[]): TenantConfig[] => {
+    const fromDB = Array.isArray(dbTenants) ? dbTenants : [];
+    const seen = new Set(fromDB.map((t) => t.id));
+    const merged = [...fromDB];
+    DEFAULT_TENANTS.forEach((dt) => {
+      if (!seen.has(dt.id)) {
+        merged.push(dt);
+        seen.add(dt.id);
+      }
+    });
+    return merged.length > 0 ? merged : DEFAULT_TENANTS;
+  };
+
   // Sync state with URL search param and tenant store on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -56,7 +70,7 @@ function LoginPage() {
       setSelectedTenantId(targetId);
 
       const dbInst = getDB();
-      const tenantsList = dbInst.tenants && dbInst.tenants.length > 0 ? dbInst.tenants : DEFAULT_TENANTS;
+      const tenantsList = getMergedTenants(dbInst.tenants);
       const match = tenantsList.find((t) => t.id === targetId) || tenantsList[0];
       if (match) {
         if (match.loginUsername) setOwnerEmail(match.loginUsername);
@@ -74,7 +88,7 @@ function LoginPage() {
     setSelectedTenantId(tId);
     switchClientTenant(tId);
     const dbInst = getDB();
-    const tenantsList = dbInst.tenants && dbInst.tenants.length > 0 ? dbInst.tenants : DEFAULT_TENANTS;
+    const tenantsList = getMergedTenants(dbInst.tenants);
     const match = tenantsList.find((t) => t.id === tId) || tenantsList[0];
     if (match) {
       if (match.loginUsername) setOwnerEmail(match.loginUsername);
@@ -89,7 +103,7 @@ function LoginPage() {
   };
 
   const dbInst = getDB();
-  const tenantsList: TenantConfig[] = dbInst.tenants && dbInst.tenants.length > 0 ? dbInst.tenants : DEFAULT_TENANTS;
+  const tenantsList: TenantConfig[] = getMergedTenants(dbInst.tenants);
   const fallbackTenant: TenantConfig = DEFAULT_TENANTS[0]!;
   const currentTenant: TenantConfig = tenantsList.find((t) => t.id === selectedTenantId) || tenantsList[0] || fallbackTenant;
 
@@ -132,11 +146,15 @@ function LoginPage() {
       if (isMatch) {
         switchClientTenant(currentTenant.id);
         sessionStorage.setItem("spotlight_session_active", "true");
+        sessionStorage.setItem("restopulse_session_tenant", currentTenant.id);
+        sessionStorage.setItem("spotlight_auth_tenant", currentTenant.id);
+        sessionStorage.setItem("spotlight_auth_role", "owner");
+        sessionStorage.setItem("spotlight_auth_user", `${currentTenant.businessName} Owner`);
         localStorage.setItem("spotlight_auth_role", "owner");
         localStorage.setItem("spotlight_auth_tenant", currentTenant.id);
         localStorage.setItem("spotlight_auth_user", `${currentTenant.businessName} Owner`);
         toast.success(`Authenticated as Owner — ${currentTenant.businessName}`);
-        navigate({ to: "/app", replace: true });
+        navigate({ to: "/app", search: { tenant: currentTenant.id }, replace: true });
       } else {
         toast.error(`Invalid credentials. Demo password for ${currentTenant.businessName}: ${currentTenant.loginPassword || "manam2026"}`);
       }
@@ -155,12 +173,17 @@ function LoginPage() {
           d.settings.activeBranchId = cashierBranch || (currentTenant.branches && currentTenant.branches[0] ? currentTenant.branches[0].id : "main");
         });
         sessionStorage.setItem("spotlight_session_active", "true");
+        sessionStorage.setItem("restopulse_session_tenant", currentTenant.id);
+        sessionStorage.setItem("spotlight_auth_tenant", currentTenant.id);
+        sessionStorage.setItem("spotlight_auth_role", "cashier");
+        sessionStorage.setItem("spotlight_auth_branch", cashierBranch);
+        sessionStorage.setItem("spotlight_auth_user", `${currentTenant.businessName} Cashier`);
         localStorage.setItem("spotlight_auth_role", "cashier");
         localStorage.setItem("spotlight_auth_tenant", currentTenant.id);
         localStorage.setItem("spotlight_auth_branch", cashierBranch);
         localStorage.setItem("spotlight_auth_user", `${currentTenant.businessName} Cashier`);
         toast.success(`Billing Terminal Unlocked — ${currentTenant.businessName}`);
-        navigate({ to: "/app/billing", replace: true });
+        navigate({ to: "/app/billing", search: { tenant: currentTenant.id }, replace: true });
       } else {
         toast.error(`Incorrect Cashier PIN. Assigned PIN for ${currentTenant.businessName}: ${currentTenant.cashierPin || "4001"}`);
       }
@@ -169,11 +192,15 @@ function LoginPage() {
       if (kitchenPin === validPin || kitchenPin === "5555") {
         switchClientTenant(currentTenant.id);
         sessionStorage.setItem("spotlight_session_active", "true");
+        sessionStorage.setItem("restopulse_session_tenant", currentTenant.id);
+        sessionStorage.setItem("spotlight_auth_tenant", currentTenant.id);
+        sessionStorage.setItem("spotlight_auth_role", "kitchen");
+        sessionStorage.setItem("spotlight_auth_user", `${currentTenant.businessName} Kitchen Chef`);
         localStorage.setItem("spotlight_auth_role", "kitchen");
         localStorage.setItem("spotlight_auth_tenant", currentTenant.id);
         localStorage.setItem("spotlight_auth_user", `${currentTenant.businessName} Kitchen Chef`);
         toast.success(`Kitchen Terminal Unlocked — ${currentTenant.businessName}`);
-        navigate({ to: "/app/stock", replace: true });
+        navigate({ to: "/app/stock", search: { tenant: currentTenant.id }, replace: true });
       } else {
         toast.error(`Incorrect Kitchen PIN. Chef PIN is ${currentTenant.kitchenPin || "5555"}`);
       }

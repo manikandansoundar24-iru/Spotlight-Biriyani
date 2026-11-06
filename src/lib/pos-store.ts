@@ -114,7 +114,7 @@ export const DEFAULT_PRINTER_SETTINGS: PrinterSettings = {
   printHeader: true,
   fssaiNumber: "12424008000456",
   gstin: "33AAAAA0000A1Z5",
-  customFooter: "Freshly cooked twice daily · No reheats · Thank you! Visit again.",
+  customFooter: "Freshly cooked twice daily - No reheats",
 };
 
 /* --- Phase 2 Enterprise Types --- */
@@ -145,9 +145,11 @@ export type KdsOrder = {
   orderType: "dinein" | "takeaway" | "swiggy" | "zomato";
   channel: ChannelId;
   createdAt: string;
+  updatedAt?: string | undefined;
   status: KdsStatus;
   notes?: string | undefined;
   lines: { name: string; qty: number; done?: boolean | undefined }[];
+  tenantId?: string | undefined;
 };
 
 export type ShiftDayClose = {
@@ -1116,6 +1118,9 @@ export function setDB(mutate: (db: DB) => void) {
   if (Array.isArray(db.sales)) db.sales = [...db.sales];
   if (Array.isArray(db.items)) db.items = [...db.items];
   if (Array.isArray(db.stock)) db.stock = [...db.stock];
+  if (Array.isArray(db.kdsOrders)) db.kdsOrders = db.kdsOrders.map((o) => ({ ...o, lines: (o.lines || []).map((l) => ({ ...l })) }));
+  if (Array.isArray(db.tables)) db.tables = db.tables.map((t) => ({ ...t, lines: [...(t.lines || [])] }));
+  if (Array.isArray(db.tenants)) db.tenants = [...db.tenants];
   cache = { ...db };
   persist();
   notifyAllTabs();
@@ -1146,7 +1151,13 @@ export function useDB(): DB | null {
   useEffect(() => {
     const sync = () => {
       const current = getDB();
-      setLocal({ ...current, sales: [...current.sales] });
+      setLocal({
+        ...current,
+        sales: [...(current.sales || [])],
+        items: [...(current.items || [])],
+        tables: (current.tables || []).map((t) => ({ ...t, lines: [...(t.lines || [])] })),
+        kdsOrders: (current.kdsOrders || []).map((o) => ({ ...o, lines: (o.lines || []).map((l) => ({ ...l })) })),
+      });
     };
     sync();
     listeners.add(sync);
@@ -1295,14 +1306,20 @@ export function addKdsOrder(order: Omit<KdsOrder, "createdAt" | "status">) {
 
 /**
  * Update KDS order status (pending -> preparing -> ready -> completed).
+ * Uses immutable mapping and fuzzy matching on ID, order number, table, or token.
  */
 export function updateKdsStatus(orderId: string, status: KdsStatus) {
   setDB((d) => {
     if (!d.kdsOrders) return;
-    const order = d.kdsOrders.find((o) => o.id === orderId);
-    if (order) {
-      order.status = status;
-    }
+    const cleanTarget = String(orderId).replace("#", "").trim();
+    d.kdsOrders = d.kdsOrders.map((o) => {
+      const matches =
+        o.id === orderId ||
+        (o.orderNumber && (o.orderNumber === orderId || o.orderNumber.replace("#", "").trim() === cleanTarget)) ||
+        (o.tokenNum !== undefined && String(o.tokenNum) === cleanTarget) ||
+        (o.tableId && o.tableId === orderId);
+      return matches ? { ...o, status, updatedAt: new Date().toISOString() } : { ...o };
+    });
   });
 }
 
@@ -1312,17 +1329,45 @@ export function updateKdsStatus(orderId: string, status: KdsStatus) {
 export function toggleKdsLineDone(orderId: string, lineIndex: number) {
   setDB((d) => {
     if (!d.kdsOrders) return;
-    const order = d.kdsOrders.find((o) => o.id === orderId);
-    if (order && order.lines[lineIndex]) {
-      order.lines[lineIndex].done = !order.lines[lineIndex].done;
-      if (order.status === "pending") {
-        order.status = "preparing";
+    const cleanTarget = String(orderId).replace("#", "").trim();
+    d.kdsOrders = d.kdsOrders.map((o) => {
+      const matches =
+        o.id === orderId ||
+        (o.orderNumber && (o.orderNumber === orderId || o.orderNumber.replace("#", "").trim() === cleanTarget)) ||
+        (o.tokenNum !== undefined && String(o.tokenNum) === cleanTarget) ||
+        (o.tableId && o.tableId === orderId);
+      if (!matches) return { ...o };
+
+      const updatedLines = o.lines.map((l, idx) => (idx === lineIndex ? { ...l, done: !l.done } : { ...l }));
+      let newStatus = o.status;
+      if (newStatus === "pending") {
+        newStatus = "preparing";
       }
-      const allDone = order.lines.every((l) => l.done);
-      if (allDone && order.status !== "ready" && order.status !== "completed") {
-        order.status = "ready";
+      const allDone = updatedLines.every((l) => l.done);
+      if (allDone && newStatus !== "ready" && newStatus !== "completed") {
+        newStatus = "ready";
       }
-    }
+      return { ...o, lines: updatedLines, status: newStatus, updatedAt: new Date().toISOString() };
+    });
+  });
+}
+
+/**
+ * Purge completed orders from the kitchen display system.
+ */
+export function clearCompletedKdsOrders() {
+  setDB((d) => {
+    if (!d.kdsOrders) return;
+    d.kdsOrders = d.kdsOrders.filter((o) => o.status !== "completed");
+  });
+}
+
+/**
+ * Clear all orders from the kitchen display system (e.g. at day start / after shift close).
+ */
+export function clearAllKdsOrders() {
+  setDB((d) => {
+    d.kdsOrders = [];
   });
 }
 

@@ -71,6 +71,7 @@ import {
   vacateTable,
   addKdsOrder,
   toggleKdsLineDone,
+  clearCompletedKdsOrders,
   type Category,
   type ChannelId,
   type Item,
@@ -744,15 +745,13 @@ function Billing() {
   }, [todaySales]);
 
   const priceFor = (itemId: string) => {
-    if (!db) return 0;
-    const it = db.items.find((i) => i.id === itemId);
+    const it = tenantItems.find((i) => i.id === itemId);
     if (!it) return 0;
     return channel === "counter" ? it.price : it.onlinePrice;
   };
 
   const add = (itemId: string) => {
-    if (!db) return;
-    const it = db.items.find((i) => i.id === itemId);
+    const it = tenantItems.find((i) => i.id === itemId);
     if (!it) return;
 
     if (isDegItem(it)) {
@@ -774,9 +773,8 @@ function Billing() {
   };
 
   const step = (itemId: string, delta: number) => {
-    if (!db) return;
     const line = lines.find((l) => l.itemId === itemId);
-    const it = db.items.find((i) => i.id === itemId);
+    const it = tenantItems.find((i) => i.id === itemId);
     const isDeg = isDegItem(line) || isDegItem(it);
 
     if (delta > 0 && isDeg) {
@@ -817,7 +815,7 @@ function Billing() {
     }
 
     const currentLine = lines.find((l) => l.itemId === itemId);
-    const it = db.items.find((i) => i.id === itemId);
+    const it = tenantItems.find((i) => i.id === itemId);
     const isDeg = isDegItem(currentLine) || isDegItem(it);
 
     let finalQty = parsed;
@@ -884,7 +882,7 @@ function Billing() {
     if (!db) return;
     setLines((prev) =>
       prev.map((l) => {
-        const it = db.items.find((i) => i.id === l.itemId);
+        const it = tenantItems.find((i) => i.id === l.itemId);
         if (!it) return l;
         return { ...l, price: c === "counter" ? it.price : it.onlinePrice };
       }),
@@ -1014,6 +1012,7 @@ function Billing() {
         tokenNum: currentToken,
         orderType,
         channel,
+        tenantId: activeTenant.id,
         lines: newSale.lines.map((l) => ({ name: l.name, qty: l.qty })),
       };
       if (selectedTableId) kdsItem.tableId = selectedTableId;
@@ -1584,6 +1583,7 @@ function Billing() {
                         tableId: selectedTableId,
                         orderType: "dinein",
                         channel,
+                        tenantId: activeTenant.id,
                         lines: preview.lines.map((l) => ({ name: l.name, qty: l.qty })),
                         notes: orderNote,
                       });
@@ -2722,25 +2722,41 @@ function Billing() {
               </div>
 
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearCompletedKdsOrders();
+                    toast.info("Cleared completed orders from KDS");
+                  }}
+                  className="rounded-lg border border-border px-2.5 py-1 text-xs font-bold text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+                  title="Clear handed over / completed orders"
+                >
+                  🧹 Clear Completed
+                </button>
                 <div className="flex rounded-lg border border-border bg-muted/60 p-0.5 text-xs">
-                  {([
-                    { id: "all", label: `All (${(db?.kdsOrders || []).filter((o) => o.status !== "completed").length})` },
-                    { id: "pending", label: `Pending (${(db?.kdsOrders || []).filter((o) => o.status === "pending").length})` },
-                    { id: "preparing", label: `Preparing (${(db?.kdsOrders || []).filter((o) => o.status === "preparing").length})` },
-                    { id: "ready", label: `Ready (${(db?.kdsOrders || []).filter((o) => o.status === "ready").length})` },
-                  ] as const).map((tab) => (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => setKdsFilter(tab.id as any)}
-                      className={`rounded px-2.5 py-1 font-bold transition-all ${kdsFilter === tab.id
-                          ? "bg-primary text-white shadow-xs"
-                          : "text-muted-foreground hover:text-foreground"
-                        }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
+                  {(() => {
+                    const tenantKdsList = (db?.kdsOrders || []).filter(
+                      (o) => !o.tenantId || o.tenantId === activeTenant.id
+                    );
+                    return ([
+                      { id: "all", label: `All (${tenantKdsList.filter((o) => o.status !== "completed").length})` },
+                      { id: "pending", label: `Pending (${tenantKdsList.filter((o) => o.status === "pending").length})` },
+                      { id: "preparing", label: `Preparing (${tenantKdsList.filter((o) => o.status === "preparing").length})` },
+                      { id: "ready", label: `Ready (${tenantKdsList.filter((o) => o.status === "ready").length})` },
+                    ] as const).map((tab) => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setKdsFilter(tab.id as any)}
+                        className={`rounded px-2.5 py-1 font-bold transition-all ${kdsFilter === tab.id
+                            ? "bg-primary text-white shadow-xs"
+                            : "text-muted-foreground hover:text-foreground"
+                          }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ));
+                  })()}
                 </div>
                 <button
                   type="button"
@@ -2754,54 +2770,66 @@ function Billing() {
 
             {/* KDS Order Cards Grid */}
             <div className="mt-4 flex-1 overflow-y-auto grid gap-3 sm:grid-cols-2 lg:grid-cols-3 pr-1">
-              {((db?.kdsOrders || []).filter((o) => (kdsFilter === "all" ? o.status !== "completed" : o.status === kdsFilter))).length === 0 ? (
-                <div className="col-span-full py-16 text-center text-muted-foreground">
-                  <UtensilsCrossed className="size-10 mx-auto text-muted-foreground/40 mb-2" />
-                  <p className="font-bold text-sm">No Active Kitchen Orders in {kdsFilter.toUpperCase()}</p>
-                  <p className="text-xs text-muted-foreground/80 mt-1">Orders sent from Counter Billing or Table KOT will appear here automatically.</p>
-                </div>
-              ) : (
-                (db?.kdsOrders || [])
-                  .filter((o) => (kdsFilter === "all" ? o.status !== "completed" : o.status === kdsFilter))
-                  .map((order) => {
-                    const elapsedMins = Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 60000);
-                    const isUrgent = elapsedMins >= 10;
-                    const isMedium = elapsedMins >= 5 && elapsedMins < 10;
-                    return (
-                      <div
-                        key={order.id}
-                        className={`rounded-2xl border p-4 shadow-sm flex flex-col justify-between transition-all ${order.status === "ready"
-                            ? "border-emerald-500/40 bg-emerald-500/5"
-                            : order.status === "preparing"
-                              ? "border-amber-500/50 bg-amber-500/5"
-                              : isUrgent
-                                ? "border-rose-500/60 bg-rose-500/10 animate-pulse"
-                                : isMedium
-                                  ? "border-amber-500/50 bg-amber-500/5"
-                                  : "border-border bg-card"
-                          }`}
-                      >
-                        <div>
-                          <div className="flex items-center justify-between border-b border-border/60 pb-2">
-                            <div>
-                              <span className="font-display font-black text-base text-foreground">
-                                {order.tableId ? `Table ${order.tableId}` : `Token #${order.tokenNum || order.orderNumber}`}
-                              </span>
-                              <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">
-                                {order.orderType === "takeaway" ? "Takeaway" : "Dine-in"}
-                              </span>
-                            </div>
-                            <span
-                              className={`rounded-full px-2 py-0.5 text-[10px] font-black tracking-wide ${isUrgent
-                                  ? "bg-rose-600 text-white"
-                                  : isMedium
-                                    ? "bg-amber-500 text-white"
-                                    : "bg-emerald-600 text-white"
-                                }`}
-                            >
-                              ⏱ {elapsedMins}m ago
+              {(() => {
+                const tenantKdsList = (db?.kdsOrders || []).filter(
+                  (o) => !o.tenantId || o.tenantId === activeTenant.id
+                );
+                const filteredList = tenantKdsList.filter(
+                  (o) => (kdsFilter === "all" ? o.status !== "completed" : o.status === kdsFilter)
+                );
+
+                if (filteredList.length === 0) {
+                  return (
+                    <div className="col-span-full py-16 text-center text-muted-foreground">
+                      <UtensilsCrossed className="size-10 mx-auto text-muted-foreground/40 mb-2" />
+                      <p className="font-bold text-sm">No Active Kitchen Orders in {kdsFilter.toUpperCase()}</p>
+                      <p className="text-xs text-muted-foreground/80 mt-1">Orders sent from Counter Billing or Table KOT for {activeTenant.businessName} will appear here automatically.</p>
+                    </div>
+                  );
+                }
+
+                return filteredList.map((order) => {
+                  const elapsedMins = Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 60000);
+                  const elapsedDisplay = elapsedMins >= 60
+                    ? `${Math.floor(elapsedMins / 60)}h ${elapsedMins % 60}m ago`
+                    : `${Math.max(0, elapsedMins)}m ago`;
+                  const isUrgent = elapsedMins >= 10;
+                  const isMedium = elapsedMins >= 5 && elapsedMins < 10;
+                  return (
+                    <div
+                      key={order.id}
+                      className={`rounded-2xl border p-4 shadow-sm flex flex-col justify-between transition-all ${order.status === "ready"
+                          ? "border-emerald-500/40 bg-emerald-500/5"
+                          : order.status === "preparing"
+                            ? "border-amber-500/50 bg-amber-500/5"
+                            : isUrgent
+                              ? "border-rose-500/60 bg-rose-500/10 animate-pulse"
+                              : isMedium
+                                ? "border-amber-500/50 bg-amber-500/5"
+                                : "border-border bg-card"
+                        }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between border-b border-border/60 pb-2">
+                          <div>
+                            <span className="font-display font-black text-base text-foreground">
+                              {order.tableId ? `Table ${order.tableId}` : `Token #${order.tokenNum || order.orderNumber}`}
+                            </span>
+                            <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">
+                              {order.orderType === "takeaway" ? "Takeaway" : "Dine-in"}
                             </span>
                           </div>
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[10px] font-black tracking-wide ${isUrgent
+                                ? "bg-rose-600 text-white"
+                                : isMedium
+                                  ? "bg-amber-500 text-white"
+                                  : "bg-emerald-600 text-white"
+                              }`}
+                          >
+                            ⏱ {elapsedDisplay}
+                          </span>
+                        </div>
 
                           {/* Status Badge */}
                           <div className="mt-2 flex items-center gap-1.5 text-[11px] font-bold">
@@ -2909,8 +2937,8 @@ function Billing() {
                         </div>
                       </div>
                     );
-                  })
-              )}
+                  });
+                })()}
             </div>
           </div>
         </div>
@@ -3255,7 +3283,15 @@ function printBill(
     </div>
     
     <div class="footer">
-      <div>${printer.customFooter || "Freshly cooked twice daily · No reheats"}</div>
+      ${(() => {
+        const raw = (printer.customFooter || "Freshly cooked twice daily - No reheats").trim();
+        const cleaned = raw
+          .replace(/Thank\s*you!?/gi, "")
+          .replace(/Visit\s*again\.?/gi, "")
+          .replace(/[·•\-]\s*$/, "")
+          .trim();
+        return cleaned ? `<div>${cleaned}</div>` : "";
+      })()}
       <div style="font-weight: bold; margin-top: 2px;">Thank you! Visit again.</div>
     </div>
 
