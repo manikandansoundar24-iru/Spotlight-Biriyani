@@ -6,7 +6,7 @@
  */
 
 import { createServerFn } from "@tanstack/react-start";
-import { getDB, setDB, DB, Sale, Item, sanitizeAndDeduplicateItems } from "./pos-store";
+import { getDB, setDB, DB, Sale, Item, sanitizeAndDeduplicateItems, getActiveTenant } from "./pos-store";
 
 const NEON_SQL_ENDPOINT = "https://ep-small-frog-aorujp14.c-2.ap-southeast-1.aws.neon.tech/sql";
 const NEON_CONN_STRING = "postgresql://neondb_owner:npg_7NjC6EYaLsgW@ep-small-frog-aorujp14.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require";
@@ -123,66 +123,101 @@ export async function pushSalesToCloud(sales: Sale[]): Promise<{ count: number }
   const validSales = sales.filter((s) => s && s.id);
   if (validSales.length === 0) return { count: 0 };
 
-  // 1. Build Multi-Row VALUES for "Sale"
-  const saleValueRows = validSales.map((s) => {
-    const safeDate = new Date(s.date || Date.now()).toISOString();
-    const branchId = (s.branchId || "taramani").replace(/'/g, "''");
-    const channel = (s.channel || "counter").replace(/'/g, "''");
-    const gross = Number(s.gross || 0);
-    const discount = Number(s.discount || 0);
-    const net = Number(s.net || gross - discount);
-    const cogs = Number(s.cogs || 0);
-    const commission = Number(s.commission || 0);
-    const packaging = Number(s.packaging || 0);
-    const profit = Number(s.profit || net - cogs - commission - packaging);
-    const payment = (s.payment || "cash").replace(/'/g, "''");
-    const orderType = (s.orderType || "dinein").replace(/'/g, "''");
+  try {
+    // 0. Pre-upsert all referenced branches into "Branch" table to ensure FK constraints are never violated
+    const knownBranches = [
+      { id: "velachery-phoenix", name: "Velachery (Opp. Phoenix Market City)", address: "Velachery Main Rd, Chennai", phone: "+91 98400 99887" },
+      { id: "tnagar", name: "T. Nagar (Main)", address: "45 Usman Road, T. Nagar, Chennai", phone: "+91 98765 43210" },
+      { id: "taramani", name: "Taramani (Flagship)", address: "No 6/31 Kazhikundram, Taramani", phone: "+91 98844 30710" },
+      { id: "adyar", name: "Adyar", address: "Lattice Bridge Rd, Adyar, Chennai", phone: "+91 90000 00002" },
+      { id: "velachery", name: "Velachery", address: "100 Feet Rd, Velachery, Chennai", phone: "+91 90000 00003" },
+      { id: "annanagar", name: "Anna Nagar Kitchen", address: "Anna Nagar, Chennai", phone: "+91 98400 11223" },
+      { id: "nungambakkam", name: "Nungambakkam High Road", address: "Nungambakkam, Chennai", phone: "+91 98400 33445" },
+    ];
+    validSales.forEach((s) => {
+      const bId = s.branchId || "taramani";
+      if (!knownBranches.some((kb) => kb.id === bId)) {
+        knownBranches.push({ id: bId, name: bId, address: "Chennai", phone: "+91 90000 00000" });
+      }
+    });
 
-    return `('${s.id}', '${safeDate}', '${branchId}', '${channel}', ${gross}, ${discount}, ${net}, ${cogs}, ${commission}, ${packaging}, ${profit}, '${payment}', '${orderType}')`;
-  });
+    const branchRows = knownBranches.map(
+      (b) => `('${b.id.replace(/'/g, "''")}', '${b.name.replace(/'/g, "''")}', '${b.address.replace(/'/g, "''")}', '${b.phone.replace(/'/g, "''")}')`
+    );
 
-  const batchSaleSql = `
-    INSERT INTO "Sale" ("id", "date", "branchId", "channel", "gross", "discount", "net", "cogs", "commission", "packaging", "profit", "payment", "orderType")
-    VALUES ${saleValueRows.join(",\n")}
-    ON CONFLICT ("id") DO UPDATE SET
-      "gross" = EXCLUDED."gross",
-      "net" = EXCLUDED."net",
-      "profit" = EXCLUDED."profit",
-      "payment" = EXCLUDED."payment",
-      "discount" = EXCLUDED."discount";
-  `;
-
-  await executeNeonQuery({ data: { query: batchSaleSql } });
-
-  // 2. Build Multi-Row VALUES for "SaleLine"
-  const lineValueRows: string[] = [];
-  validSales.forEach((s) => {
-    if (Array.isArray(s.lines) && s.lines.length > 0) {
-      s.lines.forEach((l, idx) => {
-        const lineId = `${s.id}-line-${idx + 1}`;
-        const itemId = l.itemId ? `'${l.itemId}'` : "NULL";
-        const safeName = (l.name || "Dish").replace(/'/g, "''");
-        const qty = Number(l.qty || 1);
-        const price = Number(l.price || 0);
-        const cost = Number(l.cost || 0);
-        lineValueRows.push(`('${lineId}', '${s.id}', ${itemId}, '${safeName}', ${qty}, ${price}, ${cost})`);
-      });
-    }
-  });
-
-  if (lineValueRows.length > 0) {
-    const batchLineSql = `
-      INSERT INTO "SaleLine" ("id", "saleId", "itemId", "name", "qty", "price", "cost")
-      VALUES ${lineValueRows.join(",\n")}
-      ON CONFLICT ("id") DO UPDATE SET
-        "qty" = EXCLUDED."qty",
-        "price" = EXCLUDED."price",
-        "cost" = EXCLUDED."cost";
+    const batchBranchSql = `
+      INSERT INTO "Branch" ("id", "name", "address", "phone")
+      VALUES ${branchRows.join(",\n")}
+      ON CONFLICT ("id") DO NOTHING;
     `;
-    await executeNeonQuery({ data: { query: batchLineSql } });
-  }
+    await executeNeonQuery({ data: { query: batchBranchSql } }).catch((err) => {
+      console.warn("Branch pre-sync note:", err);
+    });
 
-  return { count: validSales.length };
+    // 1. Build Multi-Row VALUES for "Sale"
+    const saleValueRows = validSales.map((s) => {
+      const safeDate = new Date(s.date || Date.now()).toISOString();
+      const branchId = (s.branchId || "taramani").replace(/'/g, "''");
+      const channel = (s.channel || "counter").replace(/'/g, "''");
+      const gross = Number(s.gross || 0);
+      const discount = Number(s.discount || 0);
+      const net = Number(s.net || gross - discount);
+      const cogs = Number(s.cogs || 0);
+      const commission = Number(s.commission || 0);
+      const packaging = Number(s.packaging || 0);
+      const profit = Number(s.profit || net - cogs - commission - packaging);
+      const payment = (s.payment || "cash").replace(/'/g, "''");
+      const orderType = (s.orderType || "dinein").replace(/'/g, "''");
+
+      return `('${s.id}', '${safeDate}', '${branchId}', '${channel}', ${gross}, ${discount}, ${net}, ${cogs}, ${commission}, ${packaging}, ${profit}, '${payment}', '${orderType}')`;
+    });
+
+    const batchSaleSql = `
+      INSERT INTO "Sale" ("id", "date", "branchId", "channel", "gross", "discount", "net", "cogs", "commission", "packaging", "profit", "payment", "orderType")
+      VALUES ${saleValueRows.join(",\n")}
+      ON CONFLICT ("id") DO UPDATE SET
+        "gross" = EXCLUDED."gross",
+        "net" = EXCLUDED."net",
+        "profit" = EXCLUDED."profit",
+        "payment" = EXCLUDED."payment",
+        "discount" = EXCLUDED."discount";
+    `;
+
+    await executeNeonQuery({ data: { query: batchSaleSql } });
+
+    // 2. Build Multi-Row VALUES for "SaleLine"
+    const lineValueRows: string[] = [];
+    validSales.forEach((s) => {
+      if (Array.isArray(s.lines) && s.lines.length > 0) {
+        s.lines.forEach((l, idx) => {
+          const lineId = `${s.id}-line-${idx + 1}`;
+          const itemId = l.itemId ? `'${l.itemId}'` : "NULL";
+          const safeName = (l.name || "Dish").replace(/'/g, "''");
+          const qty = Number(l.qty || 1);
+          const price = Number(l.price || 0);
+          const cost = Number(l.cost || 0);
+          lineValueRows.push(`('${lineId}', '${s.id}', ${itemId}, '${safeName}', ${qty}, ${price}, ${cost})`);
+        });
+      }
+    });
+
+    if (lineValueRows.length > 0) {
+      const batchLineSql = `
+        INSERT INTO "SaleLine" ("id", "saleId", "itemId", "name", "qty", "price", "cost")
+        VALUES ${lineValueRows.join(",\n")}
+        ON CONFLICT ("id") DO UPDATE SET
+          "qty" = EXCLUDED."qty",
+          "price" = EXCLUDED."price",
+          "cost" = EXCLUDED."cost";
+      `;
+      await executeNeonQuery({ data: { query: batchLineSql } });
+    }
+
+    return { count: validSales.length };
+  } catch (syncErr: any) {
+    console.warn("Neon background push deferred:", syncErr?.message || syncErr);
+    return { count: 0 };
+  }
 }
 
 /**
@@ -260,7 +295,10 @@ export async function performFullSync(): Promise<{
     let dishesSynced = 0;
     if (cloudDishes.length > 0) {
       setDB((draft) => {
-        draft.items = sanitizeAndDeduplicateItems(cloudDishes);
+        const activeTenant = getActiveTenant(draft);
+        if (activeTenant.id === "spotlight-biriyani") {
+          draft.items = sanitizeAndDeduplicateItems(cloudDishes);
+        }
       });
       dishesSynced = cloudDishes.length;
     }

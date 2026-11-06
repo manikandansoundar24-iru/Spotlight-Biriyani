@@ -273,6 +273,7 @@ function DishCard({
   liveBatch,
   price,
   canIncreaseDeg,
+  degBatchEnabled = false,
   onAdd,
   onStep,
   onUpdateQty,
@@ -283,6 +284,7 @@ function DishCard({
   liveBatch: any;
   price: number;
   canIncreaseDeg: boolean;
+  degBatchEnabled?: boolean;
   onAdd: () => void;
   onStep: (delta: number) => void;
   onUpdateQty: (val: string) => void;
@@ -292,10 +294,11 @@ function DishCard({
   const isInCart = inCartLine !== undefined;
 
   const isDeg =
-    (item.category || "").toLowerCase() === "biryani" ||
-    (item.category || "").toLowerCase() === "kushka" ||
-    item.name.toLowerCase().includes("biriyani") ||
-    item.name.toLowerCase().includes("kushka");
+    Boolean(degBatchEnabled) &&
+    ((item.category || "").toLowerCase() === "biryani" ||
+      (item.category || "").toLowerCase() === "kushka" ||
+      item.name.toLowerCase().includes("biriyani") ||
+      item.name.toLowerCase().includes("kushka"));
 
   // Granular Deg batch breakdown per dish type (Chicken, Mutton, Kushka)
   const degStockLabel = useMemo(() => {
@@ -516,8 +519,8 @@ function Billing() {
   // Today's Sales History (most recent first for active branch & tenant)
   const todaySales = useMemo(() => {
     if (!db || !Array.isArray(db.sales)) return [];
-    const activeBranch = db.settings.activeBranchId || "taramani";
-    const currentTenantId = db.activeTenantId || "spotlight-biriyani";
+    const currentTenantId = activeTenant.id || "spotlight-biriyani";
+    const activeBranch = db.settings.activeBranchId || activeTenant.branches?.[0]?.id || "taramani";
     return db.sales
       .filter((s) => {
         if (!s || typeof s.date !== "string") return false;
@@ -526,12 +529,13 @@ function Billing() {
         const matchBranch =
           s.branchId === activeBranch ||
           !s.branchId ||
-          (activeBranch === "taramani" && s.branchId === "tharamani");
+          (activeBranch === "taramani" && s.branchId === "tharamani") ||
+          Boolean(activeTenant.branches && activeTenant.branches.some((b) => b.id === s.branchId));
         return matchBranch && isSameDay(s.date);
       })
       .slice()
       .reverse();
-  }, [db]);
+  }, [db, activeTenant]);
 
   const todayCashTotal = useMemo(() => {
     return todaySales.filter((s) => s.payment === "cash").reduce((acc, s) => acc + (s.net || 0), 0);
@@ -652,6 +656,7 @@ function Billing() {
   }, [db]);
 
   const isDegItem = (itemOrLine: { name?: string; category?: string } | null | undefined) => {
+    if (activeTenant.degBatchEnabled !== true) return false;
     if (!itemOrLine) return false;
     const n = (itemOrLine.name || "").toLowerCase();
     const c = (itemOrLine.category || "").toLowerCase();
@@ -968,7 +973,7 @@ function Billing() {
       const newSale: Sale = {
         ...currentPreview,
         id: currentPreview.id || Math.random().toString(36).slice(2, 10),
-        tenantId: db.activeTenantId || "spotlight-biriyani",
+        tenantId: activeTenant.id || "spotlight-biriyani",
         date: new Date().toISOString(),
         branchId: activeBranch,
         orderType,
@@ -1041,15 +1046,15 @@ function Billing() {
     const target = saveOrUpdate();
     if (!target) return;
 
-    const businessName = db?.settings?.businessName || "Spot Light Biriyani";
-    const branch = db?.branches.find((b) => b.id === target.branchId) || db?.branches[0];
-    const itemsText = target.lines.map((l) => `* ${l.qty}x ${l.name} - ₹${l.price * l.qty}`).join("\n");
+    const businessName = activeTenant.businessName || db?.settings?.businessName || "Restaurant";
+    const branch = activeTenant.branches?.find((b) => b.id === target.branchId) || activeTenant.branches?.[0] || db?.branches[0];
+    const itemsText = target.lines.map((l) => `• ${l.qty}x ${l.name} - Rs. ${l.price * l.qty}`).join("\n");
     const orderTypeStr = target.orderType === "takeaway" ? "TAKEAWAY / PARCEL" : (target.tableId ? `DINE-IN (${target.tableId})` : "DINE-IN");
 
     const msg = [
       `Hi Customer, your ${businessName} bill is confirmed!`,
       `----------------------------------------`,
-      `*${businessName}* — ${branch?.name || "Kitchen"}`,
+      `*${businessName}* - ${branch?.name || "Kitchen"}`,
       `Date: ${new Date(target.date).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}`,
       `Order Type: *${orderTypeStr}*`,
       `Bill Ref: *#${target.id.slice(0, 6).toUpperCase()}*`,
@@ -1057,12 +1062,12 @@ function Billing() {
       `*ORDER ITEMS:*`,
       itemsText,
       `----------------------------------------`,
-      `*NET TOTAL: ₹${target.net}*`,
+      `*NET TOTAL: Rs. ${target.net}*`,
       `Payment Method: ${target.payment.toUpperCase()}`,
       `----------------------------------------`,
       `Store Address: ${branch?.address || "Chennai"}`,
       branch?.phone ? `Contact: ${branch.phone}` : "",
-      `Thank you for dining with us! Visit again.`
+      `Thank you for dining with ${businessName}! Visit again.`
     ].filter(Boolean).join("\n");
 
     const isMobile = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -1210,7 +1215,7 @@ function Billing() {
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_350px] xl:grid-cols-[minmax(0,1fr)_380px] w-full min-w-0 max-w-full items-start">
         <div className="min-w-0 max-w-full">
           {/* Live Kitchen Deg Batch Availability Bar */}
-          {(activeTenant.degBatchEnabled ?? true) && (
+          {(activeTenant.degBatchEnabled === true) && (
             <div className="overflow-hidden rounded-2xl border border-primary/30 bg-card p-3.5 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-3 pb-2.5 border-b border-border/60">
                 <div className="flex items-center gap-2.5">
@@ -1381,6 +1386,7 @@ function Billing() {
                       price={priceFor(i.id)}
                       inCartLine={inCart}
                       liveBatch={liveBatch}
+                      degBatchEnabled={activeTenant.degBatchEnabled === true}
                       canIncreaseDeg={!isDegItem(i) || currentCartDegPlates < liveBatch.platesLeft}
                       onAdd={() => add(i.id)}
                       onStep={(d) => step(i.id, d)}
@@ -1437,6 +1443,7 @@ function Billing() {
                       price={priceFor(i.id)}
                       inCartLine={inCart}
                       liveBatch={liveBatch}
+                      degBatchEnabled={activeTenant.degBatchEnabled === true}
                       canIncreaseDeg={!isDegItem(i) || currentCartDegPlates < liveBatch.platesLeft}
                       onAdd={() => add(i.id)}
                       onStep={(d) => step(i.id, d)}
@@ -2544,42 +2551,44 @@ function Billing() {
                     <div className="rounded-xl border border-border bg-[#efeae2] dark:bg-[#111b21] p-3 text-[11px] text-slate-800 dark:text-slate-100 font-sans shadow-inner">
                       <div className="rounded-lg bg-white dark:bg-[#202c33] p-3 shadow-xs border border-slate-200 dark:border-slate-700 space-y-1.5 leading-relaxed">
                         <p className="font-medium">
-                          Hi <span className="font-bold text-emerald-600 dark:text-emerald-400">{customerName || "Customer"}</span>, your Spot Light Biriyani bill is confirmed ✅
+                          Hi <span className="font-bold text-emerald-600 dark:text-emerald-400">{customerName || "Customer"}</span>, your {activeTenant.businessName} bill is confirmed!
                         </p>
                         <p className="font-bold text-slate-900 dark:text-white">
-                          Spot Light Biriyani — {branch?.name || "Chennai Kitchen"}
+                          {activeTenant.businessName} - {branch?.name || "Kitchen"}
                         </p>
                         <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-[10px]">
-                          <span>📅 {new Date(activeBill.date).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</span>
+                          <span>{new Date(activeBill.date).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</span>
                           <span className="font-bold uppercase text-primary">
-                            {activeBill.orderType === "takeaway" ? "🥡 Takeaway / Parcel" : "🍽️ Dine-in"}
+                            {activeBill.orderType === "takeaway" ? "Takeaway / Parcel" : (activeBill.tableId ? `Dine-in (${activeBill.tableId})` : "Dine-in")}
                           </span>
                         </div>
                         <div className="border-t border-slate-200 dark:border-slate-700 pt-1 text-[11px] space-y-0.5">
                           {activeBill.lines.map((l) => (
                             <div key={l.itemId} className="flex justify-between">
-                              <span>🍲 {l.qty}x {l.name}</span>
-                              <span className="font-mono">₹{l.price * l.qty}</span>
+                              <span>• {l.qty}x {l.name}</span>
+                              <span className="font-mono">Rs. {l.price * l.qty}</span>
                             </div>
                           ))}
                         </div>
                         <div className="border-t border-slate-200 dark:border-slate-700 pt-1 font-bold text-xs flex justify-between text-slate-900 dark:text-white">
-                          <span>💰 ₹{activeBill.net}</span>
+                          <span>Total: Rs. {activeBill.net}</span>
                           <span className="uppercase text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
                             Paid via {activeBill.payment}
                           </span>
                         </div>
                         <p className="text-[10px] text-slate-500">
-                          📍 {branch?.address || "Chennai, Tamil Nadu"}
+                          {branch?.address || "Chennai"}
                         </p>
-                        <p className="text-[10px] text-slate-500">
-                          📞 {branch?.phone || "+91 98844 30710"}
-                        </p>
+                        {branch?.phone && (
+                          <p className="text-[10px] text-slate-500">
+                            {branch.phone}
+                          </p>
+                        )}
                         <p className="text-[10px] font-semibold text-slate-700 dark:text-slate-300">
                           Bill Ref: <span className="font-mono text-emerald-600 dark:text-emerald-400">#{activeBill.id.slice(0, 6).toUpperCase()}</span>
                         </p>
                         <p className="text-[10px] italic text-slate-500">
-                          ♨️ Freshly prepared authentic Chennai Biriyani. Enjoy your meal!
+                          Thank you for dining with {activeTenant.businessName}! Visit again.
                         </p>
                       </div>
                     </div>
@@ -2590,9 +2599,28 @@ function Billing() {
                     <button
                       type="button"
                       onClick={() => {
-                        const itemsText = activeBill.lines.map((l) => `🍲 ${l.qty}x ${l.name} - ₹${l.price * l.qty}`).join("\n");
-                        const orderTypeStr = activeBill.orderType === "takeaway" ? "🥡 TAKEAWAY / PARCEL" : "🍽️ DINE-IN";
-                        const msg = `Hi ${customerName || "Customer"}, your Spot Light Biriyani bill is confirmed ✅\n\n*Spot Light Biriyani — ${branch?.name || "Chennai Kitchen"}*\n📅 ${new Date(activeBill.date).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}\n🔖 *${orderTypeStr}*\n${itemsText}\n💰 *₹${activeBill.net}* · Paid via ${activeBill.payment.toUpperCase()}\n📍 ${branch?.address || "Chennai, Tamil Nadu"}\n📞 ${branch?.phone || "+91 98844 30710"}\nBill Ref: *#${activeBill.id.slice(0, 6).toUpperCase()}*\n\n♨️ Freshly prepared authentic Chennai recipe. Enjoy your meal!`;
+                        const businessName = activeTenant.businessName || db?.settings?.businessName || "Restaurant";
+                        const branch = activeTenant.branches?.find((b) => b.id === activeBill.branchId) || activeTenant.branches?.[0] || db?.branches[0];
+                        const itemsText = activeBill.lines.map((l) => `• ${l.qty}x ${l.name} - Rs. ${l.price * l.qty}`).join("\n");
+                        const orderTypeStr = activeBill.orderType === "takeaway" ? "TAKEAWAY / PARCEL" : (activeBill.tableId ? `DINE-IN (${activeBill.tableId})` : "DINE-IN");
+                        const msg = [
+                          `Hi ${customerName || "Customer"}, your ${businessName} bill is confirmed!`,
+                          `----------------------------------------`,
+                          `*${businessName}* - ${branch?.name || "Kitchen"}`,
+                          `Date: ${new Date(activeBill.date).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}`,
+                          `Order Type: *${orderTypeStr}*`,
+                          `Bill Ref: *#${activeBill.id.slice(0, 6).toUpperCase()}*`,
+                          `----------------------------------------`,
+                          `*ORDER ITEMS:*`,
+                          itemsText,
+                          `----------------------------------------`,
+                          `*NET TOTAL: Rs. ${activeBill.net}*`,
+                          `Payment Method: ${activeBill.payment.toUpperCase()}`,
+                          `----------------------------------------`,
+                          `Store Address: ${branch?.address || "Chennai"}`,
+                          branch?.phone ? `Contact: ${branch.phone}` : "",
+                          `Thank you for dining with ${businessName}! Visit again.`
+                        ].filter(Boolean).join("\n");
                         navigator.clipboard.writeText(msg);
                         toast.success("WhatsApp bill copied to clipboard!");
                       }}
@@ -2610,10 +2638,28 @@ function Billing() {
                           return;
                         }
                         const validPhone = cleanPhone.slice(-10);
-                        const businessName = db?.settings?.businessName || "Spot Light Biriyani";
-                        const itemsText = activeBill.lines.map((l) => `🍲 ${l.qty}x ${l.name} - ₹${l.price * l.qty}`).join("\n");
-                        const orderTypeStr = activeBill.orderType === "takeaway" ? "🥡 TAKEAWAY / PARCEL" : "🍽️ DINE-IN";
-                        const msg = `Hi ${customerName || "Customer"}, your ${businessName} bill is confirmed ✅\n\n*${businessName} — ${branch?.name || "Kitchen"}*\n📅 ${new Date(activeBill.date).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}\n🔖 *${orderTypeStr}*\n${itemsText}\n💰 *₹${activeBill.net}* · Paid via ${activeBill.payment.toUpperCase()}\n📍 ${branch?.address || "Chennai"}\n📞 ${branch?.phone || ""}\nBill Ref: *#${activeBill.id.slice(0, 6).toUpperCase()}*\n\n♨️ Thank you! Visit again.`;
+                        const businessName = activeTenant.businessName || db?.settings?.businessName || "Restaurant";
+                        const branch = activeTenant.branches?.find((b) => b.id === activeBill.branchId) || activeTenant.branches?.[0] || db?.branches[0];
+                        const itemsText = activeBill.lines.map((l) => `• ${l.qty}x ${l.name} - Rs. ${l.price * l.qty}`).join("\n");
+                        const orderTypeStr = activeBill.orderType === "takeaway" ? "TAKEAWAY / PARCEL" : (activeBill.tableId ? `DINE-IN (${activeBill.tableId})` : "DINE-IN");
+                        const msg = [
+                          `Hi ${customerName || "Customer"}, your ${businessName} bill is confirmed!`,
+                          `----------------------------------------`,
+                          `*${businessName}* - ${branch?.name || "Kitchen"}`,
+                          `Date: ${new Date(activeBill.date).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}`,
+                          `Order Type: *${orderTypeStr}*`,
+                          `Bill Ref: *#${activeBill.id.slice(0, 6).toUpperCase()}*`,
+                          `----------------------------------------`,
+                          `*ORDER ITEMS:*`,
+                          itemsText,
+                          `----------------------------------------`,
+                          `*NET TOTAL: Rs. ${activeBill.net}*`,
+                          `Payment Method: ${activeBill.payment.toUpperCase()}`,
+                          `----------------------------------------`,
+                          `Store Address: ${branch?.address || "Chennai"}`,
+                          branch?.phone ? `Contact: ${branch.phone}` : "",
+                          `Thank you for dining with ${businessName}! Visit again.`
+                        ].filter(Boolean).join("\n");
 
                         const whatsappUrl = `https://wa.me/91${validPhone}?text=${encodeURIComponent(msg)}`;
                         const w = window.open(whatsappUrl, "_blank");

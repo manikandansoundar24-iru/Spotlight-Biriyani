@@ -13,6 +13,7 @@ Use this guide to know **which document to read**, **what to explain to whom**, 
 | **Explain Product Features & Day-to-Day Operations to a Restaurant Owner** | `SPOTLIGHT_FULL_OPERATIONS_MANUAL.md` | `docs/SPOTLIGHT_FULL_OPERATIONS_MANUAL.md` |
 | **Explain Code Architecture Line-by-Line to a Developer or Technical Interviewer** | `CODE_WALKTHROUGH_LINE_BY_LINE.md` | `docs/CODE_WALKTHROUGH_LINE_BY_LINE.md` |
 | **Explain Cloud Tech Stack, Database & Hosting Architecture** | `ARCHITECTURE.md` | `docs/ARCHITECTURE.md` |
+| **How to Beat & Replace Petpooja (Feature Matrix & ₹14,000+ Price Breakdown)** | `PETPOOJA_VS_RESTOPULSE_BATTLECARD.md` | `public/PETPOOJA_VS_RESTOPULSE_BATTLECARD.pdf` & Brain Artifact |
 | **How to Pitch, Overcome Objections & Close Sales Deals with Restaurant Owners** | `RESTAURANT_SALES_BATTLECARD_AND_CLOSING_STRATEGY.md` | `docs/RESTAURANT_SALES_BATTLECARD_AND_CLOSING_STRATEGY.md` |
 | **Explain Restaurant Business Economics, Unit Economics & Margins** | `BUSINESS-PLAYBOOK.md` | `docs/BUSINESS-PLAYBOOK.md` |
 | **How to Setup, Install, and Run Locally from Scratch** | `SETUP.md` | `docs/SETUP.md` |

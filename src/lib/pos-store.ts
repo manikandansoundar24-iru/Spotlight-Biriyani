@@ -199,6 +199,7 @@ export type TenantConfig = {
   cashierPin?: string | undefined;
   kitchenPin?: string | undefined;
   branches?: Branch[] | undefined;
+  items?: Item[] | undefined;
   enabledModules: TenantModules;
 };
 
@@ -213,6 +214,28 @@ export const DEFAULT_TABLES: TableSession[] = [
   { id: "T8", name: "Table 8 (High Top)", capacity: 2, status: "available", lines: [] },
   { id: "O1", name: "Outdoor 1 (Patio)", capacity: 4, status: "available", lines: [] },
   { id: "O2", name: "Outdoor 2 (Patio)", capacity: 4, status: "available", lines: [] },
+];
+
+export const MANAM_DEFAULT_ITEMS: Item[] = [
+  { id: "mnm-1", name: "Manam Special Chicken Dum Biriyani", category: "biryani", price: 220, onlinePrice: 269, cost: 110, active: true },
+  { id: "mnm-2", name: "Velachery Mutton Dum Biriyani", category: "biryani", price: 310, onlinePrice: 379, cost: 175, active: true },
+  { id: "mnm-3", name: "Fragrant Kushka with Salna", category: "kushka", price: 110, onlinePrice: 145, cost: 42, active: true },
+  { id: "mnm-4", name: "Egg Dum Biriyani", category: "biryani", price: 150, onlinePrice: 189, cost: 65, active: true },
+  { id: "mnm-5", name: "Chicken 65 (Boneless)", category: "starter", price: 210, onlinePrice: 259, cost: 95, active: true },
+  { id: "mnm-6", name: "Tandoori Chicken (Half)", category: "starter", price: 240, onlinePrice: 299, cost: 115, active: true },
+  { id: "mnm-7", name: "Dragon Chicken", category: "chinese", price: 230, onlinePrice: 289, cost: 105, active: true },
+  { id: "mnm-8", name: "Chettinad Pepper Mutton Fry", category: "starter", price: 320, onlinePrice: 399, cost: 180, active: true },
+  { id: "mnm-9", name: "Paneer Tikka (Tandoori)", category: "starter", price: 190, onlinePrice: 239, cost: 85, active: true },
+  { id: "mnm-10", name: "Butter Chicken Masala", category: "curry", price: 240, onlinePrice: 299, cost: 110, active: true },
+  { id: "mnm-11", name: "Kadai Chicken Wok Gravy", category: "curry", price: 230, onlinePrice: 289, cost: 105, active: true },
+  { id: "mnm-12", name: "Chettinad Mutton Chukka Gravy", category: "curry", price: 330, onlinePrice: 410, cost: 185, active: true },
+  { id: "mnm-13", name: "Butter Garlic Naan", category: "bread", price: 65, onlinePrice: 85, cost: 22, active: true },
+  { id: "mnm-14", name: "Kerala Flaky Parotta (2 Pcs)", category: "bread", price: 60, onlinePrice: 79, cost: 20, active: true },
+  { id: "mnm-15", name: "Chilli Parotta Street Style", category: "bread", price: 150, onlinePrice: 189, cost: 58, active: true },
+  { id: "mnm-16", name: "Schezwan Chicken Fried Rice", category: "chinese", price: 190, onlinePrice: 240, cost: 80, active: true },
+  { id: "mnm-17", name: "Traditional Hot Bread Halwa", category: "dessert", price: 80, onlinePrice: 110, cost: 28, active: true },
+  { id: "mnm-18", name: "Elaneer Payasam", category: "dessert", price: 110, onlinePrice: 145, cost: 45, active: true },
+  { id: "mnm-19", name: "Fresh Mint Lime Mojito", category: "beverage", price: 90, onlinePrice: 120, cost: 24, active: true },
 ];
 
 export const DEFAULT_TENANTS: TenantConfig[] = [
@@ -234,6 +257,7 @@ export const DEFAULT_TENANTS: TenantConfig[] = [
     loginPassword: "manam2026",
     cashierPin: "4001",
     kitchenPin: "5555",
+    items: MANAM_DEFAULT_ITEMS,
     branches: [
       {
         id: "velachery-phoenix",
@@ -476,9 +500,12 @@ export function getLiveBatchStatus(db: DB, branchId: string) {
   let kushkaSold = 0;
   let eggSold = 0;
 
+  const activeTenantId = db.activeTenantId || "spotlight-biriyani";
   const soldToday = sales
     .filter((s) => {
       if (!s || typeof s.date !== "string") return false;
+      const matchTenant = s.tenantId ? s.tenantId === activeTenantId : activeTenantId === "spotlight-biriyani";
+      if (!matchTenant) return false;
       const matchBranch =
         s.branchId === branchId || !s.branchId || (branchId === "taramani" && s.branchId === "tharamani");
       return matchBranch && isSameDay(s.date);
@@ -897,6 +924,8 @@ export function getDB(): DB {
         if (!cur.address && dt.address) { cur.address = dt.address; changed = true; }
         if (!cur.phone && dt.phone) { cur.phone = dt.phone; changed = true; }
         if (!cur.activeBranchName && dt.activeBranchName) { cur.activeBranchName = dt.activeBranchName; changed = true; }
+        if (!cur.items || cur.items.length === 0) { if (dt.items) cur.items = dt.items; changed = true; }
+        if (cur.degBatchEnabled !== dt.degBatchEnabled) { cur.degBatchEnabled = dt.degBatchEnabled; changed = true; }
         if (changed) needsPersist = true;
       }
     });
@@ -1212,15 +1241,25 @@ export function recordShiftClose(close: Omit<ShiftDayClose, "id" | "closedAt">) 
 export function getActiveTenant(db?: DB | null): TenantConfig {
   const currentDB = db ?? getDB();
   const tenants = currentDB.tenants && currentDB.tenants.length > 0 ? currentDB.tenants : DEFAULT_TENANTS;
-  const activeId = currentDB.activeTenantId || "spotlight-biriyani";
+  let activeId = currentDB.activeTenantId || "spotlight-biriyani";
+  if (typeof window !== "undefined") {
+    const sessionTenant = sessionStorage.getItem("restopulse_session_tenant") || localStorage.getItem("spotlight_auth_tenant");
+    if (sessionTenant && tenants.some((t) => t.id === sessionTenant)) {
+      activeId = sessionTenant;
+    }
+  }
   const found = tenants.find((t) => t.id === activeId);
   return found ?? tenants[0] ?? DEFAULT_TENANTS[0]!;
 }
 
 /**
- * Multi-Tenant Switcher (Used exclusively by Developer Super-Admin).
+ * Multi-Tenant Switcher (Used by Developer Super-Admin & Login Gateway).
  */
 export function switchClientTenant(tenantId: string) {
+  if (typeof window !== "undefined") {
+    sessionStorage.setItem("restopulse_session_tenant", tenantId);
+    localStorage.setItem("spotlight_auth_tenant", tenantId);
+  }
   setDB((d) => {
     if (!d.tenants || d.tenants.length === 0) d.tenants = [...DEFAULT_TENANTS];
     const tenant = d.tenants.find((t) => t.id === tenantId);
@@ -1229,6 +1268,9 @@ export function switchClientTenant(tenantId: string) {
       d.settings.businessName = tenant.businessName;
       d.settings.gstPct = tenant.gstPct;
       if (tenant.upiId) d.settings.upiId = tenant.upiId;
+      if (tenant.items && tenant.items.length > 0) {
+        d.items = [...tenant.items];
+      }
       if (tenant.branches && tenant.branches.length > 0 && tenant.branches[0]) {
         d.branches = [...tenant.branches];
         d.settings.activeBranchId = tenant.branches[0].id;

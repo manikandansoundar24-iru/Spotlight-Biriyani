@@ -288,16 +288,6 @@ function ManamShowcasePage() {
 
           <div className="flex items-center gap-2.5">
             <a
-              href="/PETPOOJA_VS_RESTOPULSE_BATTLECARD.pdf"
-              target="_blank"
-              rel="noreferrer"
-              className="hidden md:inline-flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/80 px-3 py-2 text-xs font-bold text-slate-200 hover:text-white hover:border-amber-500/50 transition-all shadow-xs"
-            >
-              <Download className="size-3.5 text-amber-400" />
-              <span>Battlecard (PDF)</span>
-            </a>
-
-            <a
               href="https://wa.me/919840099887?text=Hi%20Manam%20Restaurant,%20I%20would%20like%20to%20order%20food%20or%20reserve%20a%20table"
               target="_blank"
               rel="noreferrer"
@@ -615,13 +605,13 @@ function ManamShowcasePage() {
               </a>
 
               <a
-                href="/PETPOOJA_VS_RESTOPULSE_BATTLECARD.pdf"
+                href="https://maps.app.goo.gl/nFAipTWvd2V2BdeZA"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-800 hover:bg-slate-700 px-6 py-3 text-xs font-bold text-slate-200 transition-all"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-800 hover:bg-slate-700 px-6 py-3.5 text-sm font-bold text-slate-200 transition-all"
               >
-                <Download className="size-3.5 text-amber-400" />
-                <span>Download POS Battlecard (PDF)</span>
+                <MapPin className="size-4 text-amber-400" />
+                <span>Visit Restaurant (Google Maps)</span>
               </a>
             </div>
           </div>
@@ -712,19 +702,14 @@ function ManamShowcasePage() {
               <span>Manam Staff POS Login</span>
             </Link>
             <span className="text-slate-600">·</span>
-            <a href="/PETPOOJA_VS_RESTOPULSE_BATTLECARD.pdf" target="_blank" className="hover:underline flex items-center gap-1">
-              <Download className="size-3" />
-              <span>Battlecard PDF</span>
-            </a>
-            <span className="text-slate-600">·</span>
             <a href="https://maps.app.goo.gl/nFAipTWvd2V2BdeZA" target="_blank" rel="noreferrer" className="hover:underline flex items-center gap-1">
               <MapPin className="size-3" />
-              <span>Google Maps</span>
+              <span>Google Maps Directions</span>
             </a>
             <span className="text-slate-600">·</span>
-            <Link to="/" className="text-slate-400 hover:text-white">
-              Spot Light Biriyani
-            </Link>
+            <span className="text-slate-400">
+              Powered by RestoPulse Cloud ERP
+            </span>
           </div>
         </div>
       </footer>

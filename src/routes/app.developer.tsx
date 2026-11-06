@@ -582,7 +582,9 @@ export function DeveloperSuperAdminPage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] text-muted-foreground line-clamp-1">📍 {t.activeBranchName}</p>
+                  <p className="text-[11px] text-muted-foreground line-clamp-1" title={t.branches && t.branches.length > 0 ? t.branches.map((b) => b.name).join(", ") : t.activeBranchName}>
+                    📍 {t.branches && t.branches.length > 0 ? t.branches.map((b) => b.name).join(" · ") : t.activeBranchName}
+                  </p>
                   <p className="text-[11px] text-muted-foreground font-mono mt-0.5">{t.phone}</p>
                 </div>
 

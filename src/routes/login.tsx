@@ -239,28 +239,16 @@ function LoginPage() {
 
           {/* Right Action Links */}
           <div className="flex items-center gap-2 sm:gap-3">
-            <a
-              href="/PETPOOJA_VS_RESTOPULSE_BATTLECARD.pdf"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors shadow-2xs"
-            >
-              <Download className="size-3" />
-              <span className="hidden sm:inline">Battlecard (PDF)</span>
-              <span className="sm:hidden">PDF</span>
-            </a>
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2.5 py-0.5">
+              <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Terminals Online</span>
+            </span>
 
             <Link
-              to="/manam"
+              to="/"
               className="text-xs font-bold text-muted-foreground hover:text-foreground px-2 py-1 rounded transition-colors"
             >
-              🍽️ Manam
-            </Link>
-            <Link
-              to="/menu"
-              className="text-xs font-bold text-muted-foreground hover:text-foreground px-2 py-1 rounded transition-colors"
-            >
-              🔥 Spot Light
+              Platform Home
             </Link>
           </div>
         </div>

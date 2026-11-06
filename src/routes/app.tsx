@@ -194,7 +194,7 @@ function AppLayout() {
             {/* Unified Restaurant + Branch Dropdown Pill */}
             <div className="flex items-center rounded-xl border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs shadow-2xs">
               <span className="font-black text-foreground text-xs flex items-center gap-1.5 mr-2">
-                🍽️ {db?.settings?.businessName || activeTenant.businessName || "Spot Light Biriyani"}
+                🍽️ {activeTenant.businessName || db?.settings?.businessName || "Restaurant"}
               </span>
               <span className="text-muted-foreground mr-1.5">·</span>
               <select
@@ -207,7 +207,10 @@ function AppLayout() {
                 className="rounded-lg border-none bg-transparent py-0 text-xs font-bold text-primary focus:outline-none cursor-pointer"
                 title="Select active restaurant branch"
               >
-                {(db ?? getDB()).branches.map((b) => (
+                {(activeTenant.branches && activeTenant.branches.length > 0
+                  ? activeTenant.branches
+                  : (db ?? getDB()).branches
+                ).map((b) => (
                   <option key={b.id} value={b.id}>
                     📍 {b.name}
                   </option>
