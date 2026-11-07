@@ -1,6 +1,6 @@
 {
-  "name": "RestoPulse — Cloud POS & Kitchen ERP",
-  "short_name": "RestoPulse",
+  "name": "RestroStack — Cloud POS & Kitchen ERP",
+  "short_name": "RestroStack",
   "start_url": "/app/billing",
   "display": "standalone",
   "background_color": "#09090b",

@@ -276,14 +276,15 @@ function ManamShowcasePage() {
             </span>
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <span className="font-display font-black text-lg tracking-wider text-white">
+                <span className="font-display font-black text-xl tracking-wider text-white drop-shadow-sm">
                   MANAM
                 </span>
-                <span className="rounded bg-amber-500/20 border border-amber-500/40 px-2 py-0.5 text-[10px] font-black text-amber-400">
+                <span className="rounded bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-0.5 text-[10px] font-black text-black shadow-xs">
                   RESTAURANT
                 </span>
               </div>
-              <span className="text-[11px] text-slate-400 font-medium">
+              <span className="text-[11px] text-amber-300 font-bold flex items-center gap-1">
+                <MapPin className="size-3 text-amber-400 shrink-0" />
                 Velachery · Opp. Phoenix Market City
               </span>
             </div>
@@ -574,7 +575,7 @@ function ManamShowcasePage() {
                 OWN A MANAM FRANCHISE &amp; CORPORATE BULK CATERING
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Partner with Chennai's fastest-growing midnight dining brand. Tap into high footfall Velachery and OMR IT tech parks with proven high-margin culinary recipes and zero-headache RestoPulse POS ERP management.
+                Partner with Chennai's fastest-growing midnight dining brand. Tap into high footfall Velachery and OMR IT tech parks with proven high-margin culinary recipes and zero-headache RestroStack POS ERP management.
               </p>
               <div className="grid grid-cols-2 gap-3 pt-2 text-xs font-semibold text-slate-300">
                 <div className="flex items-center gap-2">
@@ -734,7 +735,7 @@ function ManamShowcasePage() {
           </p>
 
           <p className="text-[11px] text-slate-500 max-w-md mx-auto">
-            Live order billing, kitchen KDS, floor tables, and WhatsApp digital receipts for Manam Restaurant are powered by <strong>RestoPulse Cloud ERP</strong>.
+            Live order billing, kitchen KDS, floor tables, and WhatsApp digital receipts for Manam Restaurant are powered by <strong>RestroStack Cloud ERP</strong>.
           </p>
 
           <div className="pt-2 flex flex-wrap items-center justify-center gap-3 sm:gap-5 text-xs font-bold text-amber-400">
@@ -749,7 +750,7 @@ function ManamShowcasePage() {
             </a>
             <span className="text-slate-600">·</span>
             <span className="text-slate-400">
-              Powered by RestoPulse Cloud ERP
+              Powered by RestroStack Cloud ERP
             </span>
           </div>
         </div>

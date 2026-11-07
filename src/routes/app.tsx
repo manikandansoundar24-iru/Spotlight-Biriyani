@@ -18,13 +18,13 @@ export const Route = createFileRoute("/app")({
   },
   head: () => ({
     meta: [
-      { title: "RestoPulse Cloud ERP & POS Terminal" },
+      { title: "RestroStack Cloud ERP & POS Terminal" },
       {
         name: "description",
         content:
           "Multi-tenant restaurant terminal for counter billing, kitchen KDS, dynamic UPI QR, live deg stock, and multi-branch operations.",
       },
-      { property: "og:title", content: "RestoPulse POS Terminal" },
+      { property: "og:title", content: "RestroStack POS Terminal" },
       { property: "og:description", content: "Billing, stock and real profit tracking for restaurant operators." },
       { name: "robots", content: "noindex" },
     ],
@@ -185,7 +185,7 @@ function AppLayout() {
               <div className="flex flex-col">
                 <div className="flex items-center gap-1.5">
                   <span className="font-display font-black text-sm sm:text-base tracking-wide leading-none text-foreground">
-                    {db?.saasPlatformName || "RESTOPULSE"}
+                    {db?.saasPlatformName || "RESTROSTACK"}
                   </span>
                   <span className="text-[10px] font-bold text-primary bg-primary/10 border border-primary/20 rounded px-1.5 py-0.2 leading-tight">
                     Cloud POS
@@ -215,12 +215,28 @@ function AppLayout() {
             <div className="flex items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/10 px-2.5 sm:px-3 py-1.5 text-xs shadow-2xs">
               <MapPin className="size-3.5 text-primary shrink-0" />
               <select
-                value={db?.settings.activeBranchId ?? ""}
-                onChange={(e) =>
-                  setDB((d) => {
-                    d.settings.activeBranchId = e.target.value;
-                  })
+                value={
+                  (activeTenant.branches && activeTenant.branches.some((b) => b.id === db?.settings.activeBranchId))
+                    ? (db?.settings.activeBranchId ?? "")
+                    : (activeTenant.branches?.[0]?.id ?? "")
                 }
+                onChange={(e) => {
+                  const targetBranchId = e.target.value;
+                  const branchesList = activeTenant.branches && activeTenant.branches.length > 0 ? activeTenant.branches : (db ?? getDB()).branches;
+                  const targetBranch = branchesList.find((b) => b.id === targetBranchId);
+                  setDB((d) => {
+                    d.settings.activeBranchId = targetBranchId;
+                    if (d.tenants) {
+                      const t = d.tenants.find((item) => item.id === activeTenant.id);
+                      if (t && targetBranch) {
+                        t.activeBranchName = targetBranch.name;
+                        t.address = targetBranch.address || t.address;
+                        t.phone = targetBranch.phone || t.phone;
+                      }
+                    }
+                  });
+                  toast.success(`Active branch switched to ${targetBranch?.name || targetBranchId}`);
+                }}
                 className="rounded-md border-none bg-transparent py-0 text-xs font-bold text-primary focus:outline-none cursor-pointer max-w-[125px] sm:max-w-[170px] truncate"
                 title="Select active restaurant branch"
               >

@@ -11,6 +11,7 @@ import {
   KeyRound,
   Layers,
   Lock,
+  Pencil,
   Plus,
   Power,
   RefreshCw,
@@ -56,12 +57,12 @@ export const Route = createFileRoute("/app/developer")({
 });
 
 const BRAND_PRESETS = [
-  { name: "RestoPulse", tag: "Recommended Flagship", desc: "Dynamic real-time restaurant operating pulse" },
+  { name: "RestroStack", tag: "Recommended Flagship", desc: "Developer-grade hospitality & restaurant cloud POS stack" },
+  { name: "RestoPulse", tag: "Enterprise Cloud", desc: "Dynamic real-time restaurant operating pulse" },
   { name: "DinePulse", tag: "Modern QSR", desc: "Fast-casual dining and counter intelligence" },
   { name: "RestoSwift", tag: "Speed & Scale", desc: "Ultra-fast billing and high-speed kitchen turnover" },
   { name: "DegFlow", tag: "Biriyani Specialist", desc: "Tailored for authentic dum deg batch kitchens" },
   { name: "DineMatrix", tag: "Enterprise Analytics", desc: "Full-scale multi-outlet intelligence network" },
-  { name: "RestroStack", tag: "SaaS Tech Stack", desc: "Developer-grade hospitality software stack" },
 ];
 
 export function DeveloperSuperAdminPage() {
@@ -98,6 +99,10 @@ export function DeveloperSuperAdminPage() {
   const [newBranchLoc, setNewBranchLoc] = useState("");
   const [newBranchPhone, setNewBranchPhone] = useState("");
   const [showAddBranchForm, setShowAddBranchForm] = useState(false);
+  const [editingBranchId, setEditingBranchId] = useState<string | null>(null);
+  const [branchEditName, setBranchEditName] = useState("");
+  const [branchEditAddress, setBranchEditAddress] = useState("");
+  const [branchEditPhone, setBranchEditPhone] = useState("");
 
   const currentDB = db ?? getDB();
   const activeTenant = getActiveTenant(currentDB);
@@ -241,6 +246,41 @@ export function DeveloperSuperAdminPage() {
       updateTenant(updatedTenant);
       toast.success("Branch removed successfully.");
     }
+  };
+
+  const handleStartEditBranch = (b: { id: string; name: string; address?: string; phone?: string }) => {
+    setEditingBranchId(b.id);
+    setBranchEditName(b.name);
+    setBranchEditAddress(b.address || editTenant?.address || "");
+    setBranchEditPhone(b.phone || editTenant?.phone || "");
+  };
+
+  const handleSaveBranchEdit = (branchId: string) => {
+    if (!editTenant) return;
+    if (!branchEditName.trim()) {
+      toast.error("Branch name cannot be empty.");
+      return;
+    }
+    const currentBranches = editTenant.branches || [];
+    const updatedBranches = currentBranches.map((b) =>
+      b.id === branchId
+        ? {
+            ...b,
+            name: branchEditName.trim(),
+            address: branchEditAddress.trim() || editTenant.address,
+            phone: branchEditPhone.trim() || editTenant.phone,
+          }
+        : b
+    );
+    const updatedTenant: TenantConfig = {
+      ...editTenant,
+      branches: updatedBranches,
+      activeBranchName: updatedBranches[0]?.name || editTenant.activeBranchName,
+    };
+    setEditTenant(updatedTenant);
+    updateTenant(updatedTenant);
+    setEditingBranchId(null);
+    toast.success(`Branch "${branchEditName.trim()}" details updated successfully!`);
   };
 
   const handleApplyPresetPlan = (plan: "starter" | "standard" | "biriyani_pro" | "enterprise") => {
@@ -542,7 +582,7 @@ export function DeveloperSuperAdminPage() {
             <h2 className="text-base font-black text-foreground">Master SaaS Platform Brand Name</h2>
           </div>
           <span className="text-xs font-bold text-primary">
-            Active Global Brand: <span className="font-black text-foreground">{currentDB.saasPlatformName || "RestoPulse"}</span>
+            Active Global Brand: <span className="font-black text-foreground">{currentDB.saasPlatformName || "RestroStack"}</span>
           </span>
         </div>
 
@@ -552,7 +592,7 @@ export function DeveloperSuperAdminPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {BRAND_PRESETS.map((b) => {
-            const isSelected = (currentDB.saasPlatformName || "RestoPulse").toLowerCase() === b.name.toLowerCase();
+            const isSelected = (currentDB.saasPlatformName || "RestroStack").toLowerCase() === b.name.toLowerCase();
             return (
               <button
                 key={b.name}
@@ -863,17 +903,18 @@ export function DeveloperSuperAdminPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    const nextVal = !(editTenant.degBatchEnabled ?? true);
+                    const isCurrentlyEnabled = editTenant.degBatchEnabled === true;
+                    const nextVal = !isCurrentlyEnabled;
                     const updated = { ...editTenant, degBatchEnabled: nextVal };
                     setEditTenant(updated);
                     updateTenant(updated);
                     toast.info(`Deg Batch Tracking set to ${nextVal ? "ON" : "OFF"}`);
                   }}
                   className={`size-6 rounded-lg flex items-center justify-center font-bold text-xs transition-colors ${
-                    editTenant.degBatchEnabled ?? true ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground border border-border"
+                    editTenant.degBatchEnabled === true ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground border border-border"
                   }`}
                 >
-                  {editTenant.degBatchEnabled ?? true ? "✓" : "✕"}
+                  {editTenant.degBatchEnabled === true ? "✓" : "✕"}
                 </button>
               </div>
 
@@ -1124,29 +1165,90 @@ export function DeveloperSuperAdminPage() {
                 </div>
 
                 {/* Branch Cards */}
-                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                   {(editTenant.branches && editTenant.branches.length > 0
                     ? editTenant.branches
                     : [{ id: "main", name: editTenant.activeBranchName || "Main Kitchen", address: editTenant.address, phone: editTenant.phone }]
                   ).map((b) => (
                     <div
                       key={b.id}
-                      className="flex items-center justify-between p-2 rounded-xl border border-border bg-card text-[11px]"
+                      className="p-2.5 rounded-xl border border-border bg-card text-[11px] space-y-1.5 transition-all"
                     >
-                      <div className="min-w-0 pr-2">
-                        <span className="font-black text-foreground block truncate">📍 {b.name}</span>
-                        <span className="text-[10px] text-muted-foreground block truncate">{b.address}</span>
-                        <span className="text-[10px] font-mono text-primary">{b.phone}</span>
-                      </div>
-                      {(editTenant.branches?.length ?? 1) > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveBranchFromTenant(b.id)}
-                          className="p-1 text-muted-foreground hover:text-destructive transition-colors shrink-0"
-                          title="Delete branch"
-                        >
-                          <Trash2 className="size-3.5" />
-                        </button>
+                      {editingBranchId === b.id ? (
+                        <div className="space-y-2 bg-muted/30 p-2 rounded-lg border border-primary/30">
+                          <span className="font-bold text-primary block text-[11px]">Edit Branch: {b.name}</span>
+                          <div>
+                            <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">Branch Name</label>
+                            <input
+                              type="text"
+                              value={branchEditName}
+                              onChange={(e) => setBranchEditName(e.target.value)}
+                              className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs font-bold focus:border-primary focus:outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">Address / Landmark</label>
+                            <input
+                              type="text"
+                              value={branchEditAddress}
+                              onChange={(e) => setBranchEditAddress(e.target.value)}
+                              className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs focus:border-primary focus:outline-none"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">Phone / WhatsApp</label>
+                            <input
+                              type="text"
+                              value={branchEditPhone}
+                              onChange={(e) => setBranchEditPhone(e.target.value)}
+                              className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs font-mono focus:border-primary focus:outline-none"
+                            />
+                          </div>
+                          <div className="flex justify-end gap-1.5 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => setEditingBranchId(null)}
+                              className="px-2.5 py-1 rounded-md border border-border bg-card text-[10px] font-bold text-muted-foreground hover:text-foreground"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleSaveBranchEdit(b.id)}
+                              className="px-3 py-1 rounded-md bg-primary text-white text-[10px] font-bold hover:bg-primary/90 shadow-2xs"
+                            >
+                              Save Branch
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between">
+                          <div className="min-w-0 pr-2">
+                            <span className="font-black text-foreground block truncate">📍 {b.name}</span>
+                            <span className="text-[10px] text-muted-foreground block truncate">{b.address || editTenant.address}</span>
+                            <span className="text-[10px] font-mono text-primary">{b.phone || editTenant.phone}</span>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleStartEditBranch(b)}
+                              className="p-1 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                              title="Edit branch details (name, address, phone)"
+                            >
+                              <Pencil className="size-3.5" />
+                            </button>
+                            {(editTenant.branches?.length ?? 1) > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveBranchFromTenant(b.id)}
+                                className="p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                title="Delete branch"
+                              >
+                                <Trash2 className="size-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
                       )}
                     </div>
                   ))}

@@ -44,7 +44,7 @@ const PRESETS = [
     actionLabel: "Reserve on WhatsApp",
   },
   {
-    label: "⚡ RestoPulse POS Login",
+    label: "⚡ RestroStack POS Login",
     answer:
       "Authorized Manam Restaurant staff, cashier, or chef? Access the dedicated touch POS and Kitchen Display System (KDS) here.",
     actionUrl: "/login?tenant=manam-restaurant",

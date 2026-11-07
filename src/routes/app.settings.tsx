@@ -3,7 +3,7 @@ import { Check, CheckSquare, Cpu, Eye, FileText, KeyRound, Lock, Plus, Printer, 
 import { useRef, useState, useEffect } from "react";
 import { toast } from "sonner";
 
-import { DEFAULT_PRINTER_SETTINGS, exportJSON, importJSON, resetDB, setDB, useDB } from "@/lib/pos-store";
+import { DEFAULT_PRINTER_SETTINGS, exportJSON, getActiveTenant, importJSON, resetDB, setDB, useDB } from "@/lib/pos-store";
 
 export const Route = createFileRoute("/app/settings")({
   component: Settings,
@@ -14,7 +14,7 @@ function Settings() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [role, setRole] = useState<string>("owner");
   const [activeTab, setActiveTab] = useState<"store" | "printer" | "aggregators">("store");
-  const [selectedBranchId, setSelectedBranchId] = useState<string>("taramani");
+  const [selectedBranchId, setSelectedBranchId] = useState<string>("");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -26,7 +26,10 @@ function Settings() {
   if (!db) return <p className="text-sm text-muted-foreground">Loading…</p>;
 
   const printer = db.settings.printerSettings ?? DEFAULT_PRINTER_SETTINGS;
-  const currentBranch = db.branches.find((b) => b.id === (selectedBranchId || db.settings.activeBranchId)) || db.branches[0];
+  const activeTenant = getActiveTenant(db);
+  const branchesList = activeTenant.branches && activeTenant.branches.length > 0 ? activeTenant.branches : db.branches;
+  const currentBranchId = selectedBranchId || db.settings.activeBranchId || branchesList[0]?.id || "main";
+  const currentBranch = branchesList.find((b) => b.id === currentBranchId) || branchesList[0];
 
   const testPrint = () => {
     const is58 = printer.paperWidth === "58mm";
@@ -151,7 +154,7 @@ function Settings() {
                 </span>
               </div>
               <div className="flex flex-wrap gap-2">
-                {db.branches.map((b) => (
+                {branchesList.map((b) => (
                   <button
                     key={b.id}
                     type="button"
@@ -178,7 +181,7 @@ function Settings() {
               <label className="text-xs font-bold text-muted-foreground">
                 Restaurant Trade Name
                 <input
-                  value={db.settings.businessName}
+                  value={activeTenant.businessName || db.settings.businessName}
                   onChange={(e) =>
                     setDB((d) => {
                       d.settings.businessName = e.target.value;

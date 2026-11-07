@@ -3,12 +3,12 @@ import { AlertCircle, CheckCircle2, Code2, Download, Eye, EyeOff, Flame, KeyRoun
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { DEFAULT_TENANTS, getDB, setDB, switchClientTenant, TenantConfig } from "@/lib/pos-store";
+import { DEFAULT_TENANTS, getDB, setDB, switchClientTenant, TenantConfig, useDB } from "@/lib/pos-store";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Staff & Terminal Gateway — RestoPulse Enterprise POS & Cloud ERP" },
+      { title: "Staff & Terminal Gateway — RestroStack Enterprise POS & Cloud ERP" },
       {
         name: "description",
         content: "Secure terminal authentication portal for Restaurant Owners, Cashiers, Kitchen Chefs, and System Architects.",
@@ -23,6 +23,7 @@ type CustomerMode = "login" | "signup";
 type RoleTab = "owner" | "cashier" | "kitchen" | "developer";
 
 function LoginPage() {
+  const db = useDB();
   const navigate = useNavigate();
   const [portalType, setPortalType] = useState<PortalType>("staff");
   const [customerMode, setCustomerMode] = useState<CustomerMode>("login");
@@ -205,7 +206,7 @@ function LoginPage() {
         toast.error(`Incorrect Kitchen PIN. Chef PIN is ${currentTenant.kitchenPin || "5555"}`);
       }
     } else if (role === "developer") {
-      if (devKey === "dev@spotlight2026" || devKey === "admin" || devKey === "9999" || devKey === "restopulse2026") {
+      if (devKey === "dev@spotlight2026" || devKey === "admin" || devKey === "9999" || devKey === "restrostack2026" || devKey === "restopulse2026") {
         sessionStorage.setItem("spotlight_session_active", "true");
         localStorage.setItem("spotlight_auth_role", "developer");
         localStorage.setItem("spotlight_auth_user", "System Architect & Super-Admin");
@@ -252,7 +253,7 @@ function LoginPage() {
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
                 <span className="font-display font-black text-sm tracking-wide text-foreground">
-                  RESTOPULSE
+                  {db?.saasPlatformName || "RESTROSTACK"}
                 </span>
                 <span className="rounded bg-primary/10 border border-primary/20 px-1.5 py-0.2 text-[9px] font-bold text-primary">
                   Cloud ERP &amp; POS
@@ -289,7 +290,7 @@ function LoginPage() {
         <div className="relative z-10">
           <div className="text-center max-w-xl mx-auto">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-1 text-xs font-bold text-primary">
-              <Shield className="size-3.5" /> RestoPulse Enterprise Platform
+              <Shield className="size-3.5" /> {db?.saasPlatformName || "RestroStack"} Enterprise Platform
             </span>
             <h1 className="mt-3 text-2xl sm:text-4xl font-display font-black tracking-tight text-foreground">
               TERMINAL &amp; STAFF GATEWAY
@@ -488,7 +489,7 @@ function LoginPage() {
                       ⚡
                     </span>
                     <span className="font-display font-black text-xs uppercase tracking-wider text-foreground">
-                      RESTOPULSE
+                      {db?.saasPlatformName || "RESTROSTACK"}
                     </span>
                     <span className="rounded bg-primary/10 px-1.5 py-0.2 text-[9px] font-bold text-primary">
                       Cloud ERP
@@ -732,7 +733,7 @@ function LoginPage() {
       {/* Modern SaaS Footer */}
       <footer className="border-t border-border/60 py-4 text-center text-xs text-muted-foreground bg-card/60">
         <div className="mx-auto max-w-5xl px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>&copy; 2026 RestoPulse OS &middot; Multi-Tenant Cloud ERP &middot; Zero-Setup POS</span>
+          <span>&copy; 2026 {db?.saasPlatformName || "RestroStack"} OS &middot; Multi-Tenant Cloud ERP &middot; Zero-Setup POS</span>
           <div className="flex items-center gap-3">
             <a
               href="/PETPOOJA_VS_RESTOPULSE_BATTLECARD.pdf"

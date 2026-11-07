@@ -120,12 +120,14 @@ export const DEFAULT_PRINTER_SETTINGS: PrinterSettings = {
 /* --- Phase 2 Enterprise Types --- */
 
 export type TableStatus = "available" | "occupied" | "billed";
+export type TableSection = "ac" | "non-ac" | "outdoor";
 
 export type TableSession = {
   id: string; // "T1", "T2", ... "T8", "O1", "O2"
   name: string; // "Table 1 (Window)", etc.
   capacity: number; // 2, 4, 6
   status: TableStatus;
+  section?: TableSection;
   lines: SaleLine[];
   customerPhone?: string | undefined;
   customerName?: string | undefined;
@@ -206,16 +208,27 @@ export type TenantConfig = {
 };
 
 export const DEFAULT_TABLES: TableSession[] = [
-  { id: "T1", name: "Table 1 (Window)", capacity: 2, status: "available", lines: [] },
-  { id: "T2", name: "Table 2 (Window)", capacity: 2, status: "available", lines: [] },
-  { id: "T3", name: "Table 3 (Center)", capacity: 4, status: "available", lines: [] },
-  { id: "T4", name: "Table 4 (Center)", capacity: 4, status: "available", lines: [] },
-  { id: "T5", name: "Table 5 (Booth)", capacity: 4, status: "available", lines: [] },
-  { id: "T6", name: "Table 6 (Family)", capacity: 6, status: "available", lines: [] },
-  { id: "T7", name: "Table 7 (High Top)", capacity: 4, status: "available", lines: [] },
-  { id: "T8", name: "Table 8 (High Top)", capacity: 2, status: "available", lines: [] },
-  { id: "O1", name: "Outdoor 1 (Patio)", capacity: 4, status: "available", lines: [] },
-  { id: "O2", name: "Outdoor 2 (Patio)", capacity: 4, status: "available", lines: [] },
+  // A/C Family Hall
+  { id: "A1", name: "A/C Table 1", capacity: 4, section: "ac", status: "available", lines: [] },
+  { id: "A2", name: "A/C Table 2", capacity: 4, section: "ac", status: "available", lines: [] },
+  { id: "A3", name: "A/C Table 3 (Family)", capacity: 6, section: "ac", status: "available", lines: [] },
+  { id: "A4", name: "A/C Table 4 (Couple)", capacity: 2, section: "ac", status: "available", lines: [] },
+
+  // Non-A/C Main Dining Hall
+  { id: "T1", name: "Table 1 (Window)", capacity: 2, section: "non-ac", status: "available", lines: [] },
+  { id: "T2", name: "Table 2 (Window)", capacity: 2, section: "non-ac", status: "available", lines: [] },
+  { id: "T3", name: "Table 3 (Center)", capacity: 4, section: "non-ac", status: "available", lines: [] },
+  { id: "T4", name: "Table 4 (Center)", capacity: 4, section: "non-ac", status: "available", lines: [] },
+  { id: "T5", name: "Table 5 (Booth)", capacity: 4, section: "non-ac", status: "available", lines: [] },
+  { id: "T6", name: "Table 6 (Family)", capacity: 6, section: "non-ac", status: "available", lines: [] },
+  { id: "T7", name: "Table 7 (High Top)", capacity: 4, section: "non-ac", status: "available", lines: [] },
+  { id: "T8", name: "Table 8 (High Top)", capacity: 2, section: "non-ac", status: "available", lines: [] },
+
+  // Outdoor Open Lawn / Balcony
+  { id: "O1", name: "Outdoor 1 (Patio)", capacity: 4, section: "outdoor", status: "available", lines: [] },
+  { id: "O2", name: "Outdoor 2 (Patio)", capacity: 4, section: "outdoor", status: "available", lines: [] },
+  { id: "O3", name: "Outdoor 3 (Garden)", capacity: 6, section: "outdoor", status: "available", lines: [] },
+  { id: "O4", name: "Outdoor 4 (Garden)", capacity: 4, section: "outdoor", status: "available", lines: [] },
 ];
 
 export const MANAM_DEFAULT_ITEMS: Item[] = [
@@ -353,7 +366,7 @@ export const DEFAULT_TENANTS: TenantConfig[] = [
     upiId: "manamrestaurant@okhdfcbank",
     gstPct: 5,
     cuisineType: "Multi-Cuisine & Family Dining",
-    degBatchEnabled: false,
+    degBatchEnabled: true,
     currencySymbol: "₹",
     loginUsername: "owner@manam.in",
     loginPassword: "manam2026",
@@ -967,6 +980,10 @@ if (typeof window !== "undefined") {
       listeners.forEach((l) => l());
     }
   });
+
+  window.addEventListener("slb_store_updated", () => {
+    listeners.forEach((l) => l());
+  });
 }
 
 function notifyAllTabs() {
@@ -974,6 +991,13 @@ function notifyAllTabs() {
     broadcastBus?.postMessage({ type: "SLB_STORE_UPDATED", timestamp: Date.now() });
   } catch {
     // broadcast fallback
+  }
+  if (typeof window !== "undefined") {
+    try {
+      window.dispatchEvent(new CustomEvent("slb_store_updated", { detail: Date.now() }));
+    } catch {
+      // custom event fallback
+    }
   }
 }
 
@@ -1029,12 +1053,12 @@ export function getDB(): DB {
         if (!cur.loginPassword) { cur.loginPassword = dt.loginPassword; changed = true; }
         if (!cur.cashierPin) { cur.cashierPin = dt.cashierPin; changed = true; }
         if (!cur.kitchenPin) { cur.kitchenPin = dt.kitchenPin; changed = true; }
-        if (!cur.branches || cur.branches.length < (dt.branches?.length || 0)) { cur.branches = dt.branches; changed = true; }
+        if (!cur.branches || cur.branches.length === 0) { cur.branches = dt.branches; changed = true; }
         if (!cur.address && dt.address) { cur.address = dt.address; changed = true; }
         if (!cur.phone && dt.phone) { cur.phone = dt.phone; changed = true; }
         if (!cur.activeBranchName && dt.activeBranchName) { cur.activeBranchName = dt.activeBranchName; changed = true; }
         if (!cur.items || cur.items.length < (dt.items?.length || 0)) { if (dt.items) cur.items = [...dt.items]; changed = true; }
-        if (cur.degBatchEnabled !== dt.degBatchEnabled) { cur.degBatchEnabled = dt.degBatchEnabled; changed = true; }
+        if (cur.degBatchEnabled === undefined && dt.degBatchEnabled !== undefined) { cur.degBatchEnabled = dt.degBatchEnabled; changed = true; }
         if (changed) needsPersist = true;
       }
     });
@@ -1079,8 +1103,8 @@ export function getDB(): DB {
     cache.settings.upiId = "spotlightbiriyani@oksbi";
     needsPersist = true;
   }
-  if (!cache.saasPlatformName) {
-    cache.saasPlatformName = "RestoPulse";
+  if (!cache.saasPlatformName || cache.saasPlatformName === "RestoPulse") {
+    cache.saasPlatformName = "RestroStack";
     needsPersist = true;
   }
 
