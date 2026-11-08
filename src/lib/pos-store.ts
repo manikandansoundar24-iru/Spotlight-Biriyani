@@ -650,27 +650,33 @@ export function getLiveBatchStatus(db: DB, branchId?: string, tenantId?: string)
       const matchTenant = s.tenantId ? s.tenantId === currentTenantId : currentTenantId === "spotlight-biriyani";
       if (!matchTenant) return false;
       const matchBranch =
-        !s.branchId || s.branchId === currentBranchId || (currentBranchId === "taramani" && s.branchId === "tharamani");
+        !s.branchId ||
+        s.branchId === currentBranchId ||
+        (currentBranchId === "taramani" && s.branchId === "tharamani") ||
+        Boolean(activeT.branches && activeT.branches.some((b) => b.id === s.branchId));
       return matchBranch && isSameDay(s.date);
     })
     .reduce((acc, s) => {
       let bPlates = 0;
       (s.lines || []).forEach((l) => {
         const n = (l?.name || "").toLowerCase();
+        const cat = ((l as any)?.category || "").toLowerCase();
         const qty = l?.qty || 1;
-        if (n.includes("chicken") && (n.includes("biriyani") || n.includes("briyani"))) {
-          chickenSold += qty;
-          bPlates += qty;
-        } else if (n.includes("mutton")) {
-          muttonSold += qty;
-          bPlates += qty;
-        } else if (n.includes("kushka")) {
-          kushkaSold += qty;
-          bPlates += qty;
-        } else if (n.includes("egg")) {
-          eggSold += qty;
-          bPlates += qty;
-        } else if (n.includes("biriyani") || n.includes("briyani")) {
+        const isBiryaniName = n.includes("biriyani") || n.includes("biryani") || n.includes("briyani");
+        const isBiryaniOrKushka = isBiryaniName || n.includes("kushka") || cat === "biryani" || cat === "kushka";
+
+        if (isBiryaniOrKushka) {
+          if (n.includes("chicken")) {
+            chickenSold += qty;
+          } else if (n.includes("mutton")) {
+            muttonSold += qty;
+          } else if (n.includes("kushka")) {
+            kushkaSold += qty;
+          } else if (n.includes("egg")) {
+            eggSold += qty;
+          } else {
+            chickenSold += qty;
+          }
           bPlates += qty;
         }
       });
@@ -1085,12 +1091,13 @@ export function getDB(): DB {
     const tenantsList = cache.tenants;
     // Migration: ensure every default tenant (like Manam) is present and synced
     DEFAULT_TENANTS.forEach((dt) => {
-      const cur = tenantsList.find((t) => t.id === dt.id);
+      const cur = tenantsList.find((t) => t.id === dt.id || (dt.id === "manam-restaurant" && t.id === "manam"));
       if (!cur) {
         tenantsList.push({ ...dt });
         needsPersist = true;
       } else {
         let changed = false;
+        if (cur.id === "manam") { cur.id = "manam-restaurant"; changed = true; }
         if (!cur.loginUsername) { cur.loginUsername = dt.loginUsername; changed = true; }
         if (!cur.loginPassword) { cur.loginPassword = dt.loginPassword; changed = true; }
         if (!cur.cashierPin) { cur.cashierPin = dt.cashierPin; changed = true; }
@@ -1100,8 +1107,15 @@ export function getDB(): DB {
         if (!cur.phone && dt.phone) { cur.phone = dt.phone; changed = true; }
         if (!cur.activeBranchName && dt.activeBranchName) { cur.activeBranchName = dt.activeBranchName; changed = true; }
         if (!cur.items || cur.items.length < (dt.items?.length || 0)) { if (dt.items) cur.items = [...dt.items]; changed = true; }
-        if (cur.degBatchEnabled === undefined && dt.degBatchEnabled !== undefined) { cur.degBatchEnabled = dt.degBatchEnabled; changed = true; }
-        if (cur.id === "manam" && cur.degBatchEnabled === undefined) { cur.degBatchEnabled = true; changed = true; }
+        if (cur.id === "manam-restaurant" || cur.id === "spotlight-biriyani") {
+          if (cur.degBatchEnabled !== true) {
+            cur.degBatchEnabled = true;
+            changed = true;
+          }
+        } else if (cur.degBatchEnabled === undefined && dt.degBatchEnabled !== undefined) {
+          cur.degBatchEnabled = dt.degBatchEnabled;
+          changed = true;
+        }
         if (changed) needsPersist = true;
       }
     });
@@ -1224,12 +1238,33 @@ export function useDB(): DB | null {
         items: [...(current.items || [])],
         tables: (current.tables || []).map((t) => ({ ...t, lines: [...(t.lines || [])] })),
         kdsOrders: (current.kdsOrders || []).map((o) => ({ ...o, lines: (o.lines || []).map((l) => ({ ...l })) })),
+        tenants: (current.tenants || []).map((t) => ({
+          ...t,
+          enabledModules: { ...t.enabledModules },
+          branches: (t.branches || []).map((b) => ({ ...b })),
+        })),
       });
     };
     sync();
     listeners.add(sync);
+
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === KEY) {
+        cache = null;
+        sync();
+      }
+    };
+    const onCustom = () => {
+      sync();
+    };
+
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("slb_store_updated", onCustom);
+
     return () => {
       listeners.delete(sync);
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("slb_store_updated", onCustom);
     };
   }, []);
   return db;
@@ -1532,9 +1567,9 @@ export function getActiveTenant(db?: DB | null): TenantConfig {
     try {
       const searchParams = new URLSearchParams(window.location.search);
       const paramTenant = searchParams.get("tenant");
-      if (paramTenant && tenants.some((t) => t.id === paramTenant)) {
-        activeId = paramTenant;
-        sessionStorage.setItem("restopulse_session_tenant", paramTenant);
+      if (paramTenant && tenants.some((t) => t.id === paramTenant || (paramTenant === "manam" && t.id === "manam-restaurant"))) {
+        activeId = paramTenant === "manam" ? "manam-restaurant" : paramTenant;
+        sessionStorage.setItem("restopulse_session_tenant", activeId);
       }
     } catch {
       // ignore SSR or URL parsing errors
@@ -1543,15 +1578,15 @@ export function getActiveTenant(db?: DB | null): TenantConfig {
     if (!activeId) {
       // 2. Tab-isolated sessionStorage
       const sessionTenant = sessionStorage.getItem("restopulse_session_tenant");
-      if (sessionTenant && tenants.some((t) => t.id === sessionTenant)) {
-        activeId = sessionTenant;
+      if (sessionTenant && tenants.some((t) => t.id === sessionTenant || (sessionTenant === "manam" && t.id === "manam-restaurant"))) {
+        activeId = sessionTenant === "manam" ? "manam-restaurant" : sessionTenant;
       }
     }
   }
   if (!activeId) {
     activeId = currentDB.activeTenantId || "spotlight-biriyani";
   }
-  const found = tenants.find((t) => t.id === activeId);
+  const found = tenants.find((t) => t.id === activeId || (activeId === "manam" && t.id === "manam-restaurant"));
   return found ?? tenants[0] ?? DEFAULT_TENANTS[0]!;
 }
 

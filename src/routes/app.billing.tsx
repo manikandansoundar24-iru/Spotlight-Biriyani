@@ -1076,7 +1076,12 @@ function Billing() {
     } else {
       // Normal new bill with service order type
       const currentToken = todayToken;
-      const activeBranch = db.settings.activeBranchId || "taramani";
+      const activeBranch =
+        (activeTenant.branches && activeTenant.branches.some((b) => b.id === db.settings.activeBranchId)
+          ? db.settings.activeBranchId
+          : activeTenant.branches?.[0]?.id) ||
+        db.settings.activeBranchId ||
+        "main";
       const cleanCustomerPhone = (quickPhone.trim() || customerPhone.trim()).replace(/\D/g, "").slice(-10);
       const newSale: Sale = {
         ...currentPreview,
@@ -2863,14 +2868,14 @@ function Billing() {
                 <div className="flex flex-col gap-3 py-3 border-b border-border/80">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     {/* Section Switcher Tabs */}
-                    <div className="flex rounded-xl border border-border bg-muted/60 p-1 text-xs">
+                    <div className="flex flex-wrap rounded-xl border border-border bg-muted/60 p-1 text-xs gap-1">
                       <button
                         type="button"
                         onClick={() => setTableSectionFilter("all")}
                         className={`rounded-lg px-3 py-1.5 font-bold transition-all ${
                           tableSectionFilter === "all"
-                            ? "bg-primary text-primary-foreground shadow-xs"
-                            : "text-muted-foreground hover:text-foreground"
+                            ? "bg-slate-900 text-white shadow-xs dark:bg-slate-100 dark:text-slate-900"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
                         }`}
                       >
                         All Sections ({allTables.length})
@@ -2880,8 +2885,8 @@ function Billing() {
                         onClick={() => setTableSectionFilter("ac")}
                         className={`rounded-lg px-3 py-1.5 font-bold transition-all ${
                           tableSectionFilter === "ac"
-                            ? "bg-primary text-primary-foreground shadow-xs"
-                            : "text-muted-foreground hover:text-foreground"
+                            ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-xs"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
                         }`}
                       >
                         ❄️ A/C Family Hall ({acCount})
@@ -2891,8 +2896,8 @@ function Billing() {
                         onClick={() => setTableSectionFilter("non-ac")}
                         className={`rounded-lg px-3 py-1.5 font-bold transition-all ${
                           tableSectionFilter === "non-ac"
-                            ? "bg-primary text-primary-foreground shadow-xs"
-                            : "text-muted-foreground hover:text-foreground"
+                            ? "bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-xs"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
                         }`}
                       >
                         🍽️ Main Dining ({nonAcCount})
@@ -2902,8 +2907,8 @@ function Billing() {
                         onClick={() => setTableSectionFilter("outdoor")}
                         className={`rounded-lg px-3 py-1.5 font-bold transition-all ${
                           tableSectionFilter === "outdoor"
-                            ? "bg-primary text-primary-foreground shadow-xs"
-                            : "text-muted-foreground hover:text-foreground"
+                            ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-xs"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
                         }`}
                       >
                         🌿 Outdoor Patio ({outdoorCount})
@@ -2912,11 +2917,11 @@ function Billing() {
 
                     {/* Status Legend Pills */}
                     <div className="flex items-center gap-3 text-xs font-semibold">
-                      <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                      <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 text-emerald-600 dark:text-emerald-400 font-bold">
                         <span className="size-2 rounded-full bg-emerald-500" />
                         <span>{vacantTables.length} Vacant</span>
                       </span>
-                      <span className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400">
+                      <span className="flex items-center gap-1.5 rounded-full bg-rose-500/10 border border-rose-500/30 px-2.5 py-0.5 text-rose-600 dark:text-rose-400 font-bold">
                         <span className="size-2 rounded-full bg-rose-500 animate-pulse" />
                         <span>{occupiedTables.length} Occupied</span>
                       </span>
@@ -2924,7 +2929,7 @@ function Billing() {
                   </div>
 
                   {/* Visual Table Grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 overflow-y-auto p-1 max-h-[55vh]">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5 overflow-y-auto p-1 max-h-[55vh]">
                     {filteredTables.map((tbl) => {
                       const isOccupied = tbl.status === "occupied";
                       const isSelected = selectedTableId === tbl.id;
@@ -2937,17 +2942,17 @@ function Billing() {
                           key={tbl.id}
                           className={`flex flex-col justify-between rounded-2xl border-2 p-3.5 transition-all shadow-xs ${
                             isSelected
-                              ? "border-primary bg-primary/10 ring-2 ring-primary"
+                              ? "border-primary bg-gradient-to-br from-primary/20 via-amber-500/10 to-card ring-2 ring-primary shadow-lg shadow-primary/20"
                               : isOccupied
-                              ? "border-rose-500/40 bg-rose-500/5 hover:border-rose-500/60"
-                              : "border-border bg-card hover:border-primary/50 hover:bg-muted/30"
+                              ? "border-rose-500/60 bg-gradient-to-br from-rose-500/15 via-red-500/10 to-card shadow-md ring-1 ring-rose-500/30 hover:border-rose-600"
+                              : "border-emerald-500/40 bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-card hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/10"
                           }`}
                         >
                           <div>
                             {/* Table Card Top Row */}
                             <div className="flex items-start justify-between">
                               <div>
-                                <span className="font-display font-black text-xl tracking-wide text-foreground block">
+                                <span className="font-display font-black text-2xl tracking-wide text-foreground block">
                                   {tbl.id}
                                 </span>
                                 <span className="text-[11px] font-bold text-muted-foreground block truncate">
@@ -2985,25 +2990,25 @@ function Billing() {
                                 <span
                                   className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${
                                     isOccupied
-                                      ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30"
-                                      : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                                      ? "bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/40"
+                                      : "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40"
                                   }`}
                                 >
-                                  {isOccupied ? "Occupied" : "Free"}
+                                  {isOccupied ? "🔴 Occupied" : "🟢 Vacant"}
                                 </span>
                               </div>
                             </div>
 
                             {/* Capacity & Section Badges */}
-                            <div className="mt-2 flex flex-wrap gap-1 text-[10px]">
-                              <span className="rounded-md border border-border bg-muted/60 px-1.5 py-0.5 font-bold text-muted-foreground">
+                            <div className="mt-2.5 flex flex-wrap gap-1 text-[10px]">
+                              <span className="rounded-md border border-border/80 bg-background/80 px-2 py-0.5 font-bold text-foreground">
                                 👤 {tbl.capacity} Seats
                               </span>
-                              <span className="rounded-md border border-border bg-muted/60 px-1.5 py-0.5 font-bold text-muted-foreground uppercase">
+                              <span className="rounded-md border border-border/80 bg-background/80 px-2 py-0.5 font-bold text-muted-foreground uppercase">
                                 {tbl.section === "ac" ? "❄️ A/C" : tbl.section === "outdoor" ? "🌿 Patio" : "🍽️ Dining"}
                               </span>
                               {elapsedMin !== null && isOccupied && (
-                                <span className="rounded-md border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 font-bold text-amber-600 dark:text-amber-400">
+                                <span className="rounded-md border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 font-bold text-amber-700 dark:text-amber-300">
                                   ⏱️ {elapsedMin}m
                                 </span>
                               )}
@@ -3011,17 +3016,17 @@ function Billing() {
 
                             {/* If Occupied: Running Order Preview */}
                             {isOccupied && (
-                              <div className="mt-2.5 rounded-xl border border-rose-500/20 bg-card p-2 text-xs space-y-1">
+                              <div className="mt-2.5 rounded-xl border border-rose-500/30 bg-card/90 p-2 text-xs space-y-1">
                                 <div className="flex justify-between font-bold text-[11px]">
                                   <span className="text-muted-foreground">Running Total:</span>
-                                  <span className="font-mono text-rose-600 dark:text-rose-400">₹{runningAmount}</span>
+                                  <span className="font-mono text-rose-600 dark:text-rose-400 font-black">₹{runningAmount}</span>
                                 </div>
-                                <div className="flex justify-between text-[10px] text-muted-foreground">
+                                <div className="flex justify-between text-[10px] text-muted-foreground font-medium">
                                   <span>{tbl.lines?.length || 0} Dishes Ordered</span>
                                   {tbl.kotCount ? <span>KOT #{tbl.kotCount}</span> : null}
                                 </div>
                                 {tbl.customerPhone && (
-                                  <span className="block text-[10px] font-mono text-primary truncate">
+                                  <span className="block text-[10px] font-mono text-primary font-bold truncate">
                                     📞 {tbl.customerPhone}
                                   </span>
                                 )}
@@ -3045,7 +3050,7 @@ function Billing() {
                                     }
                                     setTableFloorModalOpen(false);
                                   }}
-                                  className="flex-1 rounded-lg bg-primary hover:bg-primary/90 text-white font-bold py-1.5 text-[11px] shadow-2xs transition-colors text-center"
+                                  className="flex-1 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-bold py-2 text-xs shadow-xs transition-colors text-center"
                                 >
                                   Open Bill Tab
                                 </button>
@@ -3061,7 +3066,7 @@ function Billing() {
                                       toast.success(`${tbl.name} vacated and marked available!`);
                                     }
                                   }}
-                                  className="rounded-lg border border-border hover:border-destructive/50 bg-card hover:bg-destructive/10 text-muted-foreground hover:text-destructive p-1.5 transition-colors"
+                                  className="rounded-xl border border-border hover:border-destructive/50 bg-card hover:bg-destructive/10 text-muted-foreground hover:text-destructive p-2 transition-colors"
                                   title="Vacate and free table"
                                 >
                                   <Trash2 className="size-3.5" />
@@ -3078,9 +3083,10 @@ function Billing() {
                                   setTableFloorModalOpen(false);
                                   toast.success(`Table ${tbl.id} assigned to active bill!`);
                                 }}
-                                className="w-full rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 text-[11px] shadow-2xs transition-colors text-center"
+                                className="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-2 text-xs shadow-xs transition-all text-center flex items-center justify-center gap-1.5"
                               >
-                                Select Table
+                                <Utensils className="size-3.5" />
+                                <span>Select Table</span>
                               </button>
                             )}
                           </div>
@@ -3218,82 +3224,87 @@ function Billing() {
       ========================================================================= */}
       {kdsModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-3 sm:p-6 overflow-y-auto">
-          <div className="w-full max-w-5xl rounded-2xl border border-border bg-card p-4 sm:p-6 shadow-2xl flex flex-col max-h-[90vh]">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
-              <div className="flex items-center gap-2.5">
-                <span className="flex size-9 items-center justify-center rounded-xl bg-amber-500/15 text-amber-500">
-                  <ChefHat className="size-5" />
-                </span>
-                <div>
-                  <h2 className="text-lg sm:text-xl font-display font-black leading-tight text-foreground">
-                    KITCHEN DISPLAY SYSTEM (KDS)
-                  </h2>
-                  <p className="text-xs text-muted-foreground">
-                    Real-time chef tablet display with elapsed cooking timers &amp; item checklist.
-                  </p>
-                </div>
-              </div>
+          <div className="relative w-full max-w-5xl rounded-3xl border border-border bg-card p-5 sm:p-7 shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
+            {/* Absolute Top-Right Corner Close Button */}
+            <button
+              type="button"
+              onClick={() => setKdsModalOpen(false)}
+              className="absolute top-4 right-4 sm:top-5 sm:right-5 z-20 rounded-xl border border-border bg-muted/60 p-2.5 text-muted-foreground hover:bg-muted hover:text-foreground hover:scale-105 transition-all shadow-xs"
+              title="Close KDS Modal"
+            >
+              <X className="size-5" />
+            </button>
 
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    clearCompletedKdsOrders();
-                    toast.info("Cleared completed orders from KDS");
-                  }}
-                  className="rounded-lg border border-border px-2.5 py-1 text-xs font-bold text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
-                  title="Clear handed over / completed orders"
-                >
-                  🧹 Clear Completed
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (confirm(`Clear all kitchen orders for ${activeTenant.businessName}?`)) {
-                      clearAllKdsOrders(activeTenant.id);
-                      toast.success("All kitchen orders cleared from KDS");
-                    }
-                  }}
-                  className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition-all"
-                  title="Clear all kitchen orders"
-                >
-                  🗑️ Clear All
-                </button>
-                <div className="flex rounded-lg border border-border bg-muted/60 p-0.5 text-xs">
-                  {(() => {
-                    const tenantKdsList = (db?.kdsOrders || []).filter(
-                      (o) => !o.tenantId || o.tenantId === activeTenant.id
-                    );
-                    return ([
-                      { id: "all", label: `All (${tenantKdsList.filter((o) => o.status !== "completed").length})` },
-                      { id: "pending", label: `Pending (${tenantKdsList.filter((o) => o.status === "pending").length})` },
-                      { id: "preparing", label: `Preparing (${tenantKdsList.filter((o) => o.status === "preparing").length})` },
-                      { id: "ready", label: `Ready (${tenantKdsList.filter((o) => o.status === "ready").length})` },
-                    ] as const).map((tab) => (
+            {/* Header */}
+            <div className="flex items-center gap-3 pr-14 pb-3 border-b border-border/80">
+              <span className="flex size-11 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-500 border border-amber-500/25 shrink-0">
+                <ChefHat className="size-6" />
+              </span>
+              <div>
+                <h2 className="text-xl sm:text-2xl font-display font-black leading-tight text-foreground">
+                  KITCHEN DISPLAY SYSTEM (KDS)
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  Real-time chef tablet display with elapsed cooking timers &amp; item checklist.
+                </p>
+              </div>
+            </div>
+
+            {/* Action & Filter Bar */}
+            {(() => {
+              const tenantKdsList = (db?.kdsOrders || []).filter(
+                (o) => !o.tenantId || o.tenantId === activeTenant.id
+              );
+              return (
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-3 pb-3 border-b border-border/60">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {[
+                      { id: "all", label: "📋 All Orders", count: tenantKdsList.filter((o) => o.status !== "completed").length },
+                      { id: "pending", label: "⏳ Pending", count: tenantKdsList.filter((o) => o.status === "pending").length },
+                      { id: "preparing", label: "🍳 Preparing", count: tenantKdsList.filter((o) => o.status === "preparing").length },
+                      { id: "ready", label: "✅ Ready", count: tenantKdsList.filter((o) => o.status === "ready").length },
+                    ].map((tab) => (
                       <button
                         key={tab.id}
                         type="button"
                         onClick={() => setKdsFilter(tab.id as any)}
-                        className={`rounded px-2.5 py-1 font-bold transition-all ${kdsFilter === tab.id
-                            ? "bg-primary text-white shadow-xs"
-                            : "text-muted-foreground hover:text-foreground"
-                          }`}
+                        className={`flex items-center gap-2 rounded-xl px-4 py-2 sm:px-5 sm:py-2.5 text-xs sm:text-sm font-black transition-all ${
+                          kdsFilter === tab.id
+                            ? "bg-gradient-ember text-white shadow-ember scale-[1.02]"
+                            : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground border border-border"
+                        }`}
                       >
-                        {tab.label}
+                        <span>{tab.label}</span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-xs font-mono font-black ${
+                            kdsFilter === tab.id ? "bg-white/20 text-white" : "bg-background text-foreground border border-border"
+                          }`}
+                        >
+                          {tab.count}
+                        </span>
                       </button>
-                    ));
-                  })()}
+                    ))}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (confirm(`Clear all completed & handed-over orders from KDS for ${activeTenant.businessName}?`)) {
+                          clearCompletedKdsOrders();
+                          toast.info("Cleared completed orders from KDS");
+                        }
+                      }}
+                      className="rounded-xl border border-border bg-card hover:bg-muted px-3.5 py-2 text-xs font-bold text-muted-foreground hover:text-foreground transition-all flex items-center gap-1.5 shadow-xs"
+                      title="Clear completed kitchen orders"
+                    >
+                      <Sparkles className="size-3.5 text-primary" />
+                      <span>🧹 Clear Orders</span>
+                    </button>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setKdsModalOpen(false)}
-                  className="rounded-xl border border-border bg-muted/40 p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-all ml-1"
-                  title="Close KDS Modal"
-                >
-                  <X className="size-4.5" />
-                </button>
-              </div>
-            </div>
+              );
+            })()}
 
             {/* KDS Order Cards Grid */}
             <div className="mt-4 flex-1 overflow-y-auto grid gap-3 sm:grid-cols-2 lg:grid-cols-3 pr-1">

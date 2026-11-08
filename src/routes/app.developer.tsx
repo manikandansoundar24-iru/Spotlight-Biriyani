@@ -366,6 +366,7 @@ export function DeveloperSuperAdminPage() {
         multiBranch: true,
         aggregators: true,
       };
+      degEnabled = true;
     }
 
     const updated: TenantConfig = {

@@ -51,15 +51,42 @@ function LoginPage() {
   // Helper to ensure all default tenants (including Manam) are always present even with old local cache
   const getMergedTenants = (dbTenants?: TenantConfig[]): TenantConfig[] => {
     const fromDB = Array.isArray(dbTenants) ? dbTenants : [];
-    const seen = new Set(fromDB.map((t) => t.id));
-    const merged = [...fromDB];
+    const merged: TenantConfig[] = [];
+    const manamDefault = DEFAULT_TENANTS.find((t) => t.id === "manam-restaurant") || DEFAULT_TENANTS[0]!;
+    const existingManam = fromDB.find((t) => t.id === "manam-restaurant" || t.id === "manam");
+    if (existingManam) {
+      merged.push({
+        ...manamDefault,
+        ...existingManam,
+        id: "manam-restaurant",
+        degBatchEnabled: true,
+        loginUsername: existingManam.loginUsername || "owner@manam.in",
+        loginPassword: existingManam.loginPassword || "manam2026",
+        cashierPin: existingManam.cashierPin || "4001",
+        kitchenPin: existingManam.kitchenPin || "5555",
+      });
+    } else {
+      merged.push({ ...manamDefault, degBatchEnabled: true });
+    }
+
+    // Then add the rest of DEFAULT_TENANTS
     DEFAULT_TENANTS.forEach((dt) => {
-      if (!seen.has(dt.id)) {
-        merged.push(dt);
-        seen.add(dt.id);
+      if (dt.id === "manam-restaurant") return;
+      const existing = fromDB.find((t) => t.id === dt.id);
+      if (existing) {
+        merged.push({ ...dt, ...existing });
+      } else {
+        merged.push({ ...dt });
       }
     });
-    return merged.length > 0 ? merged : DEFAULT_TENANTS;
+
+    // Then any custom provisioned tenants
+    fromDB.forEach((t) => {
+      if (t.id !== "manam-restaurant" && t.id !== "manam" && !DEFAULT_TENANTS.some((dt) => dt.id === t.id)) {
+        merged.push(t);
+      }
+    });
+    return merged;
   };
 
   // Sync state with URL search param and tenant store on mount
@@ -735,15 +762,6 @@ function LoginPage() {
         <div className="mx-auto max-w-5xl px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>&copy; 2026 {db?.saasPlatformName || "RestoPulse"} OS &middot; Multi-Tenant Cloud ERP &middot; Zero-Setup POS</span>
           <div className="flex items-center gap-3">
-            <a
-              href="/PETPOOJA_VS_RESTOPULSE_BATTLECARD.pdf"
-              target="_blank"
-              rel="noreferrer"
-              className="hover:underline font-bold text-primary"
-            >
-              Battlecard PDF
-            </a>
-            <span>&middot;</span>
             <Link to="/manam" className="hover:underline">
               Manam Restaurant Showcase
             </Link>
