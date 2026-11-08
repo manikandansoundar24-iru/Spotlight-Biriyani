@@ -72,6 +72,11 @@ import {
   addKdsOrder,
   toggleKdsLineDone,
   clearCompletedKdsOrders,
+  clearAllKdsOrders,
+  addTable,
+  updateTable,
+  deleteTable,
+  deleteKdsOrder,
   type Category,
   type ChannelId,
   type Item,
@@ -479,6 +484,79 @@ function Billing() {
   const [countedPhysicalCash, setCountedPhysicalCash] = useState<string>("");
   const [kdsFilter, setKdsFilter] = useState<"all" | "pending" | "preparing" | "ready">("all");
 
+  // Custom Table Floor Plan Management State
+  const [showAddTableModal, setShowAddTableModal] = useState(false);
+  const [editingTable, setEditingTable] = useState<TableSession | null>(null);
+  const [tblFormId, setTblFormId] = useState("");
+  const [tblFormName, setTblFormName] = useState("");
+  const [tblFormSeats, setTblFormSeats] = useState<number | string>(4);
+  const [tblFormSection, setTblFormSection] = useState<"ac" | "non-ac" | "outdoor">("non-ac");
+
+  const handleOpenAddTable = () => {
+    setEditingTable(null);
+    const existing = db?.tables || DEFAULT_TABLES;
+    const nextNum = existing.length + 1;
+    setTblFormId(`T${nextNum}`);
+    setTblFormName(`Table ${nextNum}`);
+    setTblFormSeats(4);
+    setTblFormSection(tableSectionFilter === "all" ? "non-ac" : tableSectionFilter);
+    setShowAddTableModal(true);
+  };
+
+  const handleOpenEditTable = (tbl: TableSession) => {
+    setEditingTable(tbl);
+    setTblFormId(tbl.id);
+    setTblFormName(tbl.name);
+    setTblFormSeats(tbl.capacity);
+    setTblFormSection(tbl.section || "non-ac");
+    setShowAddTableModal(true);
+  };
+
+  const handleSaveTableForm = () => {
+    const idTrimmed = tblFormId.trim().toUpperCase();
+    const nameTrimmed = tblFormName.trim();
+    const seatsNum = parseInt(String(tblFormSeats), 10);
+    if (!idTrimmed) {
+      toast.error("Please enter a table ID/number (e.g. T9, A5, VIP-1)");
+      return;
+    }
+    if (!nameTrimmed) {
+      toast.error("Please enter a table name (e.g. Table 9, Patio 3)");
+      return;
+    }
+    if (isNaN(seatsNum) || seatsNum <= 0) {
+      toast.error("Please enter a valid seats count (e.g. 2, 4, 6, 8, 10...)");
+      return;
+    }
+
+    if (editingTable) {
+      updateTable({
+        ...editingTable,
+        id: editingTable.id,
+        name: nameTrimmed,
+        capacity: seatsNum,
+        section: tblFormSection,
+      });
+      toast.success(`Table ${editingTable.id} updated (${seatsNum} seats, ${tblFormSection})!`);
+    } else {
+      try {
+        addTable({
+          id: idTrimmed,
+          name: nameTrimmed,
+          capacity: seatsNum,
+          section: tblFormSection,
+          status: "available",
+          lines: [],
+        });
+        toast.success(`Table ${idTrimmed} (${seatsNum} seats) added to floor plan!`);
+      } catch (err: any) {
+        toast.error(err.message || "Failed to add table");
+        return;
+      }
+    }
+    setShowAddTableModal(false);
+  };
+
   // Category UI Layout Toggle ('top' | 'rail') — Default to Left Touch Rail for ergonomic counter billing
   const [categoryLayout, setCategoryLayout] = useState<"top" | "rail">("rail");
 
@@ -662,8 +740,10 @@ function Billing() {
         },
       };
     }
-    const activeBranch = db.settings.activeBranchId || "taramani";
-    const statusInfo = getLiveBatchStatus(db, activeBranch);
+    const currentBranch = activeTenant.branches?.some((b) => b.id === db.settings.activeBranchId)
+      ? db.settings.activeBranchId
+      : (activeTenant.branches?.[0]?.id || "main");
+    const statusInfo = getLiveBatchStatus(db, currentBranch, activeTenant.id);
     const cap = statusInfo.cap || 120;
     const platesLeft = statusInfo.platesLeft;
     const soldToday = Math.max(0, cap - platesLeft);
@@ -675,14 +755,14 @@ function Billing() {
       isSoldOut: statusInfo.isSoldOut,
       breakdown: statusInfo.breakdown,
     };
-  }, [db]);
+  }, [db, activeTenant]);
 
   const isDegItem = (itemOrLine: { name?: string; category?: string } | null | undefined) => {
-    if (activeTenant.degBatchEnabled !== true) return false;
+    if (activeTenant.degBatchEnabled === false) return false;
     if (!itemOrLine) return false;
     const n = (itemOrLine.name || "").toLowerCase();
     const c = (itemOrLine.category || "").toLowerCase();
-    return c === "biryani" || c === "kushka" || n.includes("biriyani") || n.includes("kushka");
+    return c === "biryani" || c === "kushka" || n.includes("biriyani") || n.includes("biryani") || n.includes("kushka");
   };
 
   const currentCartDegPlates = useMemo(() => {
@@ -705,9 +785,14 @@ function Billing() {
   const [newMuttonCap, setNewMuttonCap] = useState("");
 
   const openEditBatch = () => {
-    const activeBranch = db?.settings.activeBranchId || "taramani";
-    const currentCap = db?.settings.dailyBatchCapacity?.[activeBranch] || 160;
-    const currentSplit = db?.settings.batchSplit?.[activeBranch];
+    const currentBranch = activeTenant.branches?.some((b) => b.id === db?.settings.activeBranchId)
+      ? (db?.settings.activeBranchId || "main")
+      : (activeTenant.branches?.[0]?.id || "main");
+    const currentCap =
+      db?.settings.dailyBatchCapacity?.[currentBranch] ??
+      db?.settings.dailyBatchCapacity?.[activeTenant.id] ??
+      120;
+    const currentSplit = db?.settings.batchSplit?.[currentBranch] || db?.settings.batchSplit?.[activeTenant.id];
     const cCap = currentSplit?.chickenCap ?? Math.round(currentCap * 0.65);
     const mCap = currentSplit?.muttonCap ?? (currentCap - cCap);
     setNewBatchCapacity(String(currentCap));
@@ -726,7 +811,9 @@ function Billing() {
     }
     const finalChicken = cVal > 0 ? cVal : Math.round(totalVal * 0.65);
     const finalMutton = mVal > 0 ? mVal : (totalVal - finalChicken);
-    const activeBranch = db?.settings.activeBranchId || "taramani";
+    const currentBranch = activeTenant.branches?.some((b) => b.id === db?.settings.activeBranchId)
+      ? (db?.settings.activeBranchId || "main")
+      : (activeTenant.branches?.[0]?.id || "main");
     setDB((d) => {
       if (!d.settings.dailyBatchCapacity) {
         d.settings.dailyBatchCapacity = {};
@@ -734,8 +821,10 @@ function Billing() {
       if (!d.settings.batchSplit) {
         d.settings.batchSplit = {};
       }
-      d.settings.dailyBatchCapacity[activeBranch] = totalVal;
-      d.settings.batchSplit[activeBranch] = { chickenCap: finalChicken, muttonCap: finalMutton };
+      d.settings.dailyBatchCapacity[currentBranch] = totalVal;
+      d.settings.dailyBatchCapacity[activeTenant.id] = totalVal;
+      d.settings.batchSplit[currentBranch] = { chickenCap: finalChicken, muttonCap: finalMutton };
+      d.settings.batchSplit[activeTenant.id] = { chickenCap: finalChicken, muttonCap: finalMutton };
     });
     setEditBatchModalOpen(false);
     toast.success(`Updated today's Deg: ${totalVal} plates (${finalChicken} Chicken, ${finalMutton} Mutton)!`);
@@ -1174,7 +1263,7 @@ function Billing() {
                 type="button"
                 onClick={() => setTableFloorModalOpen(true)}
                 className="flex-1 sm:flex-none h-10 sm:h-11 flex items-center justify-center gap-1.5 rounded-xl border border-blue-500/40 bg-blue-500/10 px-3 sm:px-4 text-xs sm:text-sm font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-all shadow-2xs active:scale-98"
-                title="Open Petpooja-style Interactive Table Floor Plan & Dine-In Manager"
+                title="Open Interactive Table Floor Plan & Dine-In Manager"
               >
                 <Utensils className="size-4 text-blue-600 shrink-0" />
                 <span>
@@ -1250,7 +1339,7 @@ function Billing() {
       <div className="grid gap-4 sm:gap-5 md:grid-cols-[minmax(0,1fr)_330px] lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_390px] w-full min-w-0 max-w-full items-start pb-24 md:pb-6">
         <div className="min-w-0 max-w-full">
           {/* Live Kitchen Deg Batch Availability Bar */}
-          {(activeTenant.degBatchEnabled === true) && (
+          {(activeTenant.degBatchEnabled !== false) && (
             <div className="overflow-hidden rounded-2xl border border-primary/30 bg-card p-3.5 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-3 pb-2.5 border-b border-border/60">
                 <div className="flex items-center gap-2.5">
@@ -1421,7 +1510,7 @@ function Billing() {
                       price={priceFor(i.id)}
                       inCartLine={inCart}
                       liveBatch={liveBatch}
-                      degBatchEnabled={activeTenant.degBatchEnabled === true}
+                      degBatchEnabled={activeTenant.degBatchEnabled !== false}
                       canIncreaseDeg={!isDegItem(i) || currentCartDegPlates < liveBatch.platesLeft}
                       onAdd={() => add(i.id)}
                       onStep={(d) => step(i.id, d)}
@@ -1433,7 +1522,7 @@ function Billing() {
               </div>
             </>
           ) : (
-            /* Left Touch Rail Layout (Petpooja / Toast Style) */
+            /* Left Touch Rail Layout (Ergonomic Counter POS Style) */
             <div className="mt-3 flex flex-col sm:flex-row gap-3">
               {/* Left Touch Rail (Horizontal scrollable chips on mobile, vertical sidebar on desktop) */}
               <div className="w-full sm:w-36 lg:w-40 shrink-0 flex flex-row sm:flex-col gap-1.5 overflow-x-auto sm:overflow-y-auto sm:max-h-[640px] pb-2 sm:pb-0 sm:pr-1.5 border-b sm:border-b-0 sm:border-r border-border/60">
@@ -1478,7 +1567,7 @@ function Billing() {
                       price={priceFor(i.id)}
                       inCartLine={inCart}
                       liveBatch={liveBatch}
-                      degBatchEnabled={activeTenant.degBatchEnabled === true}
+                      degBatchEnabled={activeTenant.degBatchEnabled !== false}
                       canIncreaseDeg={!isDegItem(i) || currentCartDegPlates < liveBatch.platesLeft}
                       onAdd={() => add(i.id)}
                       onStep={(d) => step(i.id, d)}
@@ -1526,27 +1615,13 @@ function Billing() {
 
           {/* Dine-in Interactive Floor Plan & Table Bar */}
           {orderType === "dinein" && activeTenant.enabledModules.tables && (
-            <div className="mb-2.5 rounded-xl border border-blue-500/30 bg-blue-500/5 p-2.5 space-y-2">
-              <div className="flex items-center justify-between text-[11px] font-bold">
-                <span className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-                  <Utensils className="size-3.5" /> Dine-In Table / Tab:
-                </span>
-                {selectedTableId ? (
-                  <span className="inline-flex items-center gap-1 text-xs text-blue-700 dark:text-blue-300 font-black">
-                    <span className="size-2 rounded-full bg-blue-600 animate-pulse" />
-                    Table {selectedTableId} Active
-                  </span>
-                ) : (
-                  <span className="text-[10px] text-muted-foreground">No table selected</span>
-                )}
-              </div>
-
+            <div className="mb-2.5">
               {selectedTableId ? (
                 (() => {
                   const tbl = (db.tables || DEFAULT_TABLES).find((t) => t.id === selectedTableId);
                   const isOccupied = tbl?.status === "occupied";
                   return (
-                    <div className="rounded-xl border border-blue-500/40 bg-card p-2 space-y-2">
+                    <div className="rounded-xl border border-primary/40 bg-primary/5 p-2.5 space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="min-w-0 pr-2">
                           <span className="font-black text-xs text-foreground block truncate">
@@ -1560,7 +1635,7 @@ function Billing() {
                           <button
                             type="button"
                             onClick={() => setTableFloorModalOpen(true)}
-                            className="px-2 py-1 rounded-lg border border-border bg-muted/40 hover:bg-muted text-[10px] font-bold text-foreground transition-colors"
+                            className="px-2 py-1 rounded-lg border border-border bg-card hover:bg-muted text-[10px] font-bold text-foreground transition-colors"
                           >
                             Switch Table
                           </button>
@@ -1618,11 +1693,11 @@ function Billing() {
                 <button
                   type="button"
                   onClick={() => setTableFloorModalOpen(true)}
-                  className="w-full flex items-center justify-between rounded-xl border-2 border-dashed border-blue-500/50 bg-blue-500/10 hover:bg-blue-500/20 p-2.5 text-xs font-bold text-blue-600 dark:text-blue-400 transition-all group shadow-2xs"
+                  className="w-full flex items-center justify-between rounded-xl border border-primary/40 bg-primary/10 hover:bg-primary/20 p-2.5 text-xs font-bold text-primary transition-all group shadow-2xs"
                 >
                   <span className="flex items-center gap-2">
-                    <Utensils className="size-4 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform" />
-                    <span>Select Table / Floor Plan (Petpooja View)</span>
+                    <Utensils className="size-4 text-primary group-hover:scale-110 transition-transform" />
+                    <span>Select Dine-In Table / Floor Plan</span>
                   </span>
                   <span className="text-xs group-hover:translate-x-0.5 transition-transform">➔</span>
                 </button>
@@ -2728,7 +2803,7 @@ function Billing() {
       )}
 
       {/* =========================================================================
-          PETPOOJA-STYLE DINE-IN FLOOR PLAN & TABLE MANAGER MODAL
+          DINE-IN FLOOR PLAN & TABLE MANAGER MODAL
       ========================================================================= */}
       {tableFloorModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-3 sm:p-6 overflow-y-auto animate-in fade-in">
@@ -2740,14 +2815,9 @@ function Billing() {
                   <Utensils className="size-5" />
                 </span>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-lg sm:text-xl font-display font-black leading-tight text-foreground">
-                      DINE-IN FLOOR PLAN &amp; TABLE MANAGER
-                    </h2>
-                    <span className="rounded-full bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 text-[10px] font-black text-blue-600 dark:text-blue-400">
-                      PETPOOJA VIEW
-                    </span>
-                  </div>
+                  <h2 className="text-lg sm:text-xl font-display font-black leading-tight text-foreground">
+                    DINE-IN FLOOR PLAN &amp; TABLE MANAGER
+                  </h2>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     Real-time visual table occupancy, running tabs, live dining timers &amp; KOT dispatch.
                   </p>
@@ -2755,6 +2825,13 @@ function Billing() {
               </div>
 
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleOpenAddTable}
+                  className="flex items-center gap-1.5 rounded-xl bg-primary text-white px-3 py-1.5 text-xs font-bold shadow-xs hover:bg-primary/90 transition-all active:scale-98"
+                >
+                  <Plus className="size-3.5" /> + Add New Table
+                </button>
                 <button
                   type="button"
                   onClick={() => setTableFloorModalOpen(false)}
@@ -2773,11 +2850,12 @@ function Billing() {
               const vacantTables = allTables.filter((t) => t.status !== "occupied");
 
               const acCount = allTables.filter((t) => t.section === "ac").length;
-              const nonAcCount = allTables.filter((t) => t.section === "non-ac").length;
+              const nonAcCount = allTables.filter((t) => t.section === "non-ac" || !t.section).length;
               const outdoorCount = allTables.filter((t) => t.section === "outdoor").length;
 
               const filteredTables = allTables.filter((t) => {
                 if (tableSectionFilter === "all") return true;
+                if (tableSectionFilter === "non-ac") return t.section === "non-ac" || !t.section;
                 return t.section === tableSectionFilter;
               });
 
@@ -2876,15 +2954,44 @@ function Billing() {
                                   {tbl.name}
                                 </span>
                               </div>
-                              <span
-                                className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${
-                                  isOccupied
-                                    ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30"
-                                    : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
-                                }`}
-                              >
-                                {isOccupied ? "Occupied" : "Free"}
-                              </span>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenEditTable(tbl);
+                                  }}
+                                  className="p-1 rounded-md border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                  title="Edit Table Name / Seats / Section"
+                                >
+                                  <Pencil className="size-3" />
+                                </button>
+                                {!isOccupied && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (confirm(`Remove table ${tbl.name} (${tbl.id}) from floor plan?`)) {
+                                        deleteTable(tbl.id);
+                                        toast.success(`Table ${tbl.id} removed`);
+                                      }
+                                    }}
+                                    className="p-1 rounded-md border border-border bg-card hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                                    title="Delete Table"
+                                  >
+                                    <Trash2 className="size-3" />
+                                  </button>
+                                )}
+                                <span
+                                  className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${
+                                    isOccupied
+                                      ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30"
+                                      : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                                  }`}
+                                >
+                                  {isOccupied ? "Occupied" : "Free"}
+                                </span>
+                              </div>
                             </div>
 
                             {/* Capacity & Section Badges */}
@@ -3002,6 +3109,110 @@ function Billing() {
         </div>
       )}
 
+      {/* Add / Edit Table Modal */}
+      {showAddTableModal && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2">
+                <Utensils className="size-5 text-primary" />
+                <h3 className="font-display font-black text-base text-foreground">
+                  {editingTable ? `Edit Table ${editingTable.id}` : "Add New Floor Table"}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddTableModal(false)}
+                className="p-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="font-bold text-foreground block mb-1">
+                  Table ID / Code (Unique identifier)
+                </label>
+                <input
+                  type="text"
+                  value={tblFormId}
+                  disabled={!!editingTable}
+                  onChange={(e) => setTblFormId(e.target.value.toUpperCase())}
+                  placeholder="e.g. T9, A5, VIP-1, Patio-4"
+                  className="w-full rounded-xl border border-input bg-background px-3 py-2 font-mono font-bold text-sm focus:border-primary focus:outline-none disabled:opacity-60"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-foreground block mb-1">
+                  Display Name / Landmark
+                </label>
+                <input
+                  type="text"
+                  value={tblFormName}
+                  onChange={(e) => setTblFormName(e.target.value)}
+                  placeholder="e.g. Table 9 (Window Corner), Family Booth 5"
+                  className="w-full rounded-xl border border-input bg-background px-3 py-2 font-bold focus:border-primary focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="font-bold text-foreground block mb-1">
+                    Seating Capacity (Any # of Seats)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={tblFormSeats}
+                    onChange={(e) => setTblFormSeats(e.target.value)}
+                    placeholder="e.g. 2, 4, 6, 8, 12"
+                    className="w-full rounded-xl border border-input bg-background px-3 py-2 font-bold font-mono text-sm focus:border-primary focus:outline-none"
+                  />
+                  <span className="text-[10px] text-muted-foreground mt-0.5 block">
+                    Any number (e.g. 1 to 50 guests)
+                  </span>
+                </div>
+
+                <div>
+                  <label className="font-bold text-foreground block mb-1">
+                    Floor Section
+                  </label>
+                  <select
+                    value={tblFormSection}
+                    onChange={(e) => setTblFormSection(e.target.value as any)}
+                    className="w-full rounded-xl border border-input bg-background px-2.5 py-2 font-bold text-xs focus:border-primary focus:outline-none"
+                  >
+                    <option value="non-ac">🍽️ Main Dining</option>
+                    <option value="ac">❄️ A/C Family Hall</option>
+                    <option value="outdoor">🌿 Outdoor Patio</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+              <button
+                type="button"
+                onClick={() => setShowAddTableModal(false)}
+                className="px-3 py-2 rounded-xl border border-border text-xs font-bold text-muted-foreground hover:bg-muted"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveTableForm}
+                className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold shadow-xs hover:bg-primary/90"
+              >
+                {editingTable ? "Save Changes" : "Create Table"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* =========================================================================
           PHASE 2: KITCHEN DISPLAY SYSTEM (KDS) MODAL / CHEF TABLET VIEW
       ========================================================================= */}
@@ -3035,6 +3246,19 @@ function Billing() {
                 >
                   🧹 Clear Completed
                 </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm(`Clear all kitchen orders for ${activeTenant.businessName}?`)) {
+                      clearAllKdsOrders(activeTenant.id);
+                      toast.success("All kitchen orders cleared from KDS");
+                    }
+                  }}
+                  className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-2.5 py-1 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition-all"
+                  title="Clear all kitchen orders"
+                >
+                  🗑️ Clear All
+                </button>
                 <div className="flex rounded-lg border border-border bg-muted/60 p-0.5 text-xs">
                   {(() => {
                     const tenantKdsList = (db?.kdsOrders || []).filter(
@@ -3063,9 +3287,10 @@ function Billing() {
                 <button
                   type="button"
                   onClick={() => setKdsModalOpen(false)}
-                  className="rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  className="rounded-xl border border-border bg-muted/40 p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-all ml-1"
+                  title="Close KDS Modal"
                 >
-                  <X className="size-5" />
+                  <X className="size-4.5" />
                 </button>
               </div>
             </div>
@@ -3121,16 +3346,31 @@ function Billing() {
                               {order.orderType === "takeaway" ? "Takeaway" : "Dine-in"}
                             </span>
                           </div>
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-[10px] font-black tracking-wide ${isUrgent
-                                ? "bg-rose-600 text-white"
-                                : isMedium
-                                  ? "bg-amber-500 text-white"
-                                  : "bg-emerald-600 text-white"
-                              }`}
-                          >
-                            ⏱ {elapsedDisplay}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-[10px] font-black tracking-wide ${isUrgent
+                                  ? "bg-rose-600 text-white"
+                                  : isMedium
+                                    ? "bg-amber-500 text-white"
+                                    : "bg-emerald-600 text-white"
+                                }`}
+                            >
+                              ⏱ {elapsedDisplay}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (confirm(`Discard / Delete ${order.tableId ? `Table ${order.tableId}` : `Token #${order.tokenNum || order.orderNumber}`}?`)) {
+                                  deleteKdsOrder(order.id);
+                                  toast.success("Order discarded from KDS");
+                                }
+                              }}
+                              className="p-1 rounded-md border border-border bg-card hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                              title="Discard / Delete Order"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </button>
+                          </div>
                         </div>
 
                           {/* Status Badge */}

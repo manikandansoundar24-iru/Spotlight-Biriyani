@@ -18,13 +18,13 @@ export const Route = createFileRoute("/app")({
   },
   head: () => ({
     meta: [
-      { title: "RestroStack Cloud ERP & POS Terminal" },
+      { title: "RestoPulse Cloud ERP & POS Terminal" },
       {
         name: "description",
         content:
           "Multi-tenant restaurant terminal for counter billing, kitchen KDS, dynamic UPI QR, live deg stock, and multi-branch operations.",
       },
-      { property: "og:title", content: "RestroStack POS Terminal" },
+      { property: "og:title", content: "RestoPulse POS Terminal" },
       { property: "og:description", content: "Billing, stock and real profit tracking for restaurant operators." },
       { name: "robots", content: "noindex" },
     ],
@@ -185,7 +185,7 @@ function AppLayout() {
               <div className="flex flex-col">
                 <div className="flex items-center gap-1.5">
                   <span className="font-display font-black text-sm sm:text-base tracking-wide leading-none text-foreground">
-                    {db?.saasPlatformName || "RESTROSTACK"}
+                    {db?.saasPlatformName || "RESTOPULSE"}
                   </span>
                   <span className="text-[10px] font-bold text-primary bg-primary/10 border border-primary/20 rounded px-1.5 py-0.2 leading-tight">
                     Cloud POS

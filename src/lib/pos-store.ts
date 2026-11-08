@@ -9,7 +9,15 @@ import { useEffect, useState } from "react";
 
 /* ---------------------------------- types --------------------------------- */
 
-export type Branch = { id: string; name: string; address: string; phone: string };
+export type Branch = {
+  id: string;
+  name: string;
+  address: string;
+  phone: string;
+  upiId?: string | undefined;
+  gstin?: string | undefined;
+  fssai?: string | undefined;
+};
 
 export type ChannelId = "counter" | "swiggy" | "zomato";
 
@@ -607,13 +615,27 @@ export function isSameDay(dateStr?: string | Date): boolean {
  * Dynamically computes remaining plates and live batch status
  * based on actual sales records for that branch today.
  */
-export function getLiveBatchStatus(db: DB, branchId: string) {
+export function getLiveBatchStatus(db: DB, branchId?: string, tenantId?: string) {
   const defaultCapacityMap: Record<string, number> = {
     taramani: 160,
     adyar: 120,
     velachery: 100,
+    "velachery-phoenix": 120,
   };
-  const cap = db.settings?.dailyBatchCapacity?.[branchId] ?? (defaultCapacityMap[branchId] || 120);
+  const activeT = getActiveTenant(db);
+  const currentTenantId = tenantId || activeT.id || db.activeTenantId || "spotlight-biriyani";
+  const currentBranchId =
+    branchId ||
+    (activeT.branches && activeT.branches.some((b) => b.id === db.settings.activeBranchId)
+      ? db.settings.activeBranchId
+      : activeT.branches?.[0]?.id) ||
+    "main";
+
+  const cap =
+    db.settings?.dailyBatchCapacity?.[currentBranchId] ??
+    db.settings?.dailyBatchCapacity?.[currentTenantId] ??
+    (defaultCapacityMap[currentBranchId] || 120);
+
   const sales = Array.isArray(db.sales) ? db.sales : [];
   const hour = new Date().getHours();
   
@@ -622,14 +644,13 @@ export function getLiveBatchStatus(db: DB, branchId: string) {
   let kushkaSold = 0;
   let eggSold = 0;
 
-  const activeTenantId = db.activeTenantId || "spotlight-biriyani";
   const soldToday = sales
     .filter((s) => {
       if (!s || typeof s.date !== "string") return false;
-      const matchTenant = s.tenantId ? s.tenantId === activeTenantId : activeTenantId === "spotlight-biriyani";
+      const matchTenant = s.tenantId ? s.tenantId === currentTenantId : currentTenantId === "spotlight-biriyani";
       if (!matchTenant) return false;
       const matchBranch =
-        s.branchId === branchId || !s.branchId || (branchId === "taramani" && s.branchId === "tharamani");
+        !s.branchId || s.branchId === currentBranchId || (currentBranchId === "taramani" && s.branchId === "tharamani");
       return matchBranch && isSameDay(s.date);
     })
     .reduce((acc, s) => {
@@ -659,7 +680,8 @@ export function getLiveBatchStatus(db: DB, branchId: string) {
   const platesLeft = Math.max(0, cap - soldToday);
 
   // Configurable or proportional capacity estimates for deg items
-  const customSplit = db.settings?.batchSplit?.[branchId];
+  const customSplit =
+    db.settings?.batchSplit?.[currentBranchId] || db.settings?.batchSplit?.[currentTenantId];
   let chickenCap = customSplit?.chickenCap ?? Math.round(cap * 0.65);
   let muttonCap = customSplit?.muttonCap ?? (cap - chickenCap);
 
@@ -1035,6 +1057,26 @@ export function getDB(): DB {
   if (!cache.tables || !Array.isArray(cache.tables) || cache.tables.length === 0) {
     cache.tables = [...DEFAULT_TABLES];
     needsPersist = true;
+  } else {
+    // Migration: ensure every existing table has a section and missing default sections are merged
+    const tbls = cache.tables;
+    let tablesChanged = false;
+    tbls.forEach((tbl) => {
+      if (!tbl.section) {
+        if (tbl.id.startsWith("A")) tbl.section = "ac";
+        else if (tbl.id.startsWith("O")) tbl.section = "outdoor";
+        else tbl.section = "non-ac";
+        tablesChanged = true;
+      }
+    });
+    // If cache only has old 10 tables without A/C (A1-A4), merge missing default tables in
+    DEFAULT_TABLES.forEach((defTbl) => {
+      if (!tbls.some((t) => t.id === defTbl.id)) {
+        tbls.push({ ...defTbl });
+        tablesChanged = true;
+      }
+    });
+    if (tablesChanged) needsPersist = true;
   }
   if (!cache.tenants || !Array.isArray(cache.tenants) || cache.tenants.length === 0) {
     cache.tenants = [...DEFAULT_TENANTS];
@@ -1059,6 +1101,7 @@ export function getDB(): DB {
         if (!cur.activeBranchName && dt.activeBranchName) { cur.activeBranchName = dt.activeBranchName; changed = true; }
         if (!cur.items || cur.items.length < (dt.items?.length || 0)) { if (dt.items) cur.items = [...dt.items]; changed = true; }
         if (cur.degBatchEnabled === undefined && dt.degBatchEnabled !== undefined) { cur.degBatchEnabled = dt.degBatchEnabled; changed = true; }
+        if (cur.id === "manam" && cur.degBatchEnabled === undefined) { cur.degBatchEnabled = true; changed = true; }
         if (changed) needsPersist = true;
       }
     });
@@ -1103,8 +1146,8 @@ export function getDB(): DB {
     cache.settings.upiId = "spotlightbiriyani@oksbi";
     needsPersist = true;
   }
-  if (!cache.saasPlatformName || cache.saasPlatformName === "RestoPulse") {
-    cache.saasPlatformName = "RestroStack";
+  if (!cache.saasPlatformName || cache.saasPlatformName === "RestroStack") {
+    cache.saasPlatformName = "RestoPulse";
     needsPersist = true;
   }
 
@@ -1314,6 +1357,65 @@ export function vacateTable(tableId: string) {
 }
 
 /**
+ * Add a new table to the restaurant floor plan.
+ */
+export function addTable(newTable: TableSession) {
+  setDB((d) => {
+    if (!d.tables) d.tables = [...DEFAULT_TABLES];
+    const exists = d.tables.some((t) => t.id.toLowerCase() === newTable.id.toLowerCase());
+    if (exists) {
+      throw new Error(`Table with ID "${newTable.id}" already exists`);
+    }
+    d.tables.push({
+      ...newTable,
+      lines: newTable.lines || [],
+      status: newTable.status || "available",
+      capacity: Number(newTable.capacity) || 4,
+    });
+  });
+}
+
+/**
+ * Edit / Update an existing table's details (Name, Capacity, Section).
+ */
+export function updateTable(table: TableSession) {
+  setDB((d) => {
+    if (!d.tables) d.tables = [...DEFAULT_TABLES];
+    const idx = d.tables.findIndex((t) => t.id === table.id);
+    if (idx >= 0) {
+      const cur = d.tables[idx];
+      if (cur) {
+        d.tables[idx] = {
+          ...cur,
+          ...table,
+          capacity: Number(table.capacity) || cur.capacity,
+        };
+      }
+    }
+  });
+}
+
+/**
+ * Delete a table from the floor plan.
+ */
+export function deleteTable(tableId: string) {
+  setDB((d) => {
+    if (!d.tables) return;
+    d.tables = d.tables.filter((t) => t.id !== tableId);
+  });
+}
+
+/**
+ * Delete a single order from the Kitchen Display System (KDS).
+ */
+export function deleteKdsOrder(orderId: string) {
+  setDB((d) => {
+    if (!d.kdsOrders) return;
+    d.kdsOrders = d.kdsOrders.filter((o) => o.id !== orderId);
+  });
+}
+
+/**
  * Add or update an order on the Kitchen Display System (KDS).
  */
 export function addKdsOrder(order: Omit<KdsOrder, "createdAt" | "status">) {
@@ -1389,9 +1491,13 @@ export function clearCompletedKdsOrders() {
 /**
  * Clear all orders from the kitchen display system (e.g. at day start / after shift close).
  */
-export function clearAllKdsOrders() {
+export function clearAllKdsOrders(tenantId?: string) {
   setDB((d) => {
-    d.kdsOrders = [];
+    if (!tenantId) {
+      d.kdsOrders = [];
+    } else {
+      d.kdsOrders = (d.kdsOrders || []).filter((o) => o.tenantId && o.tenantId !== tenantId);
+    }
   });
 }
 

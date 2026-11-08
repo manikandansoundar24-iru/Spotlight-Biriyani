@@ -43,6 +43,7 @@ import {
   TenantModules,
   updateTenant,
   useDB,
+  type Branch,
 } from "@/lib/pos-store";
 import { performFullSync } from "@/lib/neon-sync";
 
@@ -57,12 +58,12 @@ export const Route = createFileRoute("/app/developer")({
 });
 
 const BRAND_PRESETS = [
-  { name: "RestroStack", tag: "Recommended Flagship", desc: "Developer-grade hospitality & restaurant cloud POS stack" },
-  { name: "RestoPulse", tag: "Enterprise Cloud", desc: "Dynamic real-time restaurant operating pulse" },
+  { name: "RestoPulse", tag: "Recommended Flagship", desc: "Dynamic real-time restaurant operating pulse & cloud ERP" },
   { name: "DinePulse", tag: "Modern QSR", desc: "Fast-casual dining and counter intelligence" },
   { name: "RestoSwift", tag: "Speed & Scale", desc: "Ultra-fast billing and high-speed kitchen turnover" },
   { name: "DegFlow", tag: "Biriyani Specialist", desc: "Tailored for authentic dum deg batch kitchens" },
   { name: "DineMatrix", tag: "Enterprise Analytics", desc: "Full-scale multi-outlet intelligence network" },
+  { name: "RestroStack", tag: "SaaS Tech Stack", desc: "Developer-grade hospitality software stack" },
 ];
 
 export function DeveloperSuperAdminPage() {
@@ -98,11 +99,17 @@ export function DeveloperSuperAdminPage() {
   const [newBranchLabel, setNewBranchLabel] = useState("");
   const [newBranchLoc, setNewBranchLoc] = useState("");
   const [newBranchPhone, setNewBranchPhone] = useState("");
+  const [newBranchUpi, setNewBranchUpi] = useState("");
+  const [newBranchGstin, setNewBranchGstin] = useState("");
+  const [newBranchFssai, setNewBranchFssai] = useState("");
   const [showAddBranchForm, setShowAddBranchForm] = useState(false);
   const [editingBranchId, setEditingBranchId] = useState<string | null>(null);
   const [branchEditName, setBranchEditName] = useState("");
   const [branchEditAddress, setBranchEditAddress] = useState("");
   const [branchEditPhone, setBranchEditPhone] = useState("");
+  const [branchEditUpi, setBranchEditUpi] = useState("");
+  const [branchEditGstin, setBranchEditGstin] = useState("");
+  const [branchEditFssai, setBranchEditFssai] = useState("");
 
   const currentDB = db ?? getDB();
   const activeTenant = getActiveTenant(currentDB);
@@ -207,6 +214,9 @@ export function DeveloperSuperAdminPage() {
       name: newBranchLabel.trim(),
       address: newBranchLoc.trim() || editTenant.address,
       phone: newBranchPhone.trim() || editTenant.phone,
+      upiId: newBranchUpi.trim() || editTenant.upiId,
+      gstin: newBranchGstin.trim() || editTenant.gstin,
+      fssai: newBranchFssai.trim() || editTenant.fssai,
     };
 
     const updatedBranches = [...currentBranches, newBranch];
@@ -221,6 +231,9 @@ export function DeveloperSuperAdminPage() {
     setNewBranchLabel("");
     setNewBranchLoc("");
     setNewBranchPhone("");
+    setNewBranchUpi("");
+    setNewBranchGstin("");
+    setNewBranchFssai("");
     setShowAddBranchForm(false);
     toast.success(`Branch "${newBranch.name}" created for ${editTenant.businessName}!`, {
       icon: <Building2 className="size-4 text-emerald-600" />,
@@ -248,11 +261,14 @@ export function DeveloperSuperAdminPage() {
     }
   };
 
-  const handleStartEditBranch = (b: { id: string; name: string; address?: string; phone?: string }) => {
+  const handleStartEditBranch = (b: Branch) => {
     setEditingBranchId(b.id);
     setBranchEditName(b.name);
     setBranchEditAddress(b.address || editTenant?.address || "");
     setBranchEditPhone(b.phone || editTenant?.phone || "");
+    setBranchEditUpi(b.upiId || editTenant?.upiId || "");
+    setBranchEditGstin(b.gstin || editTenant?.gstin || "");
+    setBranchEditFssai(b.fssai || editTenant?.fssai || "");
   };
 
   const handleSaveBranchEdit = (branchId: string) => {
@@ -269,6 +285,9 @@ export function DeveloperSuperAdminPage() {
             name: branchEditName.trim(),
             address: branchEditAddress.trim() || editTenant.address,
             phone: branchEditPhone.trim() || editTenant.phone,
+            upiId: branchEditUpi.trim() || editTenant.upiId,
+            gstin: branchEditGstin.trim() || editTenant.gstin,
+            fssai: branchEditFssai.trim() || editTenant.fssai,
           }
         : b
     );
@@ -582,7 +601,7 @@ export function DeveloperSuperAdminPage() {
             <h2 className="text-base font-black text-foreground">Master SaaS Platform Brand Name</h2>
           </div>
           <span className="text-xs font-bold text-primary">
-            Active Global Brand: <span className="font-black text-foreground">{currentDB.saasPlatformName || "RestroStack"}</span>
+            Active Global Brand: <span className="font-black text-foreground">{currentDB.saasPlatformName || "RestoPulse"}</span>
           </span>
         </div>
 
@@ -592,7 +611,7 @@ export function DeveloperSuperAdminPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {BRAND_PRESETS.map((b) => {
-            const isSelected = (currentDB.saasPlatformName || "RestroStack").toLowerCase() === b.name.toLowerCase();
+            const isSelected = (currentDB.saasPlatformName || "RestoPulse").toLowerCase() === b.name.toLowerCase();
             return (
               <button
                 key={b.name}
@@ -1195,14 +1214,48 @@ export function DeveloperSuperAdminPage() {
                               className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs focus:border-primary focus:outline-none"
                             />
                           </div>
-                          <div>
-                            <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">Phone / WhatsApp</label>
-                            <input
-                              type="text"
-                              value={branchEditPhone}
-                              onChange={(e) => setBranchEditPhone(e.target.value)}
-                              className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs font-mono focus:border-primary focus:outline-none"
-                            />
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">Phone / WhatsApp</label>
+                              <input
+                                type="text"
+                                value={branchEditPhone}
+                                onChange={(e) => setBranchEditPhone(e.target.value)}
+                                className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs font-mono focus:border-primary focus:outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">UPI ID for Dynamic QR</label>
+                              <input
+                                type="text"
+                                value={branchEditUpi}
+                                onChange={(e) => setBranchEditUpi(e.target.value)}
+                                placeholder="e.g. outlet@okhdfcbank"
+                                className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs font-mono text-[11px] focus:border-primary focus:outline-none"
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">GSTIN Number</label>
+                              <input
+                                type="text"
+                                value={branchEditGstin}
+                                onChange={(e) => setBranchEditGstin(e.target.value)}
+                                placeholder="33AAAAA0000A1Z5"
+                                className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs font-mono text-[11px] focus:border-primary focus:outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] font-bold text-muted-foreground block mb-0.5">FSSAI License</label>
+                              <input
+                                type="text"
+                                value={branchEditFssai}
+                                onChange={(e) => setBranchEditFssai(e.target.value)}
+                                placeholder="12424008000123"
+                                className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs font-mono text-[11px] focus:border-primary focus:outline-none"
+                              />
+                            </div>
                           </div>
                           <div className="flex justify-end gap-1.5 pt-1">
                             <button
@@ -1272,13 +1325,38 @@ export function DeveloperSuperAdminPage() {
                       onChange={(e) => setNewBranchLoc(e.target.value)}
                       className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs focus:border-primary focus:outline-none"
                     />
-                    <input
-                      type="text"
-                      placeholder="Branch Phone Number"
-                      value={newBranchPhone}
-                      onChange={(e) => setNewBranchPhone(e.target.value)}
-                      className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs font-mono focus:border-primary focus:outline-none"
-                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Branch Phone Number"
+                        value={newBranchPhone}
+                        onChange={(e) => setNewBranchPhone(e.target.value)}
+                        className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs font-mono focus:border-primary focus:outline-none"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Branch UPI ID (e.g. branch@okaxis)"
+                        value={newBranchUpi}
+                        onChange={(e) => setNewBranchUpi(e.target.value)}
+                        className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs font-mono focus:border-primary focus:outline-none"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Branch GSTIN (Optional)"
+                        value={newBranchGstin}
+                        onChange={(e) => setNewBranchGstin(e.target.value)}
+                        className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs font-mono focus:border-primary focus:outline-none"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Branch FSSAI (Optional)"
+                        value={newBranchFssai}
+                        onChange={(e) => setNewBranchFssai(e.target.value)}
+                        className="w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs font-mono focus:border-primary focus:outline-none"
+                      />
+                    </div>
                     <button
                       type="button"
                       onClick={handleAddBranchToTenant}

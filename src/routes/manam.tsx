@@ -1,17 +1,30 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Award, CheckCircle2, ChevronRight, Clock, Compass, Download, ExternalLink, Flame, Heart, MapPin, MessageCircle, MessageSquare, Phone, ShieldCheck, Sparkles, Star, TrendingUp, Users, Utensils, Zap } from "lucide-react";
+import {
+  Award,
+  CheckCircle2,
+  ChevronRight,
+  Clock,
+  Compass,
+  Download,
+  ExternalLink,
+  Flame,
+  Heart,
+  MapPin,
+  MessageCircle,
+  MessageSquare,
+  Phone,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  TrendingUp,
+  Users,
+  Utensils,
+  Zap,
+} from "lucide-react";
 import { useState } from "react";
 
 import { ChennaiLeafletMap, MANAM_KITCHENS } from "@/components/map/ChennaiLeafletMap";
 import { ManamAssistant } from "@/components/site/ManamAssistant";
-
-import heroImg from "@/assets/hero-biriyani.jpg";
-import chickenRealImg from "@/assets/chicken-biriyani-real.jpg";
-import muttonRealImg from "@/assets/mutton-biriyani-real.jpg";
-import kushkaRealImg from "@/assets/kushka-salna-real.jpg";
-import breadHalwaImg from "@/assets/bread-halwa.jpg";
-import ennaiKathirikaiImg from "@/assets/ennai-kathirikai.jpg";
-import onionRaitaImg from "@/assets/onion-raita.jpg";
 
 export const Route = createFileRoute("/manam")({
   head: () => ({
@@ -20,7 +33,7 @@ export const Route = createFileRoute("/manam")({
       {
         name: "description",
         content:
-          "Manam Restaurant, Velachery: Authentic Multi-Cuisine Family Dining & Late Night Kitchen open till 4:00 AM. Biriyani, Tandoori, Chinese & Chettinad specials opposite Phoenix Market City.",
+          "Manam Restaurant, Velachery: Authentic Multi-Cuisine Family Dining & Late Night Kitchen open till 4:00 AM. Seeraga Samba Biriyani, Tandoori, Chinese & Chettinad specials opposite Phoenix Market City.",
       },
       { property: "og:title", content: "Manam Restaurant — Velachery, Chennai (Open till 4 AM)" },
       { property: "og:description", content: "Family dining & late-night kitchen open till 4 AM opposite Phoenix Market City." },
@@ -35,7 +48,6 @@ type MenuItem = {
   category: "starters" | "biriyani" | "gravies" | "breads" | "desserts";
   price: number;
   desc: string;
-  img?: string;
   isBestseller?: boolean;
   isVeg?: boolean;
 };
@@ -44,11 +56,10 @@ const MANAM_MENU: MenuItem[] = [
   // Signature Biriyanis & Rice
   {
     id: "m6",
-    name: "Manam Special Chicken Dum Biriyani",
+    name: "Manam Special Chicken Dum Biriyani (Seeraga Samba)",
     category: "biriyani",
     price: 220,
     desc: "Fragrant long-grain spiced seeraga samba rice layered with succulent tender chicken cuts, served with creamy onion raita and ennai kathirikai salna.",
-    img: chickenRealImg,
     isBestseller: true,
   },
   {
@@ -57,7 +68,6 @@ const MANAM_MENU: MenuItem[] = [
     category: "biriyani",
     price: 310,
     desc: "Rich slow-cooked goat mutton dum biriyani cooked with whole crushed spices, pure ghee, and caramelized shallots.",
-    img: muttonRealImg,
     isBestseller: true,
   },
   {
@@ -66,7 +76,6 @@ const MANAM_MENU: MenuItem[] = [
     category: "biriyani",
     price: 110,
     desc: "Aromatic dum-cooked biriyani rice without meat, served with spicy Chettinad brinjal salna and chilled curd raita.",
-    img: kushkaRealImg,
     isBestseller: true,
   },
   {
@@ -92,7 +101,6 @@ const MANAM_MENU: MenuItem[] = [
     category: "starters",
     price: 210,
     desc: "Crispy Chennai street style spiced chicken tossed with fresh curry leaves, green chillies, and cracked pepper.",
-    img: chickenRealImg,
     isBestseller: true,
   },
   {
@@ -194,7 +202,6 @@ const MANAM_MENU: MenuItem[] = [
     category: "desserts",
     price: 80,
     desc: "Classic wedding-style bread halwa slow-cooked in pure ghee, caramelized milk, and topped with crunchy roasted cashews.",
-    img: breadHalwaImg,
     isBestseller: true,
     isVeg: true,
   },
@@ -260,31 +267,31 @@ function ManamShowcasePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0f17] text-slate-100 font-sans selection:bg-amber-500 selection:text-black">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-amber-500 selection:text-white">
       {/* Top Floating Announcement Bar */}
-      <div className="bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 text-white py-2 px-4 text-center text-xs font-black tracking-wide flex items-center justify-center gap-2 shadow-md">
+      <div className="bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 text-white py-2 px-4 text-center text-xs font-black tracking-wide flex items-center justify-center gap-2 shadow-xs">
         <Sparkles className="size-3.5 animate-spin" />
         <span>LATE NIGHT DINING ACTIVE · OPEN TILL 4:00 AM · DINE-IN, TAKEAWAY &amp; MIDNIGHT DELIVERY</span>
       </div>
 
       {/* Brand Navigation Header */}
-      <header className="sticky top-0 z-40 border-b border-slate-800 bg-[#0d131f]/95 backdrop-blur-xl shadow-md">
+      <header className="sticky top-0 z-40 border-b border-slate-200/90 bg-white/95 backdrop-blur-xl shadow-xs">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 h-16">
           <div className="flex items-center gap-3">
-            <span className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-tr from-amber-500 via-orange-600 to-red-600 text-white font-black text-lg shadow-amber-500/20 shadow-md">
+            <span className="flex size-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-600 to-red-600 text-white font-black text-lg shadow-xs">
               <Flame className="size-6" />
             </span>
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <span className="font-display font-black text-xl tracking-wider text-white drop-shadow-sm">
+                <span className="font-display font-black text-xl tracking-wider text-slate-900">
                   MANAM
                 </span>
-                <span className="rounded bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-0.5 text-[10px] font-black text-black shadow-xs">
+                <span className="rounded bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-0.5 text-[10px] font-black text-white shadow-2xs">
                   RESTAURANT
                 </span>
               </div>
-              <span className="text-[11px] text-amber-300 font-bold flex items-center gap-1">
-                <MapPin className="size-3 text-amber-400 shrink-0" />
+              <span className="text-[11px] text-slate-600 font-bold flex items-center gap-1">
+                <MapPin className="size-3 text-orange-600 shrink-0" />
                 Velachery · Opp. Phoenix Market City
               </span>
             </div>
@@ -295,7 +302,7 @@ function ManamShowcasePage() {
               href="https://wa.me/919840099887?text=Hi%20Manam%20Restaurant,%20I%20would%20like%20to%20order%20food%20or%20reserve%20a%20table"
               target="_blank"
               rel="noreferrer"
-              className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 py-2 text-xs font-bold text-white transition-all shadow-md"
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 py-2 text-xs font-bold text-white transition-all shadow-xs"
             >
               <MessageCircle className="size-3.5" />
               <span>WhatsApp</span>
@@ -305,7 +312,7 @@ function ManamShowcasePage() {
             <Link
               to="/login"
               search={{ tenant: "manam-restaurant" }}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 px-4 py-2 text-xs font-black text-white transition-all shadow-md active:scale-95"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 px-4 py-2 text-xs font-black text-white transition-all shadow-xs active:scale-95"
             >
               <Zap className="size-3.5" />
               <span>Manam Staff POS Login &rarr;</span>
@@ -314,44 +321,35 @@ function ManamShowcasePage() {
         </div>
       </header>
 
-      {/* Hero Section with Rich Culinary Backdrop */}
-      <section className="relative overflow-hidden border-b border-slate-800 py-12 sm:py-16">
-        <div className="absolute inset-0 -z-10">
-          <img
-            src={heroImg}
-            alt="Manam Restaurant Dining Ambiance"
-            className="w-full h-full object-cover opacity-15 filter blur-xs"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#0b0f17]/80 via-[#0b0f17]/95 to-[#0b0f17]" />
-        </div>
-
+      {/* Hero Section with Clean Light Theme */}
+      <section className="relative overflow-hidden border-b border-slate-200 bg-gradient-to-b from-white via-amber-50/40 to-slate-50 py-12 sm:py-16">
         <div className="mx-auto max-w-6xl px-4">
           <div className="max-w-3xl space-y-4">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-3 py-1 text-xs font-black text-amber-400 uppercase tracking-widest flex items-center gap-1.5">
-                <MapPin className="size-3 text-amber-400" /> Velachery Flagship
+              <span className="rounded-full bg-orange-500/10 border border-orange-500/30 px-3 py-1 text-xs font-black text-orange-700 uppercase tracking-widest flex items-center gap-1.5">
+                <MapPin className="size-3 text-orange-600" /> Velachery Flagship
               </span>
-              <span className="flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-xs font-bold text-emerald-400">
-                <Star className="size-3.5 fill-emerald-400" /> 4.5 Stars (50+ Google Reviews)
+              <span className="flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 text-xs font-bold text-emerald-700">
+                <Star className="size-3.5 fill-emerald-600 text-emerald-600" /> 4.5 Stars (50+ Google Reviews)
               </span>
-              <span className="rounded-full bg-rose-500/15 border border-rose-500/30 px-3 py-1 text-xs font-bold text-rose-400">
+              <span className="rounded-full bg-rose-500/10 border border-rose-500/30 px-3 py-1 text-xs font-bold text-rose-700">
                 🌙 Open till 4:00 AM Daily
               </span>
             </div>
 
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white font-display leading-tight">
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 font-display leading-tight">
               AUTHENTIC MULTI-CUISINE &amp; MIDNIGHT DINING
             </h1>
 
-            <p className="text-base sm:text-lg text-slate-300 leading-relaxed max-w-2xl">
-              Opposite Phoenix Market City, Velachery. Serving slow-cooked fragrant Dum Biriyanis, sizzling clay-oven Tandoori grills, spicy Chettinad curries, and street-style Chinese wok noodles.
+            <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl">
+              Opposite Phoenix Market City, Velachery. Serving slow-cooked fragrant Seeraga Samba Dum Biriyanis, sizzling clay-oven Tandoori grills, spicy Chettinad curries, and street-style Chinese wok noodles.
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <Link
                 to="/login"
                 search={{ tenant: "manam-restaurant" }}
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-red-600 hover:opacity-95 px-5 py-3 text-sm font-black text-white transition-all shadow-lg shadow-orange-500/20 active:scale-95"
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-orange-500 to-red-600 hover:opacity-95 px-5 py-3 text-sm font-black text-white transition-all shadow-md shadow-orange-500/20 active:scale-95"
               >
                 <Zap className="size-4" />
                 <span>Launch Manam POS Terminal &rarr;</span>
@@ -361,9 +359,9 @@ function ManamShowcasePage() {
                 href="https://maps.app.goo.gl/nFAipTWvd2V2BdeZA"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 px-4 py-3 text-xs sm:text-sm font-bold text-slate-100 transition-all shadow-sm"
+                className="inline-flex items-center gap-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-300 px-4 py-3 text-xs sm:text-sm font-bold text-slate-800 transition-all shadow-2xs"
               >
-                <MapPin className="size-4 text-red-400" />
+                <MapPin className="size-4 text-red-600" />
                 <span>Google Maps Directions</span>
                 <ExternalLink className="size-3 text-slate-400" />
               </a>
@@ -372,30 +370,30 @@ function ManamShowcasePage() {
                 href="https://wa.me/919840099887?text=Hi%20Manam%20Restaurant,%20I%20would%20like%20to%20reserve%20a%20family%20table%20or%20order%20takeaway"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-3 text-xs sm:text-sm font-bold text-white transition-all shadow-sm"
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-4 py-3 text-xs sm:text-sm font-bold text-white transition-all shadow-2xs"
               >
                 <MessageSquare className="size-4" />
                 <span>WhatsApp Table Booking</span>
               </a>
             </div>
 
-            {/* Quick Feature Badges */}
+            {/* Quick Feature Badges in Clean Light Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4">
-              <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
-                <span className="block text-base font-black text-amber-400">4:00 AM</span>
-                <span className="text-[11px] text-slate-400">Midnight Food Cravings</span>
+              <div className="p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs">
+                <span className="block text-base font-black text-orange-600">4:00 AM</span>
+                <span className="text-[11px] font-semibold text-slate-600">Midnight Food Cravings</span>
               </div>
-              <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
-                <span className="block text-base font-black text-amber-400">Family AC Hall</span>
-                <span className="text-[11px] text-slate-400">Spacious Seating &amp; Cabins</span>
+              <div className="p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs">
+                <span className="block text-base font-black text-orange-600">Family AC Hall</span>
+                <span className="text-[11px] font-semibold text-slate-600">Spacious Seating &amp; Cabins</span>
               </div>
-              <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
-                <span className="block text-base font-black text-amber-400">100% Halal</span>
-                <span className="text-[11px] text-slate-400">Fresh Meat &amp; Ingredients</span>
+              <div className="p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs">
+                <span className="block text-base font-black text-orange-600">100% Halal</span>
+                <span className="text-[11px] font-semibold text-slate-600">Fresh Meat &amp; Ingredients</span>
               </div>
-              <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
-                <span className="block text-base font-black text-amber-400">0% Commission</span>
-                <span className="text-[11px] text-slate-400">Direct WhatsApp Ordering</span>
+              <div className="p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs">
+                <span className="block text-base font-black text-orange-600">0% Commission</span>
+                <span className="text-[11px] font-semibold text-slate-600">Direct WhatsApp Ordering</span>
               </div>
             </div>
           </div>
@@ -403,21 +401,21 @@ function ManamShowcasePage() {
       </section>
 
       {/* Interactive Location & Live Distance Detector */}
-      <section className="border-b border-slate-800 bg-slate-900/40 py-6 px-4">
+      <section className="border-b border-slate-200 bg-white py-6 px-4">
         <div className="mx-auto max-w-6xl flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-start gap-3">
-            <span className="flex size-10 items-center justify-center rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 shrink-0 mt-0.5">
+            <span className="flex size-10 items-center justify-center rounded-2xl bg-red-500/10 border border-red-500/20 text-red-600 shrink-0 mt-0.5">
               <Compass className="size-5" />
             </span>
             <div>
-              <h3 className="text-sm sm:text-base font-black text-white">
+              <h3 className="text-sm sm:text-base font-black text-slate-900">
                 Find Your Distance to Manam Restaurant
               </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-600 mt-0.5">
                 Located at 1st Floor Nagendran Nagar, 53 Velachery Main Rd — Directly opposite Phoenix Market City main entrance.
               </p>
               {distanceInfo && (
-                <div className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-xs font-bold text-emerald-400">
+                <div className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-xs font-bold text-emerald-700">
                   <CheckCircle2 className="size-3.5" />
                   <span>{distanceInfo}</span>
                 </div>
@@ -430,7 +428,7 @@ function ManamShowcasePage() {
               type="button"
               onClick={handleDetectDistance}
               disabled={isDetectingDistance}
-              className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2.5 text-xs font-bold text-amber-400 hover:bg-amber-500/20 transition-all shadow-xs"
+              className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 rounded-xl border border-orange-500/40 bg-orange-500/10 px-4 py-2.5 text-xs font-bold text-orange-700 hover:bg-orange-500/20 transition-all shadow-2xs"
             >
               <Compass className={`size-3.5 ${isDetectingDistance ? "animate-spin" : ""}`} />
               <span>{isDetectingDistance ? "Calculating..." : "Detect Distance from Me"}</span>
@@ -440,33 +438,33 @@ function ManamShowcasePage() {
               href="https://maps.app.goo.gl/nFAipTWvd2V2BdeZA"
               target="_blank"
               rel="noreferrer"
-              className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 px-4 py-2.5 text-xs font-bold text-slate-100 transition-all"
+              className="flex-1 md:flex-none inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 px-4 py-2.5 text-xs font-bold text-slate-800 transition-all shadow-2xs"
             >
-              <ExternalLink className="size-3.5 text-slate-400" />
+              <ExternalLink className="size-3.5 text-slate-500" />
               <span>View on Maps</span>
             </a>
           </div>
         </div>
       </section>
 
-      {/* Signature Dish Visual Gallery */}
-      <section className="py-12 border-b border-slate-800 bg-[#0c111c]">
+      {/* Signature Dish Visual Gallery (ZERO Fake Photos, Pure Clean Culinary Cards) */}
+      <section className="py-12 border-b border-slate-200 bg-slate-50">
         <div className="mx-auto max-w-6xl px-4">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
             <div>
-              <span className="text-xs font-black uppercase tracking-widest text-amber-400">
+              <span className="text-xs font-black uppercase tracking-widest text-orange-600">
                 Chef's Handcrafted Specialties
               </span>
-              <h2 className="text-2xl sm:text-4xl font-black text-white font-display mt-1">
-                SIGNATURE DISHES
+              <h2 className="text-2xl sm:text-4xl font-black text-slate-900 font-display mt-1">
+                SIGNATURE DISHES &amp; MENU
               </h2>
-              <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-xl">
+              <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-xl">
                 Prepared fresh twice daily using authentic Chettinad whole spices, long-grain fragrant rice, and tender meat cuts.
               </p>
             </div>
 
             {/* Category Tabs */}
-            <div className="flex flex-wrap gap-1.5 p-1 rounded-xl bg-slate-900 border border-slate-800">
+            <div className="flex flex-wrap gap-1.5 p-1 rounded-xl bg-white border border-slate-200 shadow-2xs">
               {[
                 { id: "all", label: "All Items" },
                 { id: "biriyani", label: "Biriyani & Rice" },
@@ -481,8 +479,8 @@ function ManamShowcasePage() {
                   onClick={() => setActiveCategory(cat.id as any)}
                   className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
                     activeCategory === cat.id
-                      ? "bg-amber-500 text-black shadow-sm"
-                      : "text-slate-400 hover:text-white"
+                      ? "bg-orange-600 text-white shadow-xs"
+                      : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
                   {cat.label}
@@ -491,69 +489,51 @@ function ManamShowcasePage() {
             </div>
           </div>
 
-          {/* Dishes Grid */}
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Clean Dishes Grid */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filteredItems.map((item) => (
               <div
                 key={item.id}
-                className="group relative rounded-2xl border border-slate-800 bg-slate-900/70 overflow-hidden shadow-lg hover:border-amber-500/50 transition-all flex flex-col justify-between"
+                className="group relative rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs hover:border-orange-500/60 hover:shadow-md transition-all flex flex-col justify-between"
               >
-                {item.img && (
-                  <div className="relative h-44 w-full overflow-hidden bg-slate-950">
-                    <img
-                      src={item.img}
-                      alt={item.name}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80" />
+                <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`size-2.5 rounded-full ${item.isVeg ? "bg-emerald-600 ring-2 ring-emerald-500/30" : "bg-red-600 ring-2 ring-red-500/30"}`}
+                        title={item.isVeg ? "Vegetarian" : "Non-Vegetarian"}
+                      />
+                      <h3 className="font-bold text-sm sm:text-base text-slate-900 group-hover:text-orange-600 transition-colors">
+                        {item.name}
+                      </h3>
+                    </div>
+
                     {item.isBestseller && (
-                      <span className="absolute top-2.5 right-2.5 rounded-full bg-amber-500 text-black font-black text-[10px] px-2.5 py-0.5 uppercase tracking-wider shadow-md">
+                      <span className="shrink-0 rounded-full bg-orange-500/15 border border-orange-500/30 px-2 py-0.5 text-[10px] font-black text-orange-700 uppercase tracking-wider">
                         Bestseller 🔥
                       </span>
                     )}
                   </div>
-                )}
 
-                <div className="p-4 flex-1 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className={`size-2.5 rounded-full ${item.isVeg ? "bg-emerald-500 ring-2 ring-emerald-500/30" : "bg-red-500 ring-2 ring-red-500/30"}`}
-                          title={item.isVeg ? "Vegetarian" : "Non-Vegetarian"}
-                        />
-                        <h3 className="font-bold text-sm sm:text-base text-white group-hover:text-amber-400 transition-colors">
-                          {item.name}
-                        </h3>
-                      </div>
+                  <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+                    {item.desc}
+                  </p>
+                </div>
 
-                      {!item.img && item.isBestseller && (
-                        <span className="shrink-0 rounded-full bg-amber-500/15 border border-amber-500/40 px-2 py-0.5 text-[10px] font-black text-amber-400 uppercase tracking-wider">
-                          Popular
-                        </span>
-                      )}
-                    </div>
+                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-xl font-black text-orange-600 font-display">
+                    ₹{item.price}
+                  </span>
 
-                    <p className="mt-2 text-xs text-slate-400 line-clamp-3 leading-relaxed">
-                      {item.desc}
-                    </p>
-                  </div>
-
-                  <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between">
-                    <span className="text-xl font-black text-amber-400 font-display">
-                      ₹{item.price}
-                    </span>
-
-                    <a
-                      href={`https://wa.me/919840099887?text=Hi%20Manam%20Restaurant,%20I%20would%20like%20to%20order%20${encodeURIComponent(item.name)}%20(₹${item.price})`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-xl bg-slate-800 hover:bg-emerald-600 text-slate-200 hover:text-white px-3.5 py-2 text-xs font-bold transition-all shadow-xs flex items-center gap-1.5"
-                    >
-                      <MessageSquare className="size-3.5" />
-                      <span>WhatsApp Order</span>
-                    </a>
-                  </div>
+                  <a
+                    href={`https://wa.me/919840099887?text=Hi%20Manam%20Restaurant,%20I%20would%20like%20to%20order%20${encodeURIComponent(item.name)}%20(₹${item.price})`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-xl bg-slate-100 hover:bg-emerald-600 text-slate-700 hover:text-white px-3.5 py-1.5 text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5"
+                  >
+                    <MessageSquare className="size-3.5" />
+                    <span>WhatsApp Order</span>
+                  </a>
                 </div>
               </div>
             ))}
@@ -561,37 +541,35 @@ function ManamShowcasePage() {
         </div>
       </section>
 
-      {/* Franchise & Corporate Catering Section */}
-      <section className="py-14 border-b border-slate-800 bg-gradient-to-b from-[#0b0f17] to-slate-900/60 px-4">
-        <div className="mx-auto max-w-5xl rounded-3xl border border-amber-500/30 bg-slate-900/90 p-6 sm:p-10 shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
-
+      {/* Franchise & Corporate Catering Section (Clean Light Amber Card) */}
+      <section className="py-14 border-b border-slate-200 bg-white px-4">
+        <div className="mx-auto max-w-5xl rounded-3xl border border-amber-300 bg-gradient-to-br from-amber-50/60 via-orange-50/40 to-white p-6 sm:p-10 shadow-sm relative overflow-hidden">
           <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="space-y-3 max-w-xl">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 px-3 py-1 text-xs font-black text-amber-400 uppercase tracking-wider">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-500/15 border border-orange-500/30 px-3 py-1 text-xs font-black text-orange-700 uppercase tracking-wider">
                 <Award className="size-3.5" /> Business Partnership
               </span>
-              <h2 className="text-2xl sm:text-3xl font-black text-white font-display">
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 font-display">
                 OWN A MANAM FRANCHISE &amp; CORPORATE BULK CATERING
               </h2>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Partner with Chennai's fastest-growing midnight dining brand. Tap into high footfall Velachery and OMR IT tech parks with proven high-margin culinary recipes and zero-headache RestroStack POS ERP management.
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                Partner with Chennai's fastest-growing midnight dining brand. Tap into high footfall Velachery and OMR IT tech parks with proven high-margin culinary recipes and zero-headache RestoPulse POS ERP management.
               </p>
-              <div className="grid grid-cols-2 gap-3 pt-2 text-xs font-semibold text-slate-300">
+              <div className="grid grid-cols-2 gap-3 pt-2 text-xs font-semibold text-slate-700">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="size-4 text-emerald-400 shrink-0" />
+                  <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
                   <span>High ROI Late-Night Footfall</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="size-4 text-emerald-400 shrink-0" />
+                  <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
                   <span>Zero Commission POS ERP</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="size-4 text-emerald-400 shrink-0" />
+                  <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
                   <span>Central Kitchen Standardized Recipes</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="size-4 text-emerald-400 shrink-0" />
+                  <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
                   <span>Full Tech Support by Adeahub</span>
                 </div>
               </div>
@@ -602,7 +580,7 @@ function ManamShowcasePage() {
                 href="https://wa.me/919840099887?text=Hi%20Manam%20Restaurant%20Management,%20I%20am%20interested%20in%20Franchise%20/%20Corporate%20Bulk%20Catering%20partnership"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 px-6 py-3.5 text-sm font-black text-white transition-all shadow-lg shadow-orange-500/20 active:scale-95"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 px-6 py-3.5 text-sm font-black text-white transition-all shadow-md shadow-orange-500/20 active:scale-95"
               >
                 <MessageSquare className="size-4" />
                 <span>Inquire About Franchise</span>
@@ -612,9 +590,9 @@ function ManamShowcasePage() {
                 href="https://maps.app.goo.gl/nFAipTWvd2V2BdeZA"
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-700 bg-slate-800 hover:bg-slate-700 px-6 py-3.5 text-sm font-bold text-slate-200 transition-all"
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white hover:bg-slate-50 px-6 py-3.5 text-sm font-bold text-slate-800 transition-all shadow-2xs"
               >
-                <MapPin className="size-4 text-amber-400" />
+                <MapPin className="size-4 text-orange-600" />
                 <span>Visit Restaurant (Google Maps)</span>
               </a>
             </div>
@@ -623,17 +601,17 @@ function ManamShowcasePage() {
       </section>
 
       {/* Live South Chennai GPS Radar · Velachery Phoenix Hub */}
-      <section className="border-t border-slate-800 bg-[#080d1a] py-16 px-4">
+      <section className="border-t border-slate-200 bg-slate-50 py-16 px-4">
         <div className="mx-auto max-w-6xl">
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-xs font-bold text-emerald-400">
-                <span className="size-2 rounded-full bg-emerald-400 animate-pulse" /> Live South Chennai GPS Radar
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1 text-xs font-bold text-emerald-700">
+                <span className="size-2 rounded-full bg-emerald-600 animate-pulse" /> Live South Chennai GPS Radar
               </span>
-              <h2 className="mt-2 text-3xl sm:text-4xl font-display font-black text-white">
+              <h2 className="mt-2 text-3xl sm:text-4xl font-display font-black text-slate-900">
                 VELACHERY PHOENIX RESTAURANT HUB
               </h2>
-              <p className="mt-1 text-xs text-slate-400 max-w-xl">
+              <p className="mt-1 text-xs text-slate-600 max-w-xl">
                 Serving Velachery, Guindy, Madipakkam, OMR IT Corridor &amp; Adyar. Real-time GPS location opposite Phoenix Market City.
               </p>
             </div>
@@ -641,7 +619,7 @@ function ManamShowcasePage() {
               href="https://maps.app.goo.gl/nFAipTWvd2V2BdeZA"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-xs font-bold text-amber-400 hover:bg-amber-500/20 transition-all"
+              className="inline-flex items-center gap-2 rounded-full border border-orange-500/40 bg-orange-500/10 px-4 py-2 text-xs font-bold text-orange-700 hover:bg-orange-500/20 transition-all"
             >
               <MapPin className="size-3.5" />
               <span>Open in Google Maps App &rarr;</span>
@@ -661,56 +639,56 @@ function ManamShowcasePage() {
       </section>
 
       {/* Real Diner Reviews & Social Proof */}
-      <section className="py-12 border-b border-slate-800 bg-[#090d14] px-4">
+      <section className="py-12 border-b border-slate-200 bg-white px-4">
         <div className="mx-auto max-w-6xl">
           <div className="text-center max-w-xl mx-auto mb-8">
-            <span className="text-xs font-black uppercase tracking-widest text-emerald-400">
+            <span className="text-xs font-black uppercase tracking-widest text-emerald-700">
               Diner Love &amp; Accolades
             </span>
-            <h2 className="text-2xl sm:text-3xl font-black text-white font-display mt-1">
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 font-display mt-1">
               4.5★ FROM OVER 50+ GOOGLE REVIEWS
             </h2>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 space-y-3">
-              <div className="flex items-center gap-1 text-amber-400">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 space-y-3 shadow-2xs">
+              <div className="flex items-center gap-1 text-amber-500">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="size-3.5 fill-amber-400" />
+                  <Star key={i} className="size-3.5 fill-amber-400 text-amber-500" />
                 ))}
               </div>
-              <p className="text-xs text-slate-300 leading-relaxed italic">
+              <p className="text-xs text-slate-700 leading-relaxed italic">
                 "The best late-night biriyani spot in Velachery! Walking across from Phoenix Market City after a midnight movie and getting piping hot biriyani and chicken 65 at 2:30 AM was pure bliss."
               </p>
-              <div className="pt-2 border-t border-slate-800/80 text-xs font-bold text-slate-400">
+              <div className="pt-2 border-t border-slate-200 text-xs font-bold text-slate-600">
                 — Vignesh Sundaram, Velachery
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 space-y-3">
-              <div className="flex items-center gap-1 text-amber-400">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 space-y-3 shadow-2xs">
+              <div className="flex items-center gap-1 text-amber-500">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="size-3.5 fill-amber-400" />
+                  <Star key={i} className="size-3.5 fill-amber-400 text-amber-500" />
                 ))}
               </div>
-              <p className="text-xs text-slate-300 leading-relaxed italic">
+              <p className="text-xs text-slate-700 leading-relaxed italic">
                 "Family AC cabins are very spacious and neat. The mutton dum biriyani meat was melting in mouth. Authentic spices, no excessive food coloring, and prompt service."
               </p>
-              <div className="pt-2 border-t border-slate-800/80 text-xs font-bold text-slate-400">
+              <div className="pt-2 border-t border-slate-200 text-xs font-bold text-slate-600">
                 — Dr. Priya Kalyanakumar, Madipakkam
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 space-y-3">
-              <div className="flex items-center gap-1 text-amber-400">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 space-y-3 shadow-2xs">
+              <div className="flex items-center gap-1 text-amber-500">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="size-3.5 fill-amber-400" />
+                  <Star key={i} className="size-3.5 fill-amber-400 text-amber-500" />
                 ))}
               </div>
-              <p className="text-xs text-slate-300 leading-relaxed italic">
+              <p className="text-xs text-slate-700 leading-relaxed italic">
                 "We ordered catering for our office tech team gathering of 40 people. Hot, neatly packed in thermal containers, delivered right on time opposite Phoenix. Highly recommended!"
               </p>
-              <div className="pt-2 border-t border-slate-800/80 text-xs font-bold text-slate-400">
+              <div className="pt-2 border-t border-slate-200 text-xs font-bold text-slate-600">
                 — Karthik Raja, OMR Tech Park
               </div>
             </div>
@@ -719,38 +697,38 @@ function ManamShowcasePage() {
       </section>
 
       {/* Footer & Software Attribution */}
-      <footer className="border-t border-slate-800 bg-slate-950 py-10 px-4 text-center">
+      <footer className="border-t border-slate-200 bg-slate-100 py-10 px-4 text-center">
         <div className="mx-auto max-w-4xl space-y-4">
           <div className="flex items-center justify-center gap-2.5">
             <span className="flex size-7 items-center justify-center rounded-lg bg-gradient-to-tr from-amber-500 to-red-600 text-white font-bold text-xs shadow-xs">
               ⚡
             </span>
-            <span className="font-display font-black text-sm tracking-wider uppercase text-white">
+            <span className="font-display font-black text-sm tracking-wider uppercase text-slate-900">
               MANAM RESTAURANT · VELACHERY
             </span>
           </div>
 
-          <p className="text-xs text-slate-400 max-w-lg mx-auto leading-relaxed">
+          <p className="text-xs text-slate-600 max-w-lg mx-auto leading-relaxed">
             1st Floor, Nagendran Nagar, No 53, Velachery Main Rd, Directly Opp. PHOENIX MARKET CITY, Velachery, Chennai - 600042. Open Daily 12:00 PM – 4:00 AM.
           </p>
 
           <p className="text-[11px] text-slate-500 max-w-md mx-auto">
-            Live order billing, kitchen KDS, floor tables, and WhatsApp digital receipts for Manam Restaurant are powered by <strong>RestroStack Cloud ERP</strong>.
+            Live order billing, kitchen KDS, floor tables, and WhatsApp digital receipts for Manam Restaurant are powered by <strong>RestoPulse Cloud ERP</strong>.
           </p>
 
-          <div className="pt-2 flex flex-wrap items-center justify-center gap-3 sm:gap-5 text-xs font-bold text-amber-400">
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-3 sm:gap-5 text-xs font-bold text-orange-600">
             <Link to="/login" search={{ tenant: "manam-restaurant" }} className="hover:underline flex items-center gap-1">
               <Zap className="size-3.5" />
               <span>Manam Staff POS Login</span>
             </Link>
-            <span className="text-slate-600">·</span>
+            <span className="text-slate-400">·</span>
             <a href="https://maps.app.goo.gl/nFAipTWvd2V2BdeZA" target="_blank" rel="noreferrer" className="hover:underline flex items-center gap-1">
               <MapPin className="size-3" />
               <span>Google Maps Directions</span>
             </a>
-            <span className="text-slate-600">·</span>
-            <span className="text-slate-400">
-              Powered by RestroStack Cloud ERP
+            <span className="text-slate-400">·</span>
+            <span className="text-slate-500">
+              Powered by RestoPulse Cloud ERP
             </span>
           </div>
         </div>
