@@ -3,7 +3,7 @@ import { AlertTriangle, CheckCircle2, Pencil, Plus, Trash2, X } from "lucide-rea
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { inr, setDB, useDB, type StockMove } from "@/lib/pos-store";
+import { getActiveTenant, getTenantStock, inr, setDB, useDB, type StockItem, type StockMove } from "@/lib/pos-store";
 
 export const Route = createFileRoute("/app/stock")({
   component: Stock,
@@ -24,6 +24,9 @@ function Stock() {
 
   if (!db) return <p className="text-sm text-muted-foreground">Loading…</p>;
 
+  const activeTenant = getActiveTenant(db);
+  const stock = getTenantStock(db, activeTenant);
+
   const applyMove = () => {
     const qty = Number(form.qty);
     if (!form.stockItemId || !qty || qty <= 0) {
@@ -31,14 +34,23 @@ function Stock() {
       return;
     }
     setDB((d) => {
+      const t = d.tenants?.find((x) => x.id === activeTenant.id);
+      if (t) {
+        if (!t.stock) t.stock = [...stock];
+        const tItem = t.stock.find((s) => s.id === form.stockItemId);
+        if (tItem) {
+          tItem.qty = Math.max(0, tItem.qty + (form.type === "in" ? qty : -qty));
+        }
+      }
       const item = d.stock.find((s) => s.id === form.stockItemId);
-      if (!item) return;
-      item.qty = Math.max(0, item.qty + (form.type === "in" ? qty : -qty));
+      if (item) {
+        item.qty = Math.max(0, item.qty + (form.type === "in" ? qty : -qty));
+      }
       d.moves.unshift({
         id: Math.random().toString(36).slice(2, 10),
         date: new Date().toISOString(),
         branchId: d.settings.activeBranchId,
-        stockItemId: item.id,
+        stockItemId: form.stockItemId,
         type: form.type,
         qty,
         note: form.note,
@@ -53,21 +65,29 @@ function Stock() {
       toast.error("Enter a material name");
       return;
     }
+    const createdItem: StockItem = {
+      id: `stk_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      name: newItem.name.trim(),
+      unit: newItem.unit.trim() || "kg",
+      qty: Number(newItem.qty) || 0,
+      reorderLevel: Number(newItem.reorderLevel) || 0,
+      costPerUnit: Number(newItem.costPerUnit) || 0,
+    };
     setDB((d) => {
-      d.stock.push({
-        id: Math.random().toString(36).slice(2, 10),
-        name: newItem.name.trim(),
-        unit: newItem.unit.trim() || "kg",
-        qty: Number(newItem.qty) || 0,
-        reorderLevel: Number(newItem.reorderLevel) || 0,
-        costPerUnit: Number(newItem.costPerUnit) || 0,
-      });
+      const t = d.tenants?.find((x) => x.id === activeTenant.id);
+      if (t) {
+        if (!t.stock) t.stock = [...stock];
+        t.stock.push(createdItem);
+      }
+      if (activeTenant.id === "spotlight-biriyani") {
+        d.stock.push(createdItem);
+      }
     });
     setNewItem({ name: "", unit: "kg", qty: "", reorderLevel: "", costPerUnit: "" });
     toast.success("Raw material added successfully");
   };
 
-  const startEdit = (item: (typeof db.stock)[0]) => {
+  const startEdit = (item: StockItem) => {
     setEditingItem({
       id: item.id,
       name: item.name,
@@ -84,6 +104,18 @@ function Stock() {
       return;
     }
     setDB((d) => {
+      const t = d.tenants?.find((x) => x.id === activeTenant.id);
+      if (t) {
+        if (!t.stock) t.stock = [...stock];
+        const item = t.stock.find((s) => s.id === editingItem.id);
+        if (item) {
+          item.name = editingItem.name.trim();
+          item.unit = editingItem.unit.trim() || "kg";
+          item.qty = Math.max(0, Number(editingItem.qty) || 0);
+          item.reorderLevel = Math.max(0, Number(editingItem.reorderLevel) || 0);
+          item.costPerUnit = Math.max(0, Number(editingItem.costPerUnit) || 0);
+        }
+      }
       const item = d.stock.find((s) => s.id === editingItem.id);
       if (item) {
         item.name = editingItem.name.trim();
@@ -98,26 +130,17 @@ function Stock() {
   };
 
   const deleteItem = (id: string, name: string) => {
-    const itemToDelete = db.stock.find((s) => s.id === id);
     setDB((d) => {
+      const t = d.tenants?.find((x) => x.id === activeTenant.id);
+      if (t && t.stock) {
+        t.stock = t.stock.filter((s) => s.id !== id);
+      }
       d.stock = d.stock.filter((s) => s.id !== id);
     });
-    toast.success(`Removed "${name}" from stock`, {
-      action: itemToDelete
-        ? {
-            label: "Undo",
-            onClick: () => {
-              setDB((d) => {
-                d.stock.push(itemToDelete);
-              });
-              toast.info(`Restored "${name}"`);
-            },
-          }
-        : undefined,
-    });
+    toast.success(`Removed "${name}" from stock`);
   };
 
-  const stockValue = db.stock.reduce((s, i) => s + i.qty * i.costPerUnit, 0);
+  const stockValue = stock.reduce((s, i) => s + i.qty * i.costPerUnit, 0);
 
   return (
     <div className="space-y-6">

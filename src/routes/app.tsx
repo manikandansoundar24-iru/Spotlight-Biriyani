@@ -150,11 +150,12 @@ function AppLayout() {
 
   const activeTenant = getActiveTenant(db);
   const visibleLinks = LINKS.filter((l) => {
-    if (!l.roles.includes(currentRole)) return false;
-    if (currentRole === "developer") return true;
+    // If this module is explicitly disabled for the active tenant, hide it from navigation
     if (l.module && activeTenant.enabledModules && activeTenant.enabledModules[l.module] === false) {
       return false;
     }
+    if (currentRole === "developer") return true;
+    if (!l.roles.includes(currentRole)) return false;
     return true;
   });
 

@@ -20,6 +20,8 @@ import {
   Users,
   Utensils,
   Zap,
+  QrCode,
+  X,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -227,6 +229,8 @@ function ManamShowcasePage() {
   const [activeCategory, setActiveCategory] = useState<"all" | "starters" | "biriyani" | "gravies" | "breads" | "desserts">("all");
   const [distanceInfo, setDistanceInfo] = useState<string | null>(null);
   const [isDetectingDistance, setIsDetectingDistance] = useState(false);
+  const [tableQrModalOpen, setTableQrModalOpen] = useState(false);
+  const [selectedTableQr, setSelectedTableQr] = useState("T1");
 
   const filteredItems = activeCategory === "all" ? MANAM_MENU : MANAM_MENU.filter((i) => i.category === activeCategory);
 
@@ -297,7 +301,39 @@ function ManamShowcasePage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          {/* Desktop Navigation Links */}
+          <nav className="hidden lg:flex items-center gap-4 text-xs font-bold text-slate-700">
+            <a href="#menu" className="hover:text-orange-600 transition-colors uppercase tracking-wider">
+              Live Menu
+            </a>
+            <a href="#radar" className="hover:text-orange-600 transition-colors flex items-center gap-1 uppercase tracking-wider">
+              <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+              Velachery Radar
+            </a>
+            <button
+              type="button"
+              onClick={() => setTableQrModalOpen(true)}
+              className="hover:text-orange-600 transition-colors flex items-center gap-1 font-bold uppercase tracking-wider"
+            >
+              <QrCode className="size-3.5 text-orange-600" />
+              Scan QR
+            </button>
+            <a href="#menu" className="hover:text-orange-600 transition-colors uppercase tracking-wider">
+              Chef Specials
+            </a>
+            <a href="#catering" className="hover:text-orange-600 transition-colors uppercase tracking-wider">
+              Franchise &amp; Party
+            </a>
+            <Link
+              to="/login"
+              search={{ tenant: "manam-restaurant" }}
+              className="rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-700 px-3 py-1 font-black hover:bg-orange-500/20 transition-all"
+            >
+              ⚡ POS Demo
+            </Link>
+          </nav>
+
+          <div className="flex items-center gap-2">
             <a
               href="https://wa.me/919840099887?text=Hi%20Manam%20Restaurant,%20I%20would%20like%20to%20order%20food%20or%20reserve%20a%20table"
               target="_blank"
@@ -312,10 +348,10 @@ function ManamShowcasePage() {
             <Link
               to="/login"
               search={{ tenant: "manam-restaurant" }}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 px-4 py-2 text-xs font-black text-white transition-all shadow-xs active:scale-95"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 px-3.5 py-2 text-xs font-black text-white transition-all shadow-xs active:scale-95"
             >
               <Zap className="size-3.5" />
-              <span>Manam Staff POS Login &rarr;</span>
+              <span>Staff Login &rarr;</span>
             </Link>
           </div>
         </div>
@@ -448,7 +484,7 @@ function ManamShowcasePage() {
       </section>
 
       {/* Signature Dish Visual Gallery (ZERO Fake Photos, Pure Clean Culinary Cards) */}
-      <section className="py-12 border-b border-slate-200 bg-slate-50">
+      <section id="menu" className="py-12 border-b border-slate-200 bg-slate-50">
         <div className="mx-auto max-w-6xl px-4">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
             <div>
@@ -542,7 +578,7 @@ function ManamShowcasePage() {
       </section>
 
       {/* Franchise & Corporate Catering Section (Clean Light Amber Card) */}
-      <section className="py-14 border-b border-slate-200 bg-white px-4">
+      <section id="catering" className="py-14 border-b border-slate-200 bg-white px-4">
         <div className="mx-auto max-w-5xl rounded-3xl border border-amber-300 bg-gradient-to-br from-amber-50/60 via-orange-50/40 to-white p-6 sm:p-10 shadow-sm relative overflow-hidden">
           <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="space-y-3 max-w-xl">
@@ -601,7 +637,7 @@ function ManamShowcasePage() {
       </section>
 
       {/* Live South Chennai GPS Radar · Velachery Phoenix Hub */}
-      <section className="border-t border-slate-200 bg-slate-50 py-16 px-4">
+      <section id="radar" className="border-t border-slate-200 bg-slate-50 py-16 px-4">
         <div className="mx-auto max-w-6xl">
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div>
@@ -733,6 +769,83 @@ function ManamShowcasePage() {
           </div>
         </div>
       </footer>
+
+      {/* Table QR Scan Modal */}
+      {tableQrModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="relative w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl text-center space-y-4">
+            <button
+              type="button"
+              onClick={() => setTableQrModalOpen(false)}
+              className="absolute right-4 top-4 p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+            >
+              <X className="size-5" />
+            </button>
+
+            <div className="size-12 rounded-2xl bg-orange-500/10 text-orange-600 flex items-center justify-center mx-auto">
+              <QrCode className="size-6" />
+            </div>
+
+            <div>
+              <h3 className="text-xl font-display font-black text-slate-900">
+                DINE-IN DIGITAL TABLE QR
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Scan with any smartphone camera or UPI app at your table to view menu and order.
+              </p>
+            </div>
+
+            {/* Table Selector */}
+            <div className="flex flex-wrap items-center justify-center gap-1.5 p-1 bg-slate-100 rounded-xl">
+              {["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8"].map((tbl) => (
+                <button
+                  key={tbl}
+                  type="button"
+                  onClick={() => setSelectedTableQr(tbl)}
+                  className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                    selectedTableQr === tbl
+                      ? "bg-orange-600 text-white shadow-xs"
+                      : "text-slate-600 hover:bg-white"
+                  }`}
+                >
+                  {tbl}
+                </button>
+              ))}
+            </div>
+
+            {/* Simulated Clean QR Code Preview */}
+            <div className="border-2 border-dashed border-orange-300 rounded-2xl p-6 bg-orange-50/30 flex flex-col items-center justify-center space-y-3">
+              <div className="size-48 rounded-xl bg-white p-3 shadow-md border border-slate-200 flex flex-col items-center justify-center">
+                <QrCode className="size-36 text-slate-900" />
+                <span className="text-[10px] font-black uppercase text-orange-600 tracking-wider mt-1">
+                  MANAM · TABLE {selectedTableQr}
+                </span>
+              </div>
+              <p className="text-[11px] font-semibold text-slate-600 font-mono">
+                https://spotlight-biriyani.vercel.app/manam?table={selectedTableQr}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <a
+                href={`https://wa.me/919840099887?text=Hi%20Manam,%20I%20am%20at%20Table%20${selectedTableQr}%20and%20want%20to%20order`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 text-xs transition-colors flex items-center justify-center gap-1.5 shadow-xs"
+              >
+                <MessageSquare className="size-3.5" /> Order for Table {selectedTableQr}
+              </a>
+              <button
+                type="button"
+                onClick={() => setTableQrModalOpen(false)}
+                className="rounded-xl border border-slate-300 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Floating Interactive Manam Restaurant Assistant */}
       <ManamAssistant />

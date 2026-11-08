@@ -212,6 +212,7 @@ export type TenantConfig = {
   kitchenPin?: string | undefined;
   branches?: Branch[] | undefined;
   items?: Item[] | undefined;
+  stock?: StockItem[] | undefined;
   enabledModules: TenantModules;
 };
 
@@ -361,6 +362,36 @@ export const MANAM_DEFAULT_ITEMS: Item[] = [
   { id: "mnm-ice-4", name: "Traditional Hot Bread Halwa", category: "dessert", price: 80, onlinePrice: 105, cost: 28, active: true },
 ];
 
+export const MANAM_DEFAULT_STOCK: StockItem[] = [
+  { id: "mnm-stk-1", name: "Seeraga Samba Rice", unit: "kg", qty: 140, reorderLevel: 40, costPerUnit: 95 },
+  { id: "mnm-stk-2", name: "Tender Farm Chicken", unit: "kg", qty: 50, reorderLevel: 25, costPerUnit: 210 },
+  { id: "mnm-stk-3", name: "Fresh Mutton (Curry Cut)", unit: "kg", qty: 20, reorderLevel: 15, costPerUnit: 780 },
+  { id: "mnm-stk-4", name: "Parotta Maida Flour", unit: "kg", qty: 60, reorderLevel: 20, costPerUnit: 42 },
+  { id: "mnm-stk-5", name: "Shawarma Whole Chicken", unit: "kg", qty: 30, reorderLevel: 10, costPerUnit: 220 },
+  { id: "mnm-stk-6", name: "Onion (Bellary & Sambar)", unit: "kg", qty: 65, reorderLevel: 25, costPerUnit: 38 },
+  { id: "mnm-stk-7", name: "Country Tomato", unit: "kg", qty: 35, reorderLevel: 15, costPerUnit: 32 },
+  { id: "mnm-stk-8", name: "Pure Cow Ghee", unit: "L", qty: 12, reorderLevel: 6, costPerUnit: 640 },
+  { id: "mnm-stk-9", name: "Fresh Malai Paneer", unit: "kg", qty: 15, reorderLevel: 5, costPerUnit: 340 },
+  { id: "mnm-stk-10", name: "Refined Sunflower Oil", unit: "L", qty: 40, reorderLevel: 20, costPerUnit: 125 },
+  { id: "mnm-stk-11", name: "Tandoori Spices & Curd", unit: "kg", qty: 16, reorderLevel: 8, costPerUnit: 160 },
+  { id: "mnm-stk-12", name: "Eco Packing Box & Covers", unit: "pcs", qty: 450, reorderLevel: 200, costPerUnit: 8 },
+];
+
+export const SPOTLIGHT_DEFAULT_STOCK: StockItem[] = [
+  { id: "slb-stk-1", name: "Basmati Rice", unit: "kg", qty: 120, reorderLevel: 40, costPerUnit: 92 },
+  { id: "slb-stk-2", name: "Chicken", unit: "kg", qty: 45, reorderLevel: 25, costPerUnit: 210 },
+  { id: "slb-stk-3", name: "Mutton", unit: "kg", qty: 18, reorderLevel: 15, costPerUnit: 780 },
+  { id: "slb-stk-4", name: "Onion", unit: "kg", qty: 60, reorderLevel: 25, costPerUnit: 38 },
+  { id: "slb-stk-5", name: "Tomato", unit: "kg", qty: 30, reorderLevel: 15, costPerUnit: 32 },
+  { id: "slb-stk-6", name: "Refined Oil", unit: "L", qty: 35, reorderLevel: 20, costPerUnit: 128 },
+  { id: "slb-stk-7", name: "Ghee", unit: "L", qty: 8, reorderLevel: 6, costPerUnit: 620 },
+  { id: "slb-stk-8", name: "Biriyani Masala", unit: "kg", qty: 6, reorderLevel: 4, costPerUnit: 480 },
+  { id: "slb-stk-9", name: "Curd", unit: "kg", qty: 12, reorderLevel: 8, costPerUnit: 60 },
+  { id: "slb-stk-10", name: "Packing Box (Full)", unit: "pcs", qty: 400, reorderLevel: 200, costPerUnit: 9 },
+  { id: "slb-stk-11", name: "Carry Bag", unit: "pcs", qty: 700, reorderLevel: 300, costPerUnit: 3 },
+  { id: "slb-stk-12", name: "LPG Cylinder", unit: "pcs", qty: 3, reorderLevel: 2, costPerUnit: 1850 },
+];
+
 export const DEFAULT_TENANTS: TenantConfig[] = [
   {
     id: "manam-restaurant",
@@ -381,6 +412,7 @@ export const DEFAULT_TENANTS: TenantConfig[] = [
     cashierPin: "4001",
     kitchenPin: "5555",
     items: MANAM_DEFAULT_ITEMS,
+    stock: MANAM_DEFAULT_STOCK,
     branches: [
       {
         id: "velachery-phoenix",
@@ -421,6 +453,7 @@ export const DEFAULT_TENANTS: TenantConfig[] = [
     loginPassword: "spotlight2026",
     cashierPin: "1234",
     kitchenPin: "5555",
+    stock: SPOTLIGHT_DEFAULT_STOCK,
     branches: [
       {
         id: "taramani",
@@ -1107,6 +1140,10 @@ export function getDB(): DB {
         if (!cur.phone && dt.phone) { cur.phone = dt.phone; changed = true; }
         if (!cur.activeBranchName && dt.activeBranchName) { cur.activeBranchName = dt.activeBranchName; changed = true; }
         if (!cur.items || cur.items.length < (dt.items?.length || 0)) { if (dt.items) cur.items = [...dt.items]; changed = true; }
+        if (!cur.stock || cur.stock.length === 0 || (cur.id === "manam-restaurant" && cur.stock.some((s) => s.name === "Basmati Rice"))) {
+          if (dt.stock) cur.stock = [...dt.stock];
+          changed = true;
+        }
         if (cur.id === "manam-restaurant" || cur.id === "spotlight-biriyani") {
           if (cur.degBatchEnabled !== true) {
             cur.degBatchEnabled = true;
@@ -1277,14 +1314,22 @@ export const inr = (n: number) =>
 
 export const dayKey = (iso: string) => iso.slice(0, 10);
 
-export function filterSales(db: DB, opts: { days?: number; branchId?: string; channel?: ChannelId | "all" }) {
+export function filterSales(
+  db: DB,
+  opts: { days?: number; branchId?: string; channel?: ChannelId | "all"; tenantId?: string },
+) {
   const from = opts.days ? Date.now() - opts.days * 864e5 : 0;
-  return db.sales.filter(
-    (s) =>
-      new Date(s.date).getTime() >= from &&
-      (!opts.branchId || opts.branchId === "all" || s.branchId === opts.branchId) &&
-      (!opts.channel || opts.channel === "all" || s.channel === opts.channel),
-  );
+  const currentTenant = getActiveTenant(db);
+  const targetTenantId = opts.tenantId || currentTenant.id;
+  return db.sales.filter((s) => {
+    if (!s || !s.date) return false;
+    const matchTenant = s.tenantId ? s.tenantId === targetTenantId : targetTenantId === "spotlight-biriyani";
+    if (!matchTenant) return false;
+    const matchTime = new Date(s.date).getTime() >= from;
+    const matchBranch = !opts.branchId || opts.branchId === "all" || s.branchId === opts.branchId;
+    const matchChannel = !opts.channel || opts.channel === "all" || s.channel === opts.channel;
+    return matchTime && matchBranch && matchChannel;
+  });
 }
 
 export function totals(sales: Sale[]) {
@@ -1608,6 +1653,22 @@ export function getTenantItems(db?: DB | null, tenant?: TenantConfig): Item[] {
     return defaultMatch.items;
   }
   return currentDB.items && currentDB.items.length > 0 ? currentDB.items : [];
+}
+
+/**
+ * Get raw inventory stock strictly for the active tenant.
+ * Prevents Biriyani Basmati Rice from leaking into Multi-Cuisine / other tenants.
+ */
+export function getTenantStock(db?: DB | null, tenant?: TenantConfig): StockItem[] {
+  const activeT = tenant || getActiveTenant(db);
+  if (activeT.stock && activeT.stock.length > 0) {
+    return activeT.stock;
+  }
+  if (activeT.id === "manam-restaurant" || activeT.id === "manam") {
+    return MANAM_DEFAULT_STOCK;
+  }
+  const currentDB = db ?? getDB();
+  return currentDB.stock && currentDB.stock.length > 0 ? currentDB.stock : SPOTLIGHT_DEFAULT_STOCK;
 }
 
 /**

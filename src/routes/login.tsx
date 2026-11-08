@@ -96,6 +96,9 @@ function LoginPage() {
       const tenantParam = urlParams.get("tenant");
       const targetId = tenantParam || "spotlight-biriyani";
       setSelectedTenantId(targetId);
+      if (tenantParam) {
+        switchClientTenant(tenantParam);
+      }
 
       const dbInst = getDB();
       const tenantsList = getMergedTenants(dbInst.tenants);

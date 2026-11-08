@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   AlertCircle,
   Calendar,
@@ -46,6 +46,7 @@ import {
   Square,
   UserCheck,
   Maximize2,
+  Lock,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -773,6 +774,32 @@ function Billing() {
 
   const isCartOverDeg = currentCartDegPlates > liveBatch.platesLeft;
 
+  const degDishesStats = useMemo(() => {
+    const sales = (db?.sales || []).filter((s) => {
+      if (!s || typeof s.date !== "string") return false;
+      const matchTenant = s.tenantId ? s.tenantId === activeTenant.id : activeTenant.id === "spotlight-biriyani";
+      return matchTenant && isSameDay(s.date);
+    });
+    const soldMap: Record<string, number> = {};
+    sales.forEach((s) => {
+      (s.lines || []).forEach((l) => {
+        soldMap[l.itemId] = (soldMap[l.itemId] || 0) + (l.qty || 0);
+        if (l.name) soldMap[l.name.toLowerCase().trim()] = (soldMap[l.name.toLowerCase().trim()] || 0) + (l.qty || 0);
+      });
+    });
+    const degDishes = tenantItems.filter((i) => isDegItem(i));
+    return degDishes.map((dish) => {
+      const byId = soldMap[dish.id] || 0;
+      const byName = soldMap[dish.name.toLowerCase().trim()] || 0;
+      const sold = Math.max(byId, byName);
+      return {
+        id: dish.id,
+        name: dish.name,
+        sold,
+      };
+    });
+  }, [db, activeTenant, tenantItems]);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       window.scrollTo(0, 0);
@@ -1230,6 +1257,39 @@ function Billing() {
     );
   }
 
+  // Strict Module Access Guard: if Counter POS Billing is turned off for this tenant
+  if (activeTenant.enabledModules && activeTenant.enabledModules.billing === false) {
+    return (
+      <div className="surface-card p-8 sm:p-12 text-center max-w-lg mx-auto my-12 space-y-4 rounded-3xl border border-border shadow-lg">
+        <div className="size-14 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto">
+          <Lock className="size-7" />
+        </div>
+        <h2 className="text-xl sm:text-2xl font-black font-display text-foreground">
+          Counter POS Billing Disabled
+        </h2>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          The POS Billing Terminal module has been disabled for{" "}
+          <span className="font-bold text-foreground">{activeTenant.businessName}</span>.
+          You can enable it anytime from the Master Developer Console.
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+          <Link
+            to="/app"
+            className="rounded-xl bg-primary text-white px-4 py-2 text-xs font-bold shadow-xs hover:bg-primary/90 transition-all"
+          >
+            Go to Dashboard
+          </Link>
+          <Link
+            to="/app/developer"
+            className="rounded-xl border border-border bg-card px-4 py-2 text-xs font-bold hover:bg-muted transition-all"
+          >
+            Open Developer Console
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 w-full min-w-0 max-w-full">
       {/* Top Header Bar — Guaranteed Single Line, No Stair-Step Wrapping */}
@@ -1262,22 +1322,6 @@ function Billing() {
               <History className="size-4 text-primary shrink-0" />
               <span>Past Bills ({todaySales.length})</span>
             </button>
-
-            {activeTenant.enabledModules.tables && (
-              <button
-                type="button"
-                onClick={() => setTableFloorModalOpen(true)}
-                className="flex-1 sm:flex-none h-10 sm:h-11 flex items-center justify-center gap-1.5 rounded-xl border border-blue-500/40 bg-blue-500/10 px-3 sm:px-4 text-xs sm:text-sm font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-all shadow-2xs active:scale-98"
-                title="Open Interactive Table Floor Plan & Dine-In Manager"
-              >
-                <Utensils className="size-4 text-blue-600 shrink-0" />
-                <span>
-                  Floor Tables{" "}
-                  {((db?.tables || DEFAULT_TABLES).filter((t) => t.status === "occupied")).length > 0 &&
-                    `(${((db?.tables || DEFAULT_TABLES).filter((t) => t.status === "occupied")).length} Running)`}
-                </span>
-              </button>
-            )}
 
             {activeTenant.enabledModules.kds && (
               <button
@@ -1421,24 +1465,23 @@ function Billing() {
                 </div>
               </div>
 
-              {/* Deg Segment Breakdown: Chicken, Mutton, Egg, Kushka */}
-              {liveBatch.breakdown && (
-                <div className="mt-2.5 flex flex-wrap items-center gap-2 pt-2 border-t border-border/40 text-[11px]">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+              {/* Dynamic Deg Segment Breakdown per Tenant's actual Biriyani Dishes */}
+              {degDishesStats.length > 0 && (
+                <div className="mt-2.5 flex flex-wrap items-center gap-1.5 pt-2 border-t border-border/40 text-[11px]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1 shrink-0">
                     <Flame className="size-3 text-primary" /> Deg Breakdown:
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-0.5 font-medium border border-border/40">
-                    <span className="font-bold text-foreground">Chicken Biriyani:</span> {liveBatch.breakdown.chickenSold} sold · <span className="text-primary font-bold">{liveBatch.breakdown.chickenLeft} left</span>
-                  </span>
-                  <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-0.5 font-medium border border-border/40">
-                    <span className="font-bold text-foreground">Mutton Biriyani:</span> {liveBatch.breakdown.muttonSold} sold · <span className="text-primary font-bold">{liveBatch.breakdown.muttonLeft} left</span>
-                  </span>
-                  <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-0.5 font-medium border border-border/40">
-                    <span className="font-bold text-foreground">Egg Biriyani:</span> {liveBatch.breakdown.eggSold} sold
-                  </span>
-                  <span className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-0.5 font-medium border border-border/40">
-                    <span className="font-bold text-foreground">Kushka Portions:</span> {liveBatch.breakdown.kushkaSold} sold
-                  </span>
+                  {degDishesStats.map((dish) => (
+                    <span
+                      key={dish.id}
+                      className="inline-flex items-center gap-1 rounded-md bg-muted/60 px-2 py-0.5 font-medium border border-border/40"
+                    >
+                      <span className="font-bold text-foreground">{dish.name}:</span>{" "}
+                      <span className={dish.sold > 0 ? "text-primary font-bold" : "text-muted-foreground font-semibold"}>
+                        {dish.sold} sold
+                      </span>
+                    </span>
+                  ))}
                 </div>
               )}
             </div>
@@ -2811,31 +2854,31 @@ function Billing() {
           DINE-IN FLOOR PLAN & TABLE MANAGER MODAL
       ========================================================================= */}
       {tableFloorModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-3 sm:p-6 overflow-y-auto animate-in fade-in">
-          <div className="w-full max-w-5xl rounded-3xl border border-border bg-card p-4 sm:p-6 shadow-2xl flex flex-col max-h-[92vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-2 sm:p-4 md:p-6 overflow-hidden animate-in fade-in">
+          <div className="relative w-full max-w-5xl rounded-3xl border border-border bg-card p-4 sm:p-6 shadow-2xl flex flex-col h-[90vh] max-h-[90vh] overflow-hidden">
             {/* Modal Header */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
-              <div className="flex items-center gap-3">
-                <span className="flex size-10 items-center justify-center rounded-2xl bg-blue-500/15 text-blue-600 dark:text-blue-400">
-                  <Utensils className="size-5" />
+            <div className="shrink-0 flex items-center justify-between gap-3 border-b border-border pb-3">
+              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                <span className="flex size-9 sm:size-10 items-center justify-center rounded-2xl bg-blue-500/15 text-blue-600 dark:text-blue-400 shrink-0">
+                  <Utensils className="size-4 sm:size-5" />
                 </span>
-                <div>
-                  <h2 className="text-lg sm:text-xl font-display font-black leading-tight text-foreground">
+                <div className="min-w-0">
+                  <h2 className="text-base sm:text-lg font-display font-black leading-tight text-foreground truncate">
                     DINE-IN FLOOR PLAN &amp; TABLE MANAGER
                   </h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  <p className="text-[11px] sm:text-xs text-muted-foreground truncate">
                     Real-time visual table occupancy, running tabs, live dining timers &amp; KOT dispatch.
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={handleOpenAddTable}
                   className="flex items-center gap-1.5 rounded-xl bg-primary text-white px-3 py-1.5 text-xs font-bold shadow-xs hover:bg-primary/90 transition-all active:scale-98"
                 >
-                  <Plus className="size-3.5" /> + Add New Table
+                  <Plus className="size-3.5" /> <span className="hidden sm:inline">+ Add New Table</span><span className="sm:hidden">+ Table</span>
                 </button>
                 <button
                   type="button"
@@ -2865,14 +2908,14 @@ function Billing() {
               });
 
               return (
-                <div className="flex flex-col gap-3 py-3 border-b border-border/80">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex-1 min-h-0 flex flex-col gap-3 pt-3 overflow-hidden">
+                  <div className="shrink-0 flex flex-wrap items-center justify-between gap-2">
                     {/* Section Switcher Tabs */}
                     <div className="flex flex-wrap rounded-xl border border-border bg-muted/60 p-1 text-xs gap-1">
                       <button
                         type="button"
                         onClick={() => setTableSectionFilter("all")}
-                        className={`rounded-lg px-3 py-1.5 font-bold transition-all ${
+                        className={`rounded-lg px-2.5 sm:px-3 py-1.5 font-bold transition-all ${
                           tableSectionFilter === "all"
                             ? "bg-slate-900 text-white shadow-xs dark:bg-slate-100 dark:text-slate-900"
                             : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -2883,7 +2926,7 @@ function Billing() {
                       <button
                         type="button"
                         onClick={() => setTableSectionFilter("ac")}
-                        className={`rounded-lg px-3 py-1.5 font-bold transition-all ${
+                        className={`rounded-lg px-2.5 sm:px-3 py-1.5 font-bold transition-all ${
                           tableSectionFilter === "ac"
                             ? "bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-xs"
                             : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -2894,7 +2937,7 @@ function Billing() {
                       <button
                         type="button"
                         onClick={() => setTableSectionFilter("non-ac")}
-                        className={`rounded-lg px-3 py-1.5 font-bold transition-all ${
+                        className={`rounded-lg px-2.5 sm:px-3 py-1.5 font-bold transition-all ${
                           tableSectionFilter === "non-ac"
                             ? "bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-xs"
                             : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -2905,7 +2948,7 @@ function Billing() {
                       <button
                         type="button"
                         onClick={() => setTableSectionFilter("outdoor")}
-                        className={`rounded-lg px-3 py-1.5 font-bold transition-all ${
+                        className={`rounded-lg px-2.5 sm:px-3 py-1.5 font-bold transition-all ${
                           tableSectionFilter === "outdoor"
                             ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-xs"
                             : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -2929,7 +2972,7 @@ function Billing() {
                   </div>
 
                   {/* Visual Table Grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5 overflow-y-auto p-1 max-h-[55vh]">
+                  <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3.5">
                     {filteredTables.map((tbl) => {
                       const isOccupied = tbl.status === "occupied";
                       const isSelected = selectedTableId === tbl.id;
@@ -2940,7 +2983,7 @@ function Billing() {
                       return (
                         <div
                           key={tbl.id}
-                          className={`flex flex-col justify-between rounded-2xl border-2 p-3.5 transition-all shadow-xs ${
+                          className={`flex flex-col justify-between rounded-2xl border-2 p-3.5 transition-all shadow-xs min-w-0 min-h-[175px] ${
                             isSelected
                               ? "border-primary bg-gradient-to-br from-primary/20 via-amber-500/10 to-card ring-2 ring-primary shadow-lg shadow-primary/20"
                               : isOccupied
@@ -3096,9 +3139,9 @@ function Billing() {
                   </div>
 
                   {/* Modal Footer */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border">
-                    <span className="text-xs text-muted-foreground">
-                      💡 Tip: Click any vacant table to start taking orders. Select an occupied table to add more dishes or print final bill.
+                  <div className="shrink-0 flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-border mt-auto">
+                    <span className="text-[11px] sm:text-xs text-muted-foreground">
+                      💡 Click any vacant table to start taking orders. Select an occupied table to add dishes or print bill.
                     </span>
                     <button
                       type="button"

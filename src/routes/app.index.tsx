@@ -16,6 +16,8 @@ import {
 import {
   dailySeries,
   filterSales,
+  getActiveTenant,
+  getTenantStock,
   inr,
   itemBreakdown,
   totals,
@@ -41,11 +43,13 @@ function Dashboard() {
 
   if (!db) return <p className="text-sm text-muted-foreground">Loading your shop data…</p>;
 
-  const sales = filterSales(db, { days, branchId: branch, channel });
+  const activeTenant = getActiveTenant(db);
+  const sales = filterSales(db, { days, branchId: branch, channel, tenantId: activeTenant.id });
   const t = totals(sales);
   const series = dailySeries(sales, Math.max(days, 7));
   const items = itemBreakdown(sales);
-  const lowStock = db.stock.filter((s) => s.qty <= s.reorderLevel);
+  const tenantStock = getTenantStock(db, activeTenant);
+  const lowStock = tenantStock.filter((s) => s.qty <= s.reorderLevel);
   const margin = t.revenue ? (t.profit / t.revenue) * 100 : 0;
 
   const byChannel = db.channels.map((c) => {
@@ -153,7 +157,16 @@ function Dashboard() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={items.slice(0, 8)}>
                 <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
-                <XAxis dataKey="name" stroke="var(--muted-foreground)" fontSize={9} interval={0} angle={-18} textAnchor="end" height={60} />
+                <XAxis
+                  dataKey="name"
+                  stroke="var(--muted-foreground)"
+                  fontSize={9}
+                  interval={0}
+                  angle={-18}
+                  textAnchor="end"
+                  height={60}
+                  tickFormatter={(val: string) => (val && val.length > 14 ? `${val.slice(0, 13)}…` : val)}
+                />
                 <YAxis stroke="var(--muted-foreground)" fontSize={11} />
                 <Tooltip
                   contentStyle={{
