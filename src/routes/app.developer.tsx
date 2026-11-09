@@ -220,10 +220,20 @@ export function DeveloperSuperAdminPage() {
     };
 
     const updatedBranches = [...currentBranches, newBranch];
+    const isPrimary = updatedBranches[0]?.id === branchId;
     const updatedTenant: TenantConfig = {
       ...editTenant,
       branches: updatedBranches,
       activeBranchName: updatedBranches[0]?.name || editTenant.activeBranchName,
+      ...(isPrimary
+        ? {
+            phone: branchEditPhone.trim() || editTenant.phone,
+            address: branchEditAddress.trim() || editTenant.address,
+            upiId: branchEditUpi.trim() || editTenant.upiId,
+            gstin: branchEditGstin.trim() || editTenant.gstin,
+            fssai: branchEditFssai.trim() || editTenant.fssai,
+          }
+        : {}),
     };
 
     setEditTenant(updatedTenant);
@@ -291,10 +301,20 @@ export function DeveloperSuperAdminPage() {
           }
         : b
     );
+    const isPrimary = updatedBranches[0]?.id === branchId;
     const updatedTenant: TenantConfig = {
       ...editTenant,
       branches: updatedBranches,
       activeBranchName: updatedBranches[0]?.name || editTenant.activeBranchName,
+      ...(isPrimary
+        ? {
+            phone: branchEditPhone.trim() || editTenant.phone,
+            address: branchEditAddress.trim() || editTenant.address,
+            upiId: branchEditUpi.trim() || editTenant.upiId,
+            gstin: branchEditGstin.trim() || editTenant.gstin,
+            fssai: branchEditFssai.trim() || editTenant.fssai,
+          }
+        : {}),
     };
     setEditTenant(updatedTenant);
     updateTenant(updatedTenant);
@@ -684,7 +704,7 @@ export function DeveloperSuperAdminPage() {
         </div>
 
         {/* Client Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {tenants.map((t) => {
             const isActive = activeTenant.id === t.id;
             const isSelected = selectedTenantId === t.id;
@@ -692,48 +712,89 @@ export function DeveloperSuperAdminPage() {
               <div
                 key={t.id}
                 onClick={() => setSelectedTenantId(t.id)}
-                className={`relative flex flex-col justify-between p-4 rounded-2xl border transition-all cursor-pointer ${
+                className={`relative flex flex-col justify-between p-4 sm:p-5 rounded-2xl border transition-all cursor-pointer ${
                   isSelected
-                    ? "border-primary bg-primary/5 shadow-md ring-1 ring-primary"
-                    : "border-border/70 bg-muted/15 hover:border-border hover:bg-muted/30"
+                    ? "border-primary bg-primary/5 shadow-md ring-2 ring-primary/40"
+                    : "border-border/70 bg-card hover:border-primary/40 hover:bg-muted/30"
                 }`}
               >
                 <div>
-                  <div className="flex items-start justify-between gap-1 mb-1.5">
-                    <h3 className="font-black text-sm text-foreground line-clamp-1">{t.businessName}</h3>
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div>
+                      <h3 className="font-black text-base text-foreground">{t.businessName}</h3>
+                      <p className="text-[11px] text-muted-foreground line-clamp-1">{t.tagline}</p>
+                    </div>
                     {isActive ? (
-                      <span className="shrink-0 rounded-full bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 text-[9px] font-black text-emerald-600">
+                      <span className="shrink-0 rounded-full bg-emerald-500/20 border border-emerald-500/40 px-2.5 py-0.5 text-[10px] font-black text-emerald-600">
                         ACTIVE LIVE
                       </span>
                     ) : (
-                      <span className="shrink-0 rounded-full bg-muted border border-border px-1.5 py-0.5 text-[9px] font-bold text-muted-foreground">
+                      <span className="shrink-0 rounded-full bg-muted border border-border px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
                         {t.cuisineType || "Standard"}
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] text-muted-foreground line-clamp-1" title={t.branches && t.branches.length > 0 ? t.branches.map((b) => b.name).join(", ") : t.activeBranchName}>
-                    📍 {t.branches && t.branches.length > 0 ? t.branches.map((b) => b.name).join(" · ") : t.activeBranchName}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground font-mono mt-0.5">{t.phone}</p>
+
+                  {/* Branches & Contact Info */}
+                  <div className="mt-3 space-y-1.5 border-t border-border/50 pt-2.5">
+                    <div className="flex items-center justify-between text-[11px] font-bold text-muted-foreground">
+                      <span>Branches ({t.branches?.length || 1}):</span>
+                      <span className="font-mono text-primary text-[10px]">{t.phone}</span>
+                    </div>
+
+                    <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                      {(t.branches && t.branches.length > 0
+                        ? t.branches
+                        : [{ id: "main", name: t.activeBranchName || "Main Kitchen", address: t.address, phone: t.phone }]
+                      ).map((b, idx) => (
+                        <div key={b.id || idx} className="rounded-xl bg-muted/30 p-2 text-[11px] border border-border/40 space-y-0.5">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-foreground">📍 {b.name}</span>
+                            {b.phone && <span className="font-mono text-[10px] text-muted-foreground">{b.phone}</span>}
+                          </div>
+                          {b.address && (
+                            <p className="text-[10px] text-muted-foreground line-clamp-1" title={b.address}>
+                              {b.address}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-border/50 flex items-center justify-between gap-1">
-                  {!isActive ? (
+                <div className="mt-4 pt-3 border-t border-border/50 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    {!isActive ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSwitchTenant(t.id);
+                        }}
+                        className="rounded-xl bg-primary/10 border border-primary/30 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary hover:text-white transition-all shadow-2xs"
+                      >
+                        ⚡ Switch Live
+                      </button>
+                    ) : (
+                      <span className="text-xs font-black text-emerald-600 flex items-center gap-1.5 bg-emerald-500/10 px-2.5 py-1 rounded-xl border border-emerald-500/20">
+                        <Check className="size-3.5" /> Live Active
+                      </span>
+                    )}
+
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleSwitchTenant(t.id);
+                        setSelectedTenantId(t.id);
+                        toast.info(`Configuring entitlements for ${t.businessName}`);
                       }}
-                      className="rounded-lg bg-primary/10 border border-primary/30 px-2.5 py-1 text-[11px] font-bold text-primary hover:bg-primary/20 transition-colors"
+                      className="rounded-xl border border-border bg-card px-2.5 py-1.5 text-xs font-bold text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
+                      title="Edit Features & Configuration"
                     >
-                      ⚡ Switch Live
+                      Configure ➔
                     </button>
-                  ) : (
-                    <span className="text-[11px] font-black text-emerald-600 flex items-center gap-1">
-                      <Check className="size-3" /> Live Active
-                    </span>
-                  )}
+                  </div>
 
                   {tenants.length > 1 && (
                     <button
@@ -742,10 +803,10 @@ export function DeveloperSuperAdminPage() {
                         e.stopPropagation();
                         handleDeleteClient(t.id);
                       }}
-                      className="p-1 text-muted-foreground hover:text-destructive transition-colors"
+                      className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
                       title="Delete Tenant"
                     >
-                      <Trash2 className="size-3.5" />
+                      <Trash2 className="size-4" />
                     </button>
                   )}
                 </div>

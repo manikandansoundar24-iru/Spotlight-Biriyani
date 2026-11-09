@@ -43,7 +43,7 @@ type NavLinkItem = {
 
 const LINKS: readonly NavLinkItem[] = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true, roles: ["owner", "developer"] },
-  { to: "/app/billing", label: "Billing & Floor POS", icon: Receipt, roles: ["owner", "cashier", "developer"], module: "billing" },
+  { to: "/app/billing", label: "Billing & Floor POS", icon: Receipt, roles: ["owner", "cashier", "waiter", "developer"], module: "billing" },
   { to: "/app/captain", label: "Captain POS", icon: Smartphone, roles: ["owner", "cashier", "waiter", "developer"], module: "tables" },
   { to: "/app/reports", label: "Reports & Forecast", icon: BarChart3, roles: ["owner", "developer"], module: "reports" },
   { to: "/app/stock", label: "Stock & Deg", icon: Boxes, roles: ["owner", "kitchen", "developer"], module: "stock" },
@@ -151,11 +151,12 @@ function AppLayout() {
 
   const activeTenant = getActiveTenant(db);
   const visibleLinks = LINKS.filter((l) => {
-    // If this module is explicitly disabled for the active tenant, hide it from navigation
+    // 1. Super-Admin Developer Console always has full unrestricted access
+    if (currentRole === "developer") return true;
+    // 2. If this module is explicitly disabled for the active tenant, hide it from navigation
     if (l.module && activeTenant.enabledModules && activeTenant.enabledModules[l.module] === false) {
       return false;
     }
-    if (currentRole === "developer") return true;
     if (!l.roles.includes(currentRole)) return false;
     return true;
   });

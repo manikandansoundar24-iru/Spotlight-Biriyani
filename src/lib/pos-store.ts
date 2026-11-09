@@ -420,6 +420,18 @@ export const DEFAULT_TENANTS: TenantConfig[] = [
         address: "1st Floor, Nagendran Nagar, No 53, Velachery Main Rd, Opp. PHOENIX MARKET CITY, Velachery, Chennai - 600042",
         phone: "+91 98400 99887",
       },
+      {
+        id: "omr-navalur",
+        name: "OMR Navalur Food Street (Late Night 4 AM Hub)",
+        address: "OMR Food Street, Navalur Junction, Chennai - 603103",
+        phone: "+91 98400 99888",
+      },
+      {
+        id: "adyar-besant",
+        name: "Adyar Besant Nagar (Express Kitchen)",
+        address: "2nd Avenue, Besant Nagar Beach Road, Chennai - 600090",
+        phone: "+91 98400 99889",
+      },
     ],
     enabledModules: {
       billing: true,
@@ -680,14 +692,24 @@ export function getLiveBatchStatus(db: DB, branchId?: string, tenantId?: string)
   const soldToday = sales
     .filter((s) => {
       if (!s || typeof s.date !== "string") return false;
-      const matchTenant = s.tenantId ? s.tenantId === currentTenantId : currentTenantId === "spotlight-biriyani";
+      const matchTenant = Boolean(
+        s.tenantId === currentTenantId ||
+        (currentTenantId.startsWith("manam") && (s.tenantId?.startsWith("manam") || !s.tenantId && activeT.id.startsWith("manam"))) ||
+        ((currentTenantId === "spotlight-biriyani" || currentTenantId === "spotlight") && (!s.tenantId || s.tenantId?.startsWith("spotlight")))
+      );
       if (!matchTenant) return false;
       const matchBranch =
         !s.branchId ||
         s.branchId === currentBranchId ||
         (currentBranchId === "taramani" && s.branchId === "tharamani") ||
         Boolean(activeT.branches && activeT.branches.some((b) => b.id === s.branchId));
-      return matchBranch && isSameDay(s.date);
+      if (!matchBranch) return false;
+
+      // Shift-aware / timezone-robust match: either same calendar day or within last 24 hours
+      if (isSameDay(s.date)) return true;
+      const saleTime = new Date(s.date).getTime();
+      const diffHours = (Date.now() - saleTime) / (1000 * 60 * 60);
+      return diffHours >= 0 && diffHours < 24;
     })
     .reduce((acc, s) => {
       let bPlates = 0;

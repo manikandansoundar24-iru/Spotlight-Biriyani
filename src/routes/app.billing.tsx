@@ -593,6 +593,7 @@ function Billing() {
     const activeLines = lines.filter((l) => l.qty > 0);
     if (!activeLines.length) return null;
     return buildSale({
+      tenantId: activeTenant.id || "spotlight-biriyani",
       branchId: db.settings.activeBranchId,
       channel,
       lines: activeLines,
@@ -600,7 +601,7 @@ function Billing() {
       payment,
       channels: db.channels,
     });
-  }, [db, lines, channel, discount, payment]);
+  }, [db, lines, channel, discount, payment, activeTenant]);
 
   const [orderType, setOrderType] = useState<"dinein" | "takeaway">("dinein");
 
@@ -803,8 +804,26 @@ function Billing() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       window.scrollTo(0, 0);
+
+      // Check if arriving from Captain Tableside POS to complete bill
+      const activeTableParam = localStorage.getItem("spotlight_active_table");
+      if (activeTableParam) {
+        localStorage.removeItem("spotlight_active_table");
+        const tbl = (db?.tables || DEFAULT_TABLES).find((t) => t.id === activeTableParam);
+        if (tbl) {
+          setSelectedTableId(tbl.id);
+          if (tbl.lines && tbl.lines.length > 0) {
+            setLines([...tbl.lines]);
+            setQuickPhone(tbl.customerPhone || "");
+            setOrderNote(tbl.notes || "");
+            toast.success(`Loaded Tab for Table ${tbl.id} (${tbl.name}) — Ready for Bill Settlement!`);
+          } else {
+            toast.info(`Table ${tbl.id} selected`);
+          }
+        }
+      }
     }
-  }, [db?.settings.activeBranchId]);
+  }, [db?.settings.activeBranchId, db?.tables]);
 
   const [editBatchModalOpen, setEditBatchModalOpen] = useState(false);
   const [newBatchCapacity, setNewBatchCapacity] = useState("");
@@ -2984,7 +3003,7 @@ function Billing() {
                       return (
                         <div
                           key={tbl.id}
-                          className={`flex flex-col justify-between rounded-2xl border-2 p-3 sm:p-3.5 transition-all shadow-xs min-w-0 min-h-[160px] max-h-[220px] ${
+                          className={`flex flex-col justify-between rounded-2xl border-2 p-3 sm:p-3.5 transition-all shadow-xs min-w-0 h-full overflow-hidden ${
                             isSelected
                               ? "border-primary bg-gradient-to-br from-primary/20 via-amber-500/10 to-card ring-2 ring-primary shadow-lg shadow-primary/20"
                               : isOccupied
@@ -2993,7 +3012,7 @@ function Billing() {
                           }`}
                         >
                           <div>
-                            {/* Line 1: Table ID + Status Badge (Completely separated, impossible to overlap) */}
+                            {/* Line 1: Table ID + Status Badge */}
                             <div className="flex items-center justify-between gap-1.5 pb-1">
                               <span className="font-display font-black text-xl sm:text-2xl tracking-wide text-foreground leading-none">
                                 {tbl.id}
@@ -3063,7 +3082,7 @@ function Billing() {
 
                             {/* If Occupied: Running Order Preview */}
                             {isOccupied && (
-                              <div className="mt-2 rounded-xl border border-rose-500/30 bg-card/90 p-2 text-xs space-y-1">
+                              <div className="mt-2 rounded-xl border border-rose-500/30 bg-card/90 p-2 text-xs space-y-0.5">
                                 <div className="flex justify-between font-bold text-[11px]">
                                   <span className="text-muted-foreground">Running Total:</span>
                                   <span className="font-mono text-rose-600 dark:text-rose-400 font-black">₹{runningAmount}</span>
@@ -3077,7 +3096,7 @@ function Billing() {
                           </div>
 
                           {/* Action Buttons */}
-                          <div className="mt-3 pt-2.5 border-t border-border/60 flex items-center gap-1.5">
+                          <div className="mt-2 pt-2 border-t border-border/60 flex items-center gap-1.5">
                             {isOccupied ? (
                               <>
                                 <button
@@ -3092,7 +3111,7 @@ function Billing() {
                                     }
                                     setTableFloorModalOpen(false);
                                   }}
-                                  className="flex-1 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-bold py-2 text-xs shadow-xs transition-colors text-center"
+                                  className="flex-1 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-black py-2 text-xs shadow-xs transition-colors text-center"
                                 >
                                   Open Bill Tab
                                 </button>
@@ -3108,7 +3127,7 @@ function Billing() {
                                       toast.success(`${tbl.name} vacated and marked available!`);
                                     }
                                   }}
-                                  className="rounded-xl border border-border hover:border-destructive/50 bg-card hover:bg-destructive/10 text-muted-foreground hover:text-destructive p-2 transition-colors"
+                                  className="rounded-xl border border-border hover:border-destructive/50 bg-card hover:bg-destructive/10 text-muted-foreground hover:text-destructive p-2 transition-colors shrink-0"
                                   title="Vacate and free table"
                                 >
                                   <Trash2 className="size-3.5" />
