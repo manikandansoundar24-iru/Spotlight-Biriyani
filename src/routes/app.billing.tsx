@@ -56,6 +56,7 @@ import {
   CATEGORIES,
   DEFAULT_PRINTER_SETTINGS,
   DEFAULT_TABLES,
+  getActiveBranchModules,
   getActiveTenant,
   getCustomerLoyalty,
   getLiveBatchStatus,
@@ -454,6 +455,12 @@ function DishCard({
 function Billing() {
   const db = useDB();
   const activeTenant = getActiveTenant(db);
+  const activeBranchId =
+    (activeTenant.branches && activeTenant.branches.some((b) => b.id === db?.settings.activeBranchId))
+      ? db?.settings.activeBranchId
+      : activeTenant.branches?.[0]?.id;
+  const activeBranch = activeTenant.branches?.find((b) => b.id === activeBranchId);
+  const activeModules = getActiveBranchModules(activeTenant, activeBranchId);
   const [cat, setCat] = useState<Category | "all">("biryani");
   const [lines, setLines] = useState<SaleLine[]>([]);
   const [channel, setChannel] = useState<ChannelId>("counter");
@@ -802,28 +809,30 @@ function Billing() {
   }, [db, activeTenant, tenantItems]);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.scrollTo(0, 0);
+    if (typeof window === "undefined") return;
 
-      // Check if arriving from Captain Tableside POS to complete bill
-      const activeTableParam = localStorage.getItem("spotlight_active_table");
-      if (activeTableParam) {
-        localStorage.removeItem("spotlight_active_table");
-        const tbl = (db?.tables || DEFAULT_TABLES).find((t) => t.id === activeTableParam);
-        if (tbl) {
-          setSelectedTableId(tbl.id);
-          if (tbl.lines && tbl.lines.length > 0) {
-            setLines([...tbl.lines]);
-            setQuickPhone(tbl.customerPhone || "");
-            setOrderNote(tbl.notes || "");
-            toast.success(`Loaded Tab for Table ${tbl.id} (${tbl.name}) — Ready for Bill Settlement!`);
-          } else {
-            toast.info(`Table ${tbl.id} selected`);
-          }
+    // Scroll to top ONCE on initial navigation
+    window.scrollTo(0, 0);
+
+    // Check if arriving from Captain Tableside POS to complete bill
+    const activeTableParam = localStorage.getItem("spotlight_active_table");
+    if (activeTableParam) {
+      localStorage.removeItem("spotlight_active_table");
+      const currentDB = getDB();
+      const tbl = (currentDB?.tables || DEFAULT_TABLES).find((t) => t.id === activeTableParam);
+      if (tbl) {
+        setSelectedTableId(tbl.id);
+        if (tbl.lines && tbl.lines.length > 0) {
+          setLines([...tbl.lines]);
+          setQuickPhone(tbl.customerPhone || "");
+          setOrderNote(tbl.notes || "");
+          toast.success(`Loaded Tab for Table ${tbl.id} (${tbl.name}) — Ready for Bill Settlement!`);
+        } else {
+          toast.info(`Table ${tbl.id} selected`);
         }
       }
     }
-  }, [db?.settings.activeBranchId, db?.tables]);
+  }, []); // Run strictly ONCE on mount — never on db/table mutations to avoid scroll-fighting/shaking!
 
   const [editBatchModalOpen, setEditBatchModalOpen] = useState(false);
   const [newBatchCapacity, setNewBatchCapacity] = useState("");
@@ -1177,7 +1186,11 @@ function Billing() {
       setOrderNote("");
 
       const p = db.settings.printerSettings ?? DEFAULT_PRINTER_SETTINGS;
-      printBill(newSale, db.settings.businessName, currentToken, note, tender, change, p);
+      try {
+        printBill(newSale, db.settings.businessName, currentToken, note, tender, change, p);
+      } catch (err) {
+        console.warn("Print receipt dialog suppressed:", err);
+      }
       toast.success(`Bill saved & sent to printer! Token #${currentToken} · ${inr(newSale.net)} · Profit ${inr(newSale.profit)}`, {
         icon: <Sparkles className="size-4 text-primary" />,
       });
@@ -1276,8 +1289,8 @@ function Billing() {
     );
   }
 
-  // Strict Module Access Guard: if Counter POS Billing is turned off for this tenant
-  if (activeTenant.enabledModules && activeTenant.enabledModules.billing === false) {
+  // Strict Module Access Guard: if Counter POS Billing is turned off for this tenant or branch
+  if (activeModules.billing === false) {
     return (
       <div className="surface-card p-8 sm:p-12 text-center max-w-lg mx-auto my-12 space-y-4 rounded-3xl border border-border shadow-lg">
         <div className="size-14 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto">
@@ -1288,7 +1301,8 @@ function Billing() {
         </h2>
         <p className="text-sm text-muted-foreground leading-relaxed">
           The POS Billing Terminal module has been disabled for{" "}
-          <span className="font-bold text-foreground">{activeTenant.businessName}</span>.
+          <span className="font-bold text-foreground">{activeTenant.businessName}</span>
+          {activeBranch?.name ? ` (${activeBranch.name})` : ""}.
           You can enable it anytime from the Master Developer Console.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
@@ -2064,10 +2078,11 @@ function Billing() {
               <button
                 type="button"
                 onClick={() => {
+                  const tblToVacate = selectedTableId;
                   const target = saveOrUpdate();
                   if (target) {
-                    vacateTable(selectedTableId);
-                    toast.success(`Table ${selectedTableId} settled & marked VACANT! Ready for next guests.`);
+                    if (tblToVacate) vacateTable(tblToVacate);
+                    toast.success(`Table ${tblToVacate} settled & marked VACANT! Ready for next guests.`);
                     setSelectedTableId(null);
                   }
                 }}

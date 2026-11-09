@@ -110,10 +110,39 @@ export function DeveloperSuperAdminPage() {
   const [branchEditUpi, setBranchEditUpi] = useState("");
   const [branchEditGstin, setBranchEditGstin] = useState("");
   const [branchEditFssai, setBranchEditFssai] = useState("");
+  const [selectedBranchScope, setSelectedBranchScope] = useState<string>("all");
 
   const currentDB = db ?? getDB();
   const activeTenant = getActiveTenant(currentDB);
   const tenants = currentDB.tenants && currentDB.tenants.length > 0 ? currentDB.tenants : DEFAULT_TENANTS;
+
+  const targetBranch = editTenant?.branches?.find((b) => b.id === selectedBranchScope);
+
+  const activeScopedModules: TenantModules = useMemo(() => {
+    if (!editTenant) {
+      return {
+        billing: true, tables: true, kds: true, stock: true, reports: true,
+        menu: true, loyalty: true, dynamicUpi: true, zReport: true, multiBranch: true, aggregators: true,
+      };
+    }
+    if (selectedBranchScope === "all" || !targetBranch) {
+      return editTenant.enabledModules;
+    }
+    return {
+      ...editTenant.enabledModules,
+      ...(targetBranch.enabledModules || {}),
+    };
+  }, [editTenant, selectedBranchScope, targetBranch]);
+
+  const activeScopedDegBatch = useMemo(() => {
+    if (!editTenant) return true;
+    if (selectedBranchScope === "all" || !targetBranch) {
+      return editTenant.degBatchEnabled !== false;
+    }
+    return targetBranch.degBatchEnabled !== undefined
+      ? targetBranch.degBatchEnabled
+      : editTenant.degBatchEnabled !== false;
+  }, [editTenant, selectedBranchScope, targetBranch]);
 
   // Security Verification
   useEffect(() => {
@@ -135,6 +164,7 @@ export function DeveloperSuperAdminPage() {
   }, [activeTenant, selectedTenantId]);
 
   useEffect(() => {
+    setSelectedBranchScope("all");
     const target = tenants.find((t) => t.id === selectedTenantId) || activeTenant;
     if (target && (!editTenant || editTenant.id !== target.id)) {
       setEditTenant({ ...target });
@@ -171,16 +201,95 @@ export function DeveloperSuperAdminPage() {
 
   const handleToggleModule = (moduleKey: keyof TenantModules) => {
     if (!editTenant) return;
-    const updated: TenantConfig = {
-      ...editTenant,
-      enabledModules: {
-        ...editTenant.enabledModules,
-        [moduleKey]: !editTenant.enabledModules[moduleKey],
-      },
-    };
+
+    if (selectedBranchScope === "all") {
+      const updated: TenantConfig = {
+        ...editTenant,
+        enabledModules: {
+          ...editTenant.enabledModules,
+          [moduleKey]: !editTenant.enabledModules[moduleKey],
+        },
+      };
+      setEditTenant(updated);
+      updateTenant(updated);
+      toast.info(`Updated module "${moduleKey}" for all branches of ${updated.businessName}`);
+    } else {
+      const currentBranches = editTenant.branches || [];
+      const branch = currentBranches.find((b) => b.id === selectedBranchScope);
+      if (!branch) return;
+
+      const currentBranchModules: Partial<TenantModules> = branch.enabledModules || { ...editTenant.enabledModules };
+      const currentVal = currentBranchModules[moduleKey] ?? editTenant.enabledModules[moduleKey];
+      const nextVal = !currentVal;
+
+      const updatedBranches = currentBranches.map((b) =>
+        b.id === selectedBranchScope
+          ? {
+              ...b,
+              enabledModules: {
+                ...(b.enabledModules || {}),
+                [moduleKey]: nextVal,
+              },
+            }
+          : b
+      );
+
+      const updated: TenantConfig = {
+        ...editTenant,
+        branches: updatedBranches,
+      };
+      setEditTenant(updated);
+      updateTenant(updated);
+      toast.info(`Updated module "${moduleKey}" for branch ${branch.name}`);
+    }
+  };
+
+  const handleToggleDegBatch = () => {
+    if (!editTenant) return;
+    if (selectedBranchScope === "all") {
+      const isCurrentlyEnabled = editTenant.degBatchEnabled !== false;
+      const nextVal = !isCurrentlyEnabled;
+      const updated = { ...editTenant, degBatchEnabled: nextVal };
+      setEditTenant(updated);
+      updateTenant(updated);
+      toast.info(`Deg Batch Tracking set to ${nextVal ? "ON" : "OFF"} for all branches`);
+    } else {
+      const currentBranches = editTenant.branches || [];
+      const branch = currentBranches.find((b) => b.id === selectedBranchScope);
+      if (!branch) return;
+      const currentVal = branch.degBatchEnabled !== undefined ? branch.degBatchEnabled : (editTenant.degBatchEnabled !== false);
+      const nextVal = !currentVal;
+      const updatedBranches = currentBranches.map((b) =>
+        b.id === selectedBranchScope
+          ? { ...b, degBatchEnabled: nextVal }
+          : b
+      );
+      const updated = { ...editTenant, branches: updatedBranches };
+      setEditTenant(updated);
+      updateTenant(updated);
+      toast.info(`Deg Batch Tracking set to ${nextVal ? "ON" : "OFF"} for branch ${branch.name}`);
+    }
+  };
+
+  const handleResetBranchScope = () => {
+    if (!editTenant || selectedBranchScope === "all") return;
+    const currentBranches = editTenant.branches || [];
+    const branch = currentBranches.find((b) => b.id === selectedBranchScope);
+    if (!branch) return;
+
+    const updatedBranches = currentBranches.map((b) =>
+      b.id === selectedBranchScope
+        ? {
+            ...b,
+            enabledModules: undefined,
+            degBatchEnabled: undefined,
+          }
+        : b
+    );
+    const updated = { ...editTenant, branches: updatedBranches };
     setEditTenant(updated);
     updateTenant(updated);
-    toast.info(`Updated module "${moduleKey}" for ${updated.businessName}`);
+    toast.success(`Reset ${branch.name} to inherit default restaurant plan.`);
   };
 
   const handleSaveTenantProfile = (e: React.FormEvent) => {
@@ -389,14 +498,36 @@ export function DeveloperSuperAdminPage() {
       degEnabled = true;
     }
 
-    const updated: TenantConfig = {
-      ...editTenant,
-      degBatchEnabled: degEnabled,
-      enabledModules: newModules,
-    };
-    setEditTenant(updated);
-    updateTenant(updated);
-    toast.success(`Applied ${plan.replace("_", " ").toUpperCase()} preset plan to ${updated.businessName}!`);
+    if (selectedBranchScope === "all") {
+      const updated: TenantConfig = {
+        ...editTenant,
+        degBatchEnabled: degEnabled,
+        enabledModules: newModules,
+      };
+      setEditTenant(updated);
+      updateTenant(updated);
+      toast.success(`Applied ${plan.replace("_", " ").toUpperCase()} preset plan to all branches of ${updated.businessName}!`);
+    } else {
+      const currentBranches = editTenant.branches || [];
+      const branch = currentBranches.find((b) => b.id === selectedBranchScope);
+      if (!branch) return;
+      const updatedBranches = currentBranches.map((b) =>
+        b.id === selectedBranchScope
+          ? {
+              ...b,
+              enabledModules: newModules,
+              degBatchEnabled: degEnabled,
+            }
+          : b
+      );
+      const updated: TenantConfig = {
+        ...editTenant,
+        branches: updatedBranches,
+      };
+      setEditTenant(updated);
+      updateTenant(updated);
+      toast.success(`Applied ${plan.replace("_", " ").toUpperCase()} preset plan to branch ${branch.name}!`);
+    }
   };
 
   const handleProvisionSubmit = (e: React.FormEvent) => {
@@ -787,12 +918,14 @@ export function DeveloperSuperAdminPage() {
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedTenantId(t.id);
+                        const el = document.getElementById("feature-entitlements-matrix");
+                        if (el) el.scrollIntoView({ behavior: "smooth" });
                         toast.info(`Configuring entitlements for ${t.businessName}`);
                       }}
-                      className="rounded-xl border border-border bg-card px-2.5 py-1.5 text-xs font-bold text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
+                      className="rounded-xl border border-primary/30 bg-primary/5 px-2.5 py-1.5 text-xs font-bold text-primary hover:bg-primary/20 transition-colors flex items-center gap-1"
                       title="Edit Features & Configuration"
                     >
-                      Configure ➔
+                      ⚙️ Configure Entitlements ➔
                     </button>
                   </div>
 
@@ -818,9 +951,9 @@ export function DeveloperSuperAdminPage() {
 
       {/* SECTION 3: GRANULAR FEATURE ENTITLEMENTS & CREDENTIALS FOR SELECTED TENANT */}
       {editTenant && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div id="feature-entitlements-matrix" className="grid grid-cols-1 lg:grid-cols-12 gap-6 scroll-mt-24">
           {/* LEFT 7 COLS: Granular Feature Entitlement Matrix */}
-          <div className="lg:col-span-7 rounded-3xl border border-border/80 bg-card p-5 sm:p-6 shadow-xs space-y-5">
+          <div className="lg:col-span-7 rounded-3xl border border-border/80 bg-card p-5 sm:p-6 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/60 pb-3">
               <div>
                 <div className="flex items-center gap-2">
@@ -871,6 +1004,62 @@ export function DeveloperSuperAdminPage() {
               </div>
             </div>
 
+            {/* BRANCH SCOPE SELECTOR — Customize Features per Individual Branch */}
+            <div className="space-y-2 bg-muted/30 p-3 rounded-2xl border border-border/60">
+              <div className="flex items-center justify-between flex-wrap gap-1">
+                <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <Building2 className="size-3.5 text-primary" /> Branch Entitlement Scope:
+                </span>
+                {selectedBranchScope !== "all" && targetBranch?.enabledModules && (
+                  <button
+                    type="button"
+                    onClick={handleResetBranchScope}
+                    className="text-[10px] text-amber-600 dark:text-amber-400 hover:underline font-bold"
+                  >
+                    Reset Branch to Default Plan
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5">
+                <button
+                  type="button"
+                  onClick={() => setSelectedBranchScope("all")}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                    selectedBranchScope === "all"
+                      ? "bg-primary text-white shadow-2xs"
+                      : "bg-card border border-border text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  🏢 All Branches (Default Plan)
+                </button>
+                {(editTenant.branches || []).map((b) => {
+                  const hasCustom = b.enabledModules && Object.keys(b.enabledModules).length > 0;
+                  return (
+                    <button
+                      key={b.id}
+                      type="button"
+                      onClick={() => setSelectedBranchScope(b.id)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 ${
+                        selectedBranchScope === b.id
+                          ? "bg-primary text-white shadow-2xs"
+                          : "bg-card border border-border text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <span>📍 {b.name}</span>
+                      {hasCustom && (
+                        <span className="size-1.5 rounded-full bg-amber-400 shrink-0" title="Custom branch override active" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                {selectedBranchScope === "all"
+                  ? "Configuring default entitlements for all branches. Specific branch outlets can override these below."
+                  : `Configuring custom entitlements specifically for ${targetBranch?.name}. These overrides take effect immediately when switching to this branch!`}
+              </p>
+            </div>
+
             {/* Feature Modules Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* Billing */}
@@ -883,10 +1072,10 @@ export function DeveloperSuperAdminPage() {
                   type="button"
                   onClick={() => handleToggleModule("billing")}
                   className={`size-6 rounded-lg flex items-center justify-center font-bold text-xs transition-colors ${
-                    editTenant.enabledModules.billing ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground border border-border"
+                    activeScopedModules.billing ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground border border-border"
                   }`}
                 >
-                  {editTenant.enabledModules.billing ? "✓" : "✕"}
+                  {activeScopedModules.billing ? "✓" : "✕"}
                 </button>
               </div>
 
@@ -900,10 +1089,10 @@ export function DeveloperSuperAdminPage() {
                   type="button"
                   onClick={() => handleToggleModule("tables")}
                   className={`size-6 rounded-lg flex items-center justify-center font-bold text-xs transition-colors ${
-                    editTenant.enabledModules.tables ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground border border-border"
+                    activeScopedModules.tables ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground border border-border"
                   }`}
                 >
-                  {editTenant.enabledModules.tables ? "✓" : "✕"}
+                  {activeScopedModules.tables ? "✓" : "✕"}
                 </button>
               </div>
 
@@ -917,10 +1106,10 @@ export function DeveloperSuperAdminPage() {
                   type="button"
                   onClick={() => handleToggleModule("kds")}
                   className={`size-6 rounded-lg flex items-center justify-center font-bold text-xs transition-colors ${
-                    editTenant.enabledModules.kds ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground border border-border"
+                    activeScopedModules.kds ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground border border-border"
                   }`}
                 >
-                  {editTenant.enabledModules.kds ? "✓" : "✕"}
+                  {activeScopedModules.kds ? "✓" : "✕"}
                 </button>
               </div>
 
@@ -934,10 +1123,10 @@ export function DeveloperSuperAdminPage() {
                   type="button"
                   onClick={() => handleToggleModule("dynamicUpi")}
                   className={`size-6 rounded-lg flex items-center justify-center font-bold text-xs transition-colors ${
-                    editTenant.enabledModules.dynamicUpi ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground border border-border"
+                    activeScopedModules.dynamicUpi ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground border border-border"
                   }`}
                 >
-                  {editTenant.enabledModules.dynamicUpi ? "✓" : "✕"}
+                  {activeScopedModules.dynamicUpi ? "✓" : "✕"}
                 </button>
               </div>
 
@@ -951,10 +1140,10 @@ export function DeveloperSuperAdminPage() {
                   type="button"
                   onClick={() => handleToggleModule("zReport")}
                   className={`size-6 rounded-lg flex items-center justify-center font-bold text-xs transition-colors ${
-                    editTenant.enabledModules.zReport ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground border border-border"
+                    activeScopedModules.zReport ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground border border-border"
                   }`}
                 >
-                  {editTenant.enabledModules.zReport ? "✓" : "✕"}
+                  {activeScopedModules.zReport ? "✓" : "✕"}
                 </button>
               </div>
 
@@ -968,10 +1157,10 @@ export function DeveloperSuperAdminPage() {
                   type="button"
                   onClick={() => handleToggleModule("loyalty")}
                   className={`size-6 rounded-lg flex items-center justify-center font-bold text-xs transition-colors ${
-                    editTenant.enabledModules.loyalty ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground border border-border"
+                    activeScopedModules.loyalty ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground border border-border"
                   }`}
                 >
-                  {editTenant.enabledModules.loyalty ? "✓" : "✕"}
+                  {activeScopedModules.loyalty ? "✓" : "✕"}
                 </button>
               </div>
 
@@ -983,19 +1172,12 @@ export function DeveloperSuperAdminPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => {
-                    const isCurrentlyEnabled = editTenant.degBatchEnabled === true;
-                    const nextVal = !isCurrentlyEnabled;
-                    const updated = { ...editTenant, degBatchEnabled: nextVal };
-                    setEditTenant(updated);
-                    updateTenant(updated);
-                    toast.info(`Deg Batch Tracking set to ${nextVal ? "ON" : "OFF"}`);
-                  }}
+                  onClick={handleToggleDegBatch}
                   className={`size-6 rounded-lg flex items-center justify-center font-bold text-xs transition-colors ${
-                    editTenant.degBatchEnabled === true ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground border border-border"
+                    activeScopedDegBatch ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground border border-border"
                   }`}
                 >
-                  {editTenant.degBatchEnabled === true ? "✓" : "✕"}
+                  {activeScopedDegBatch ? "✓" : "✕"}
                 </button>
               </div>
 
@@ -1009,10 +1191,10 @@ export function DeveloperSuperAdminPage() {
                   type="button"
                   onClick={() => handleToggleModule("stock")}
                   className={`size-6 rounded-lg flex items-center justify-center font-bold text-xs transition-colors ${
-                    editTenant.enabledModules.stock ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground border border-border"
+                    activeScopedModules.stock ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground border border-border"
                   }`}
                 >
-                  {editTenant.enabledModules.stock ? "✓" : "✕"}
+                  {activeScopedModules.stock ? "✓" : "✕"}
                 </button>
               </div>
 
@@ -1026,10 +1208,10 @@ export function DeveloperSuperAdminPage() {
                   type="button"
                   onClick={() => handleToggleModule("reports")}
                   className={`size-6 rounded-lg flex items-center justify-center font-bold text-xs transition-colors ${
-                    editTenant.enabledModules.reports ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground border border-border"
+                    activeScopedModules.reports ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground border border-border"
                   }`}
                 >
-                  {editTenant.enabledModules.reports ? "✓" : "✕"}
+                  {activeScopedModules.reports ? "✓" : "✕"}
                 </button>
               </div>
 
@@ -1043,10 +1225,10 @@ export function DeveloperSuperAdminPage() {
                   type="button"
                   onClick={() => handleToggleModule("menu")}
                   className={`size-6 rounded-lg flex items-center justify-center font-bold text-xs transition-colors ${
-                    editTenant.enabledModules.menu ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground border border-border"
+                    activeScopedModules.menu ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground border border-border"
                   }`}
                 >
-                  {editTenant.enabledModules.menu ? "✓" : "✕"}
+                  {activeScopedModules.menu ? "✓" : "✕"}
                 </button>
               </div>
 
@@ -1060,10 +1242,10 @@ export function DeveloperSuperAdminPage() {
                   type="button"
                   onClick={() => handleToggleModule("multiBranch")}
                   className={`size-6 rounded-lg flex items-center justify-center font-bold text-xs transition-colors ${
-                    editTenant.enabledModules.multiBranch ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground border border-border"
+                    activeScopedModules.multiBranch ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground border border-border"
                   }`}
                 >
-                  {editTenant.enabledModules.multiBranch ? "✓" : "✕"}
+                  {activeScopedModules.multiBranch ? "✓" : "✕"}
                 </button>
               </div>
 
@@ -1077,10 +1259,10 @@ export function DeveloperSuperAdminPage() {
                   type="button"
                   onClick={() => handleToggleModule("aggregators")}
                   className={`size-6 rounded-lg flex items-center justify-center font-bold text-xs transition-colors ${
-                    editTenant.enabledModules.aggregators ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground border border-border"
+                    activeScopedModules.aggregators ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground border border-border"
                   }`}
                 >
-                  {editTenant.enabledModules.aggregators ? "✓" : "✕"}
+                  {activeScopedModules.aggregators ? "✓" : "✕"}
                 </button>
               </div>
             </div>

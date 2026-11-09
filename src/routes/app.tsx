@@ -3,7 +3,7 @@ import { BarChart3, Boxes, Database, Flame, LayoutDashboard, LogOut, MapPin, Moo
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { getActiveTenant, getDB, setDB, TenantModules, useDB } from "@/lib/pos-store";
+import { getActiveBranchModules, getActiveTenant, getDB, setDB, TenantModules, useDB } from "@/lib/pos-store";
 import { performFullSync } from "@/lib/neon-sync";
 
 export const Route = createFileRoute("/app")({
@@ -49,6 +49,7 @@ const LINKS: readonly NavLinkItem[] = [
   { to: "/app/stock", label: "Stock & Deg", icon: Boxes, roles: ["owner", "kitchen", "developer"], module: "stock" },
   { to: "/app/items", label: "Menu & Costs", icon: UtensilsCrossed, roles: ["owner", "developer"], module: "menu" },
   { to: "/app/settings", label: "Settings", icon: Settings, roles: ["owner", "developer"] },
+  { to: "/app/developer", label: "Dev Console", icon: ShieldAlert, roles: ["developer"] },
 ];
 
 function AppLayout() {
@@ -150,14 +151,25 @@ function AppLayout() {
   };
 
   const activeTenant = getActiveTenant(db);
+  const activeBranchId =
+    (activeTenant.branches && activeTenant.branches.some((b) => b.id === db?.settings.activeBranchId))
+      ? db?.settings.activeBranchId
+      : activeTenant.branches?.[0]?.id;
+  const activeModules = getActiveBranchModules(activeTenant, activeBranchId);
+
   const visibleLinks = LINKS.filter((l) => {
-    // 1. Super-Admin Developer Console always has full unrestricted access
-    if (currentRole === "developer") return true;
-    // 2. If this module is explicitly disabled for the active tenant, hide it from navigation
-    if (l.module && activeTenant.enabledModules && activeTenant.enabledModules[l.module] === false) {
+    // 1. Role permission
+    if (!l.roles.includes(currentRole)) return false;
+
+    // 2. Developer Super-Admin Console link is always visible to developer
+    if (l.to === "/app/developer") return true;
+
+    // 3. For any module-bound link (Billing, Captain POS, Reports, Stock, Menu),
+    // strictly respect activeModules! If module is disabled for this tenant or branch, HIDE IT!
+    if (l.module && activeModules[l.module] === false) {
       return false;
     }
-    if (!l.roles.includes(currentRole)) return false;
+
     return true;
   });
 

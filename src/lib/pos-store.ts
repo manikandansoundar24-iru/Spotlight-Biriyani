@@ -9,6 +9,20 @@ import { useEffect, useState } from "react";
 
 /* ---------------------------------- types --------------------------------- */
 
+export type TenantModules = {
+  billing: boolean;
+  tables: boolean;
+  kds: boolean;
+  stock: boolean;
+  reports: boolean;
+  menu: boolean;
+  loyalty: boolean;
+  dynamicUpi: boolean;
+  zReport: boolean;
+  multiBranch: boolean;
+  aggregators: boolean;
+};
+
 export type Branch = {
   id: string;
   name: string;
@@ -17,6 +31,8 @@ export type Branch = {
   upiId?: string | undefined;
   gstin?: string | undefined;
   fssai?: string | undefined;
+  enabledModules?: Partial<TenantModules> | undefined;
+  degBatchEnabled?: boolean | undefined;
 };
 
 export type ChannelId = "counter" | "swiggy" | "zomato";
@@ -1064,6 +1080,11 @@ if (typeof window !== "undefined") {
     }
   });
 
+  window.addEventListener("focus", () => {
+    cache = null;
+    listeners.forEach((l) => l());
+  });
+
   window.addEventListener("slb_store_updated", () => {
     listeners.forEach((l) => l());
   });
@@ -1654,6 +1675,25 @@ export function getActiveTenant(db?: DB | null): TenantConfig {
   }
   const found = tenants.find((t) => t.id === activeId || (activeId === "manam" && t.id === "manam-restaurant"));
   return found ?? tenants[0] ?? DEFAULT_TENANTS[0]!;
+}
+
+/**
+ * Resolves active feature modules for a tenant and optional branch.
+ * If a branch has specific module overrides, they take precedence over the tenant defaults.
+ */
+export function getActiveBranchModules(tenant: TenantConfig, branchId?: string): TenantModules {
+  const base: TenantModules = { ...tenant.enabledModules };
+  if (!branchId || !tenant.branches || tenant.branches.length === 0) {
+    return base;
+  }
+  const br = tenant.branches.find((b) => b.id === branchId);
+  if (br && br.enabledModules) {
+    return {
+      ...base,
+      ...br.enabledModules,
+    };
+  }
+  return base;
 }
 
 /**
