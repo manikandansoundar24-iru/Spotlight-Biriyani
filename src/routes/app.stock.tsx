@@ -165,15 +165,15 @@ function Stock() {
           <div className="surface-card p-4 sm:p-5">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-display">CURRENT ON-HAND STOCK</h2>
-              <span className="text-xs text-muted-foreground">{db.stock.length} materials tracked</span>
+              <span className="text-xs text-muted-foreground">{stock.length} materials tracked</span>
             </div>
 
             {/* Mobile-Friendly Stock Card List (Phone Screens) */}
             <div className="sm:hidden space-y-3 mb-4">
-              {db.stock.length === 0 ? (
+              {stock.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">No materials in inventory.</p>
               ) : (
-                db.stock.map((s) => {
+                stock.map((s) => {
                   const low = s.qty <= s.reorderLevel;
                   return (
                     <div key={s.id} className="rounded-xl border border-border/80 bg-background/50 p-3.5 space-y-2">
@@ -247,14 +247,14 @@ function Stock() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
-                {db.stock.length === 0 ? (
+                {stock.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-8 text-center text-sm text-muted-foreground">
                       No materials in inventory. Add one using the form on the right.
                     </td>
                   </tr>
                 ) : (
-                  db.stock.map((s) => {
+                  stock.map((s) => {
                     const low = s.qty <= s.reorderLevel;
                     return (
                       <tr key={s.id} className="hover:bg-muted/40 transition-colors">
@@ -326,7 +326,7 @@ function Stock() {
             ) : (
               <ul className="mt-3 divide-y divide-border/60 text-sm">
                 {db.moves.slice(0, 12).map((m) => {
-                  const item = db.stock.find((s) => s.id === m.stockItemId);
+                  const item = stock.find((s) => s.id === m.stockItemId) || db.stock.find((s) => s.id === m.stockItemId);
                   return (
                     <li key={m.id} className="flex flex-wrap justify-between gap-2 py-2">
                       <span>
@@ -363,7 +363,7 @@ function Stock() {
                   className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground"
                 >
                   <option value="">Select material…</option>
-                  {db.stock.map((s) => (
+                  {stock.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.name} ({s.qty} {s.unit} on hand)
                     </option>

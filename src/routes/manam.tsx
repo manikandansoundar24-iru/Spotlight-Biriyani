@@ -10,10 +10,12 @@ import {
   Flame,
   Heart,
   MapPin,
+  Menu,
   MessageCircle,
   MessageSquare,
   Phone,
   ShieldCheck,
+  Smartphone,
   Sparkles,
   Star,
   TrendingUp,
@@ -231,6 +233,7 @@ function ManamShowcasePage() {
   const [isDetectingDistance, setIsDetectingDistance] = useState(false);
   const [tableQrModalOpen, setTableQrModalOpen] = useState(false);
   const [selectedTableQr, setSelectedTableQr] = useState("T1");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const filteredItems = activeCategory === "all" ? MANAM_MENU : MANAM_MENU.filter((i) => i.category === activeCategory);
 
@@ -280,29 +283,30 @@ function ManamShowcasePage() {
 
       {/* Brand Navigation Header */}
       <header className="sticky top-0 z-40 border-b border-slate-200/90 bg-white/95 backdrop-blur-xl shadow-xs">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 h-16">
-          <div className="flex items-center gap-3">
-            <span className="flex size-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-600 to-red-600 text-white font-black text-lg shadow-xs">
-              <Flame className="size-6" />
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-3 sm:px-4 h-16">
+          {/* Logo & Location */}
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <span className="flex size-9 sm:size-10 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-600 to-red-600 text-white font-black text-base sm:text-lg shadow-xs shrink-0">
+              <Flame className="size-5 sm:size-6" />
             </span>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <span className="font-display font-black text-xl tracking-wider text-slate-900">
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className="font-display font-black text-lg sm:text-xl tracking-wider text-slate-900 leading-tight">
                   MANAM
                 </span>
-                <span className="rounded bg-gradient-to-r from-amber-500 to-orange-500 px-2 py-0.5 text-[10px] font-black text-white shadow-2xs">
+                <span className="rounded bg-gradient-to-r from-amber-500 to-orange-500 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-black text-white shadow-2xs leading-tight">
                   RESTAURANT
                 </span>
               </div>
-              <span className="text-[11px] text-slate-600 font-bold flex items-center gap-1">
+              <span className="text-[10px] sm:text-[11px] text-slate-600 font-bold flex items-center gap-1 truncate max-w-[150px] sm:max-w-none">
                 <MapPin className="size-3 text-orange-600 shrink-0" />
                 Velachery · Opp. Phoenix Market City
               </span>
             </div>
           </div>
 
-          {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-4 text-xs font-bold text-slate-700">
+          {/* Desktop Navigation Links (>= xl: 1280px) */}
+          <nav className="hidden xl:flex items-center gap-3.5 text-xs font-bold text-slate-700">
             <a href="#menu" className="hover:text-orange-600 transition-colors uppercase tracking-wider">
               Live Menu
             </a>
@@ -313,7 +317,7 @@ function ManamShowcasePage() {
             <button
               type="button"
               onClick={() => setTableQrModalOpen(true)}
-              className="hover:text-orange-600 transition-colors flex items-center gap-1 font-bold uppercase tracking-wider"
+              className="hover:text-orange-600 transition-colors flex items-center gap-1 font-bold uppercase tracking-wider cursor-pointer"
             >
               <QrCode className="size-3.5 text-orange-600" />
               Scan QR
@@ -325,20 +329,29 @@ function ManamShowcasePage() {
               Franchise &amp; Party
             </a>
             <Link
+              to="/app/captain"
+              search={{ tenant: "manam-restaurant" }}
+              className="rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-800 px-2.5 py-1 font-black hover:bg-amber-500/20 transition-all flex items-center gap-1"
+            >
+              <Smartphone className="size-3 text-amber-600" />
+              Captain POS
+            </Link>
+            <Link
               to="/login"
               search={{ tenant: "manam-restaurant" }}
-              className="rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-700 px-3 py-1 font-black hover:bg-orange-500/20 transition-all"
+              className="rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-700 px-2.5 py-1 font-black hover:bg-orange-500/20 transition-all"
             >
               ⚡ POS Demo
             </Link>
           </nav>
 
-          <div className="flex items-center gap-2">
+          {/* Actions: WhatsApp + Staff Login + Mobile Menu Toggle */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <a
               href="https://wa.me/919840099887?text=Hi%20Manam%20Restaurant,%20I%20would%20like%20to%20order%20food%20or%20reserve%20a%20table"
               target="_blank"
               rel="noreferrer"
-              className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 py-2 text-xs font-bold text-white transition-all shadow-xs"
+              className="hidden md:inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white transition-all shadow-xs"
             >
               <MessageCircle className="size-3.5" />
               <span>WhatsApp</span>
@@ -348,13 +361,96 @@ function ManamShowcasePage() {
             <Link
               to="/login"
               search={{ tenant: "manam-restaurant" }}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 px-3.5 py-2 text-xs font-black text-white transition-all shadow-xs active:scale-95"
+              className="inline-flex items-center gap-1 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 px-3 py-1.5 text-xs font-black text-white transition-all shadow-xs active:scale-95"
             >
               <Zap className="size-3.5" />
-              <span>Staff Login &rarr;</span>
+              <span>Staff Login</span>
             </Link>
+
+            {/* Mobile / Tablet Hamburger Toggle (< xl) */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((p) => !p)}
+              className="xl:hidden flex items-center justify-center size-9 rounded-xl border border-slate-200 bg-slate-100 text-slate-700 hover:text-slate-900 transition-colors"
+              aria-label="Toggle Navigation Menu"
+            >
+              {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+            </button>
           </div>
         </div>
+
+        {/* MOBILE SLIDE-DOWN DRAWER (< xl) */}
+        {mobileMenuOpen && (
+          <div className="xl:hidden border-t border-slate-200 bg-white px-4 py-3 shadow-lg space-y-2 animate-in slide-in-from-top-2">
+            <div className="grid grid-cols-2 gap-2 text-xs font-bold text-slate-700">
+              <a
+                href="#menu"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+              >
+                <Utensils className="size-4 text-orange-500" />
+                Live Menu
+              </a>
+              <a
+                href="#radar"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+              >
+                <Compass className="size-4 text-emerald-500" />
+                Velachery Radar
+              </a>
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setTableQrModalOpen(true);
+                }}
+                className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 hover:bg-orange-50 hover:text-orange-600 transition-colors text-left font-bold"
+              >
+                <QrCode className="size-4 text-orange-500" />
+                Scan Table QR
+              </button>
+              <a
+                href="#catering"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+              >
+                <Users className="size-4 text-amber-500" />
+                Franchise &amp; Party
+              </a>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
+              <Link
+                to="/app/captain"
+                search={{ tenant: "manam-restaurant" }}
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-center gap-2 rounded-xl bg-amber-500/10 border border-amber-500/30 p-2.5 text-xs font-black text-amber-800"
+              >
+                <Smartphone className="size-4 text-amber-600" />
+                Launch Tableside Captain POS (Mobile)
+              </Link>
+              <Link
+                to="/login"
+                search={{ tenant: "manam-restaurant" }}
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-center gap-2 rounded-xl bg-orange-500/10 border border-orange-500/30 p-2.5 text-xs font-black text-orange-700"
+              >
+                <Zap className="size-4 text-orange-600" />
+                ⚡ Open Counter Billing POS Demo
+              </Link>
+              <a
+                href="https://wa.me/919840099887?text=Hi%20Manam%20Restaurant,%20I%20would%20like%20to%20order%20food%20or%20reserve%20a%20table"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-center gap-2 rounded-xl bg-emerald-600 p-2.5 text-xs font-bold text-white shadow-xs"
+              >
+                <MessageCircle className="size-4" />
+                Chat on WhatsApp (+91 98400 99887)
+              </a>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Hero Section with Clean Light Theme */}

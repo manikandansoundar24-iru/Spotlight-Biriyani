@@ -1,5 +1,5 @@
 import { createFileRoute, Link, Outlet, redirect } from "@tanstack/react-router";
-import { BarChart3, Boxes, Database, Flame, LayoutDashboard, LogOut, MapPin, Moon, Receipt, Settings, ShieldAlert, ShieldCheck, Sun, UtensilsCrossed } from "lucide-react";
+import { BarChart3, Boxes, Database, Flame, LayoutDashboard, LogOut, MapPin, Moon, Receipt, Settings, ShieldAlert, ShieldCheck, Smartphone, Sun, UtensilsCrossed } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -44,6 +44,7 @@ type NavLinkItem = {
 const LINKS: readonly NavLinkItem[] = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true, roles: ["owner", "developer"] },
   { to: "/app/billing", label: "Billing & Floor POS", icon: Receipt, roles: ["owner", "cashier", "developer"], module: "billing" },
+  { to: "/app/captain", label: "Captain POS", icon: Smartphone, roles: ["owner", "cashier", "waiter", "developer"], module: "tables" },
   { to: "/app/reports", label: "Reports & Forecast", icon: BarChart3, roles: ["owner", "developer"], module: "reports" },
   { to: "/app/stock", label: "Stock & Deg", icon: Boxes, roles: ["owner", "kitchen", "developer"], module: "stock" },
   { to: "/app/items", label: "Menu & Costs", icon: UtensilsCrossed, roles: ["owner", "developer"], module: "menu" },
@@ -175,8 +176,87 @@ function AppLayout() {
   return (
     <div className={`min-h-screen w-full max-w-full overflow-x-hidden bg-background text-foreground ${isDarkMode ? "dark" : ""}`}>
       <header className="sticky top-0 z-40 border-b border-border/80 bg-card/95 backdrop-blur-xl shadow-xs">
-        {/* TOP BAR: Single Sleek Line, zero staircase wrap */}
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-3 sm:px-6 lg:px-8 h-14">
+        {/* MOBILE TOP BAR (< sm: 640px): Compact, zero overlap, touch friendly */}
+        <div className="flex sm:hidden items-center justify-between gap-2 px-3 h-13 border-b border-border/40">
+          {/* Left: Brand + Active Restaurant Name */}
+          <Link to="/app" className="flex items-center gap-2 min-w-0">
+            <span className="flex size-7 items-center justify-center rounded-lg bg-gradient-to-tr from-amber-500 via-orange-600 to-red-600 text-white shrink-0 shadow-xs">
+              <Flame className="size-4" />
+            </span>
+            <div className="flex flex-col min-w-0">
+              <span className="font-extrabold text-xs text-foreground truncate max-w-[130px] leading-tight">
+                {activeTenant.businessName || "Restaurant"}
+              </span>
+              <span className="text-[9px] font-bold text-primary truncate leading-tight">
+                {db?.saasPlatformName || "RestoPulse"} Cloud POS
+              </span>
+            </div>
+          </Link>
+
+          {/* Right: Branch Selector + Theme + Logout */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Branch dropdown */}
+            <div className="flex items-center gap-1 rounded-lg border border-primary/30 bg-primary/10 px-2 py-1 text-[11px] shadow-2xs">
+              <MapPin className="size-3 text-primary shrink-0" />
+              <select
+                value={
+                  (activeTenant.branches && activeTenant.branches.some((b) => b.id === db?.settings.activeBranchId))
+                    ? (db?.settings.activeBranchId ?? "")
+                    : (activeTenant.branches?.[0]?.id ?? "")
+                }
+                onChange={(e) => {
+                  const targetBranchId = e.target.value;
+                  const branchesList = activeTenant.branches && activeTenant.branches.length > 0 ? activeTenant.branches : (db ?? getDB()).branches;
+                  const targetBranch = branchesList.find((b) => b.id === targetBranchId);
+                  setDB((d) => {
+                    d.settings.activeBranchId = targetBranchId;
+                    if (d.tenants) {
+                      const t = d.tenants.find((item) => item.id === activeTenant.id);
+                      if (t && targetBranch) {
+                        t.activeBranchName = targetBranch.name;
+                        t.address = targetBranch.address || t.address;
+                        t.phone = targetBranch.phone || t.phone;
+                      }
+                    }
+                  });
+                  toast.success(`Branch: ${targetBranch?.name || targetBranchId}`);
+                }}
+                className="rounded border-none bg-transparent py-0 text-[11px] font-bold text-primary focus:outline-none cursor-pointer max-w-[95px] truncate"
+                title="Select restaurant branch"
+              >
+                {(activeTenant.branches && activeTenant.branches.length > 0
+                  ? activeTenant.branches
+                  : (db ?? getDB()).branches
+                ).map((b) => (
+                  <option key={b.id} value={b.id} className="bg-card text-foreground font-medium">
+                    {b.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="flex items-center justify-center rounded-lg border border-border bg-card size-7 text-xs font-semibold text-foreground hover:border-primary transition-colors shadow-2xs"
+              title="Switch Theme"
+            >
+              {isDarkMode ? <Moon className="size-3 text-primary" /> : <Sun className="size-3 text-amber-500" />}
+            </button>
+
+            {/* Logout Action */}
+            <button
+              onClick={handleLogout}
+              className="flex items-center justify-center rounded-lg border border-destructive/30 bg-destructive/10 size-7 text-destructive hover:bg-destructive/20 transition-colors shadow-2xs"
+              title="Lock Terminal & Log Out"
+            >
+              <LogOut className="size-3" />
+            </button>
+          </div>
+        </div>
+
+        {/* DESKTOP / TABLET TOP BAR (>= sm: 640px): Full Brand & Enterprise Controls */}
+        <div className="hidden sm:flex mx-auto max-w-7xl items-center justify-between gap-3 px-3 sm:px-6 lg:px-8 h-14">
           {/* LEFT: SaaS Platform Brand + Active Restaurant */}
           <div className="flex items-center gap-3 min-w-0">
             <Link to="/app" className="flex items-center gap-2.5 group shrink-0">
@@ -286,7 +366,7 @@ function AppLayout() {
         </div>
 
         {/* BOTTOM NAV TABS: Smooth horizontal scrollable bar, no wrapping */}
-        <nav className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-3 sm:px-6 lg:px-8 pb-1.5 pt-0.5">
+        <nav className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-3 sm:px-6 lg:px-8 pb-1.5 pt-0.5 no-scrollbar">
           {visibleLinks.map((l) => (
             <Link
               key={l.to}

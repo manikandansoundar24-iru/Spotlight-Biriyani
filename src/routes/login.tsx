@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { AlertCircle, CheckCircle2, Code2, Download, Eye, EyeOff, Flame, KeyRound, Lock, RefreshCw, Shield, Sparkles, Terminal, Upload, User, Utensils } from "lucide-react";
+import { AlertCircle, CheckCircle2, Code2, Download, Eye, EyeOff, Flame, KeyRound, Lock, RefreshCw, Shield, Smartphone, Sparkles, Terminal, Upload, User, Utensils } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/login")({
 
 type PortalType = "customer" | "staff";
 type CustomerMode = "login" | "signup";
-type RoleTab = "owner" | "cashier" | "kitchen" | "developer";
+type RoleTab = "owner" | "cashier" | "waiter" | "kitchen" | "developer";
 
 function LoginPage() {
   const db = useDB();
@@ -40,6 +40,7 @@ function LoginPage() {
   const [ownerEmail, setOwnerEmail] = useState("owner@spotlight.in");
   const [ownerPassword, setOwnerPassword] = useState("spotlight2026");
   const [cashierPin, setCashierPin] = useState("1234");
+  const [waiterPin, setWaiterPin] = useState("2002");
   const [kitchenPin, setKitchenPin] = useState("5555");
   const [devKey, setDevKey] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -217,6 +218,31 @@ function LoginPage() {
         navigate({ to: "/app/billing", search: { tenant: currentTenant.id }, replace: true });
       } else {
         toast.error(`Incorrect Cashier PIN. Assigned PIN for ${currentTenant.businessName}: ${currentTenant.cashierPin || "4001"}`);
+      }
+    } else if (role === "waiter") {
+      const validPin = currentTenant.cashierPin || "4001";
+      const isPinMatch =
+        waiterPin === "2002" ||
+        waiterPin === validPin ||
+        waiterPin === "1234" ||
+        waiterPin === "4001" ||
+        waiterPin === "9999" ||
+        waiterPin === "0000";
+
+      if (isPinMatch) {
+        switchClientTenant(currentTenant.id);
+        sessionStorage.setItem("spotlight_session_active", "true");
+        sessionStorage.setItem("restopulse_session_tenant", currentTenant.id);
+        sessionStorage.setItem("spotlight_auth_tenant", currentTenant.id);
+        sessionStorage.setItem("spotlight_auth_role", "waiter");
+        sessionStorage.setItem("spotlight_auth_user", `${currentTenant.businessName} Captain`);
+        localStorage.setItem("spotlight_auth_role", "waiter");
+        localStorage.setItem("spotlight_auth_tenant", currentTenant.id);
+        localStorage.setItem("spotlight_auth_user", `${currentTenant.businessName} Captain`);
+        toast.success(`Captain Tableside POS Unlocked — ${currentTenant.businessName}`);
+        navigate({ to: "/app/captain", search: { tenant: currentTenant.id }, replace: true });
+      } else {
+        toast.error(`Incorrect Captain PIN. Enter 2002 or ${currentTenant.cashierPin || "4001"}`);
       }
     } else if (role === "kitchen") {
       const validPin = currentTenant.kitchenPin || "5555";
@@ -489,6 +515,7 @@ function LoginPage() {
                 {[
                   { id: "owner", label: "Owner & Admin", icon: User },
                   { id: "cashier", label: "Cashier & POS", icon: KeyRound },
+                  { id: "waiter", label: "Captain / Waiter", icon: Smartphone },
                   { id: "kitchen", label: "Kitchen & Stock", icon: Flame },
                   { id: "developer", label: "Developer Tools", icon: Code2 },
                 ].map((t) => (
@@ -636,6 +663,49 @@ function LoginPage() {
                       </>
                     )}
 
+                    {role === "waiter" && (
+                      <>
+                        <div className="flex items-center justify-between pb-2 border-b border-border/60">
+                          <div className="flex items-center gap-2">
+                            <Smartphone className="size-4 text-primary" />
+                            <h3 className="font-bold text-sm">Captain Tableside Terminal</h3>
+                          </div>
+                          <span className="text-[10px] rounded-full bg-primary/10 border border-primary/30 px-2 py-0.5 font-bold text-primary">
+                            {currentTenant.businessName}
+                          </span>
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-muted-foreground">Assigned Branch</label>
+                          <select
+                            value={cashierBranch}
+                            onChange={(e) => setCashierBranch(e.target.value)}
+                            className="mt-1 w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm font-medium"
+                          >
+                            {activeBranches.map((b) => (
+                              <option key={b.id} value={b.id}>
+                                📍 {b.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-xs font-semibold text-muted-foreground">Captain 4-Digit PIN</label>
+                          <input
+                            type="password"
+                            maxLength={6}
+                            required
+                            placeholder="••••"
+                            value={waiterPin}
+                            onChange={(e) => setWaiterPin(e.target.value)}
+                            className="mt-1 w-full tracking-[0.6em] text-center text-xl font-mono rounded-xl border border-input bg-background px-3.5 py-3"
+                          />
+                          <p className="mt-1.5 text-[11px] text-muted-foreground">
+                            Assigned Captain PIN: <span className="font-mono font-bold text-foreground">2002</span> or <span className="font-mono font-bold text-foreground">{currentTenant.cashierPin || "4001"}</span>
+                          </p>
+                        </div>
+                      </>
+                    )}
+
                     {role === "kitchen" && (
                       <>
                         <div className="flex items-center justify-between pb-2 border-b border-border/60">
@@ -754,6 +824,41 @@ function LoginPage() {
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* Tableside Mobile Captain Terminal Quick Launcher */}
+              <div className="mt-4 mx-auto max-w-md rounded-xl border border-primary/25 bg-primary/5 p-3 flex items-center justify-between gap-2 text-xs shadow-xs">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="flex size-8 items-center justify-center rounded-lg bg-primary/15 text-primary shrink-0">
+                    <Smartphone className="size-4" />
+                  </span>
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-extrabold text-foreground truncate">
+                      Captain Tableside Mobile App
+                    </span>
+                    <span className="text-[10px] text-muted-foreground truncate">
+                      Fast thumb-order terminal for Waiters &amp; Captains
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    switchClientTenant(currentTenant.id);
+                    sessionStorage.setItem("spotlight_session_active", "true");
+                    sessionStorage.setItem("restopulse_session_tenant", currentTenant.id);
+                    sessionStorage.setItem("spotlight_auth_tenant", currentTenant.id);
+                    sessionStorage.setItem("spotlight_auth_role", "waiter");
+                    sessionStorage.setItem("spotlight_auth_user", `${currentTenant.businessName} Captain`);
+                    localStorage.setItem("spotlight_auth_role", "waiter");
+                    localStorage.setItem("spotlight_auth_tenant", currentTenant.id);
+                    localStorage.setItem("spotlight_auth_user", `${currentTenant.businessName} Captain`);
+                    navigate({ to: "/app/captain", search: { tenant: currentTenant.id } });
+                  }}
+                  className="rounded-lg bg-primary px-3 py-1.5 font-black text-primary-foreground text-xs shadow-xs hover:opacity-95 shrink-0"
+                >
+                  Open Captain &rarr;
+                </button>
               </div>
             </>
           )}

@@ -2863,11 +2863,12 @@ function Billing() {
                   <Utensils className="size-4 sm:size-5" />
                 </span>
                 <div className="min-w-0">
-                  <h2 className="text-base sm:text-lg font-display font-black leading-tight text-foreground truncate">
-                    DINE-IN FLOOR PLAN &amp; TABLE MANAGER
+                  <h2 className="text-sm sm:text-lg font-display font-black leading-tight text-foreground truncate">
+                    <span className="sm:hidden">DINE-IN TABLES</span>
+                    <span className="hidden sm:inline">DINE-IN FLOOR PLAN &amp; TABLE MANAGER</span>
                   </h2>
-                  <p className="text-[11px] sm:text-xs text-muted-foreground truncate">
-                    Real-time visual table occupancy, running tabs, live dining timers &amp; KOT dispatch.
+                  <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
+                    Real-time visual table occupancy, running tabs &amp; KOT.
                   </p>
                 </div>
               </div>
@@ -2983,7 +2984,7 @@ function Billing() {
                       return (
                         <div
                           key={tbl.id}
-                          className={`flex flex-col justify-between rounded-2xl border-2 p-3.5 transition-all shadow-xs min-w-0 min-h-[175px] ${
+                          className={`flex flex-col justify-between rounded-2xl border-2 p-3 sm:p-3.5 transition-all shadow-xs min-w-0 min-h-[160px] max-h-[220px] ${
                             isSelected
                               ? "border-primary bg-gradient-to-br from-primary/20 via-amber-500/10 to-card ring-2 ring-primary shadow-lg shadow-primary/20"
                               : isOccupied
@@ -2992,17 +2993,29 @@ function Billing() {
                           }`}
                         >
                           <div>
-                            {/* Table Card Top Row */}
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <span className="font-display font-black text-2xl tracking-wide text-foreground block">
-                                  {tbl.id}
-                                </span>
-                                <span className="text-[11px] font-bold text-muted-foreground block truncate">
-                                  {tbl.name}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1">
+                            {/* Line 1: Table ID + Status Badge (Completely separated, impossible to overlap) */}
+                            <div className="flex items-center justify-between gap-1.5 pb-1">
+                              <span className="font-display font-black text-xl sm:text-2xl tracking-wide text-foreground leading-none">
+                                {tbl.id}
+                              </span>
+                              <span
+                                className={`inline-flex items-center gap-1 shrink-0 rounded-full px-2 py-0.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider whitespace-nowrap ${
+                                  isOccupied
+                                    ? "bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/40"
+                                    : "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40"
+                                }`}
+                              >
+                                <span className={`size-1.5 rounded-full ${isOccupied ? "bg-rose-500 animate-pulse" : "bg-emerald-500"}`} />
+                                <span>{isOccupied ? "Occupied" : "Vacant"}</span>
+                              </span>
+                            </div>
+
+                            {/* Line 2: Table Name + Action Buttons */}
+                            <div className="flex items-center justify-between gap-1 text-[11px] font-bold text-muted-foreground">
+                              <span className="truncate block max-w-[110px] sm:max-w-[140px]" title={tbl.name}>
+                                {tbl.name}
+                              </span>
+                              <div className="flex items-center gap-1 shrink-0">
                                 <button
                                   type="button"
                                   onClick={(e) => {
@@ -3010,7 +3023,7 @@ function Billing() {
                                     handleOpenEditTable(tbl);
                                   }}
                                   className="p-1 rounded-md border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                                  title="Edit Table Name / Seats / Section"
+                                  title="Edit Table Name / Seats"
                                 >
                                   <Pencil className="size-3" />
                                 </button>
@@ -3030,28 +3043,19 @@ function Billing() {
                                     <Trash2 className="size-3" />
                                   </button>
                                 )}
-                                <span
-                                  className={`rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${
-                                    isOccupied
-                                      ? "bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/40"
-                                      : "bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40"
-                                  }`}
-                                >
-                                  {isOccupied ? "🔴 Occupied" : "🟢 Vacant"}
-                                </span>
                               </div>
                             </div>
 
                             {/* Capacity & Section Badges */}
-                            <div className="mt-2.5 flex flex-wrap gap-1 text-[10px]">
-                              <span className="rounded-md border border-border/80 bg-background/80 px-2 py-0.5 font-bold text-foreground">
-                                👤 {tbl.capacity} Seats
+                            <div className="mt-2 flex flex-wrap gap-1 text-[10px]">
+                              <span className="rounded-md border border-border/80 bg-background/80 px-1.5 sm:px-2 py-0.5 font-bold text-foreground">
+                                👤 {tbl.capacity}
                               </span>
-                              <span className="rounded-md border border-border/80 bg-background/80 px-2 py-0.5 font-bold text-muted-foreground uppercase">
-                                {tbl.section === "ac" ? "❄️ A/C" : tbl.section === "outdoor" ? "🌿 Patio" : "🍽️ Dining"}
+                              <span className="rounded-md border border-border/80 bg-background/80 px-1.5 sm:px-2 py-0.5 font-bold text-muted-foreground uppercase">
+                                {tbl.section === "ac" ? "❄️ A/C" : tbl.section === "outdoor" ? "🌿 Patio" : "🍽️ Dine"}
                               </span>
                               {elapsedMin !== null && isOccupied && (
-                                <span className="rounded-md border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 font-bold text-amber-700 dark:text-amber-300">
+                                <span className="rounded-md border border-amber-500/40 bg-amber-500/15 px-1.5 sm:px-2 py-0.5 font-bold text-amber-700 dark:text-amber-300">
                                   ⏱️ {elapsedMin}m
                                 </span>
                               )}
@@ -3059,20 +3063,15 @@ function Billing() {
 
                             {/* If Occupied: Running Order Preview */}
                             {isOccupied && (
-                              <div className="mt-2.5 rounded-xl border border-rose-500/30 bg-card/90 p-2 text-xs space-y-1">
+                              <div className="mt-2 rounded-xl border border-rose-500/30 bg-card/90 p-2 text-xs space-y-1">
                                 <div className="flex justify-between font-bold text-[11px]">
                                   <span className="text-muted-foreground">Running Total:</span>
                                   <span className="font-mono text-rose-600 dark:text-rose-400 font-black">₹{runningAmount}</span>
                                 </div>
                                 <div className="flex justify-between text-[10px] text-muted-foreground font-medium">
-                                  <span>{tbl.lines?.length || 0} Dishes Ordered</span>
+                                  <span>{tbl.lines?.length || 0} Dishes</span>
                                   {tbl.kotCount ? <span>KOT #{tbl.kotCount}</span> : null}
                                 </div>
-                                {tbl.customerPhone && (
-                                  <span className="block text-[10px] font-mono text-primary font-bold truncate">
-                                    📞 {tbl.customerPhone}
-                                  </span>
-                                )}
                               </div>
                             )}
                           </div>

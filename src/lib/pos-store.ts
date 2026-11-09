@@ -1140,16 +1140,15 @@ export function getDB(): DB {
         if (!cur.phone && dt.phone) { cur.phone = dt.phone; changed = true; }
         if (!cur.activeBranchName && dt.activeBranchName) { cur.activeBranchName = dt.activeBranchName; changed = true; }
         if (!cur.items || cur.items.length < (dt.items?.length || 0)) { if (dt.items) cur.items = [...dt.items]; changed = true; }
-        if (!cur.stock || cur.stock.length === 0 || (cur.id === "manam-restaurant" && cur.stock.some((s) => s.name === "Basmati Rice"))) {
-          if (dt.stock) cur.stock = [...dt.stock];
+        if (!cur.stock || cur.stock.length === 0 || ((cur.id === "manam-restaurant" || cur.id === "manam") && cur.stock.some((s) => s.name === "Basmati Rice"))) {
+          if (cur.id === "manam-restaurant" || cur.id === "manam") {
+            cur.stock = [...MANAM_DEFAULT_STOCK];
+          } else if (dt.stock) {
+            cur.stock = [...dt.stock];
+          }
           changed = true;
         }
-        if (cur.id === "manam-restaurant" || cur.id === "spotlight-biriyani") {
-          if (cur.degBatchEnabled !== true) {
-            cur.degBatchEnabled = true;
-            changed = true;
-          }
-        } else if (cur.degBatchEnabled === undefined && dt.degBatchEnabled !== undefined) {
+        if (cur.degBatchEnabled === undefined && dt.degBatchEnabled !== undefined) {
           cur.degBatchEnabled = dt.degBatchEnabled;
           changed = true;
         }
@@ -1661,11 +1660,14 @@ export function getTenantItems(db?: DB | null, tenant?: TenantConfig): Item[] {
  */
 export function getTenantStock(db?: DB | null, tenant?: TenantConfig): StockItem[] {
   const activeT = tenant || getActiveTenant(db);
-  if (activeT.stock && activeT.stock.length > 0) {
+  if (activeT.id === "manam-restaurant" || activeT.id === "manam") {
+    if (!activeT.stock || activeT.stock.length === 0 || activeT.stock.some((s) => s.name === "Basmati Rice")) {
+      return MANAM_DEFAULT_STOCK;
+    }
     return activeT.stock;
   }
-  if (activeT.id === "manam-restaurant" || activeT.id === "manam") {
-    return MANAM_DEFAULT_STOCK;
+  if (activeT.stock && activeT.stock.length > 0) {
+    return activeT.stock;
   }
   const currentDB = db ?? getDB();
   return currentDB.stock && currentDB.stock.length > 0 ? currentDB.stock : SPOTLIGHT_DEFAULT_STOCK;
