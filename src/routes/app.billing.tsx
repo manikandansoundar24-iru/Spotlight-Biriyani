@@ -59,6 +59,7 @@ import {
   getActiveBranchModules,
   getActiveTenant,
   getCustomerLoyalty,
+  getDB,
   getLiveBatchStatus,
   getTenantItems,
   inr,
@@ -819,7 +820,7 @@ function Billing() {
     if (activeTableParam) {
       localStorage.removeItem("spotlight_active_table");
       const currentDB = getDB();
-      const tbl = (currentDB?.tables || DEFAULT_TABLES).find((t) => t.id === activeTableParam);
+      const tbl = (currentDB?.tables || DEFAULT_TABLES).find((t: TableSession) => t.id === activeTableParam);
       if (tbl) {
         setSelectedTableId(tbl.id);
         if (tbl.lines && tbl.lines.length > 0) {
@@ -3007,18 +3008,48 @@ function Billing() {
                   </div>
 
                   {/* Visual Table Grid */}
-                  <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3.5">
+                  <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3.5 auto-rows-fr">
                     {filteredTables.map((tbl) => {
                       const isOccupied = tbl.status === "occupied";
                       const isSelected = selectedTableId === tbl.id;
                       const runningAmount = (tbl.lines || []).reduce((sum, l) => sum + (l.price * l.qty), 0);
                       const openedTime = tbl.openedAt ? new Date(tbl.openedAt) : null;
                       const elapsedMin = openedTime ? Math.max(1, Math.round((Date.now() - openedTime.getTime()) / 60000)) : null;
+                      const formattedElapsed = (() => {
+                        if (elapsedMin === null) return null;
+                        if (elapsedMin < 60) return `${elapsedMin}m`;
+                        const hrs = Math.floor(elapsedMin / 60);
+                        const mins = elapsedMin % 60;
+                        return `${hrs}h ${mins}m`;
+                      })();
 
                       return (
                         <div
                           key={tbl.id}
-                          className={`flex flex-col justify-between rounded-2xl border-2 p-3 sm:p-3.5 transition-all shadow-xs min-w-0 h-full overflow-hidden ${
+                          onClick={() => {
+                            if (isOccupied) {
+                              setSelectedTableId(tbl.id);
+                              if (tbl.lines && tbl.lines.length > 0) {
+                                setLines([...tbl.lines]);
+                                setQuickPhone(tbl.customerPhone || "");
+                                setOrderNote(tbl.notes || "");
+                                toast.info(`Loaded active tab for ${tbl.name}`);
+                              } else {
+                                setSelectedTableId(tbl.id);
+                                setLines([]);
+                                toast.info(`Table ${tbl.id} selected`);
+                              }
+                              setTableFloorModalOpen(false);
+                            } else {
+                              setSelectedTableId(tbl.id);
+                              setLines([]);
+                              setQuickPhone("");
+                              setOrderNote("");
+                              setTableFloorModalOpen(false);
+                              toast.success(`Table ${tbl.id} assigned to active bill!`);
+                            }
+                          }}
+                          className={`flex flex-col justify-between rounded-2xl border-2 p-3 sm:p-3.5 transition-all shadow-xs min-w-0 min-h-[175px] cursor-pointer hover:shadow-md ${
                             isSelected
                               ? "border-primary bg-gradient-to-br from-primary/20 via-amber-500/10 to-card ring-2 ring-primary shadow-lg shadow-primary/20"
                               : isOccupied
@@ -3049,7 +3080,7 @@ function Billing() {
                               <span className="truncate block max-w-[110px] sm:max-w-[140px]" title={tbl.name}>
                                 {tbl.name}
                               </span>
-                              <div className="flex items-center gap-1 shrink-0">
+                              <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                                 <button
                                   type="button"
                                   onClick={(e) => {
@@ -3083,20 +3114,20 @@ function Billing() {
                             {/* Capacity & Section Badges */}
                             <div className="mt-2 flex flex-wrap gap-1 text-[10px]">
                               <span className="rounded-md border border-border/80 bg-background/80 px-1.5 sm:px-2 py-0.5 font-bold text-foreground">
-                                👤 {tbl.capacity}
+                                👤 {tbl.capacity} Seats
                               </span>
                               <span className="rounded-md border border-border/80 bg-background/80 px-1.5 sm:px-2 py-0.5 font-bold text-muted-foreground uppercase">
                                 {tbl.section === "ac" ? "❄️ A/C" : tbl.section === "outdoor" ? "🌿 Patio" : "🍽️ Dine"}
                               </span>
-                              {elapsedMin !== null && isOccupied && (
+                              {formattedElapsed !== null && isOccupied && (
                                 <span className="rounded-md border border-amber-500/40 bg-amber-500/15 px-1.5 sm:px-2 py-0.5 font-bold text-amber-700 dark:text-amber-300">
-                                  ⏱️ {elapsedMin}m
+                                  ⏱️ {formattedElapsed}
                                 </span>
                               )}
                             </div>
 
                             {/* If Occupied: Running Order Preview */}
-                            {isOccupied && (
+                            {isOccupied ? (
                               <div className="mt-2 rounded-xl border border-rose-500/30 bg-card/90 p-2 text-xs space-y-0.5">
                                 <div className="flex justify-between font-bold text-[11px]">
                                   <span className="text-muted-foreground">Running Total:</span>
@@ -3107,6 +3138,11 @@ function Billing() {
                                   {tbl.kotCount ? <span>KOT #{tbl.kotCount}</span> : null}
                                 </div>
                               </div>
+                            ) : (
+                              <div className="mt-2 py-1 text-[11px] text-muted-foreground/70 flex items-center gap-1.5">
+                                <span className="size-1.5 rounded-full bg-emerald-500" />
+                                <span>Available for seating</span>
+                              </div>
                             )}
                           </div>
 
@@ -3116,13 +3152,18 @@ function Billing() {
                               <>
                                 <button
                                   type="button"
-                                  onClick={() => {
+                                  onClick={(e) => {
+                                    e.stopPropagation();
                                     setSelectedTableId(tbl.id);
                                     if (tbl.lines && tbl.lines.length > 0) {
                                       setLines([...tbl.lines]);
                                       setQuickPhone(tbl.customerPhone || "");
                                       setOrderNote(tbl.notes || "");
                                       toast.info(`Loaded active tab for ${tbl.name}`);
+                                    } else {
+                                      setSelectedTableId(tbl.id);
+                                      setLines([]);
+                                      toast.info(`Table ${tbl.id} selected`);
                                     }
                                     setTableFloorModalOpen(false);
                                   }}
@@ -3132,7 +3173,8 @@ function Billing() {
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => {
+                                  onClick={(e) => {
+                                    e.stopPropagation();
                                     if (confirm(`Vacate ${tbl.name} (${tbl.id}) and clear tab?`)) {
                                       vacateTable(tbl.id);
                                       if (selectedTableId === tbl.id) {
@@ -3151,7 +3193,8 @@ function Billing() {
                             ) : (
                               <button
                                 type="button"
-                                onClick={() => {
+                                onClick={(e) => {
+                                  e.stopPropagation();
                                   setSelectedTableId(tbl.id);
                                   setLines([]);
                                   setQuickPhone("");

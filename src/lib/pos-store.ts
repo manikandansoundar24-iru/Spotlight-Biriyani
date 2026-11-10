@@ -9,20 +9,6 @@ import { useEffect, useState } from "react";
 
 /* ---------------------------------- types --------------------------------- */
 
-export type TenantModules = {
-  billing: boolean;
-  tables: boolean;
-  kds: boolean;
-  stock: boolean;
-  reports: boolean;
-  menu: boolean;
-  loyalty: boolean;
-  dynamicUpi: boolean;
-  zReport: boolean;
-  multiBranch: boolean;
-  aggregators: boolean;
-};
-
 export type Branch = {
   id: string;
   name: string;
@@ -1681,8 +1667,25 @@ export function getActiveTenant(db?: DB | null): TenantConfig {
  * Resolves active feature modules for a tenant and optional branch.
  * If a branch has specific module overrides, they take precedence over the tenant defaults.
  */
-export function getActiveBranchModules(tenant: TenantConfig, branchId?: string): TenantModules {
-  const base: TenantModules = { ...tenant.enabledModules };
+export function getActiveBranchModules(tenant?: TenantConfig | null, branchId?: string): TenantModules {
+  const defaultModules: TenantModules = {
+    billing: true,
+    tables: true,
+    kds: true,
+    stock: true,
+    reports: true,
+    menu: true,
+    loyalty: true,
+    dynamicUpi: true,
+    zReport: true,
+    multiBranch: true,
+    aggregators: true,
+  };
+  if (!tenant) return defaultModules;
+  const base: TenantModules = {
+    ...defaultModules,
+    ...(tenant.enabledModules || {}),
+  };
   if (!branchId || !tenant.branches || tenant.branches.length === 0) {
     return base;
   }

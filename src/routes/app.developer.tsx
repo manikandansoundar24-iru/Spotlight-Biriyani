@@ -27,7 +27,7 @@ import {
   Utensils,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -119,17 +119,22 @@ export function DeveloperSuperAdminPage() {
   const targetBranch = editTenant?.branches?.find((b) => b.id === selectedBranchScope);
 
   const activeScopedModules: TenantModules = useMemo(() => {
+    const defaultModules: TenantModules = {
+      billing: true, tables: true, kds: true, stock: true, reports: true,
+      menu: true, loyalty: true, dynamicUpi: true, zReport: true, multiBranch: true, aggregators: true,
+    };
     if (!editTenant) {
-      return {
-        billing: true, tables: true, kds: true, stock: true, reports: true,
-        menu: true, loyalty: true, dynamicUpi: true, zReport: true, multiBranch: true, aggregators: true,
-      };
+      return defaultModules;
     }
+    const tenantBase: TenantModules = {
+      ...defaultModules,
+      ...(editTenant.enabledModules || {}),
+    };
     if (selectedBranchScope === "all" || !targetBranch) {
-      return editTenant.enabledModules;
+      return tenantBase;
     }
     return {
-      ...editTenant.enabledModules,
+      ...tenantBase,
       ...(targetBranch.enabledModules || {}),
     };
   }, [editTenant, selectedBranchScope, targetBranch]);
@@ -329,20 +334,10 @@ export function DeveloperSuperAdminPage() {
     };
 
     const updatedBranches = [...currentBranches, newBranch];
-    const isPrimary = updatedBranches[0]?.id === branchId;
     const updatedTenant: TenantConfig = {
       ...editTenant,
       branches: updatedBranches,
       activeBranchName: updatedBranches[0]?.name || editTenant.activeBranchName,
-      ...(isPrimary
-        ? {
-            phone: branchEditPhone.trim() || editTenant.phone,
-            address: branchEditAddress.trim() || editTenant.address,
-            upiId: branchEditUpi.trim() || editTenant.upiId,
-            gstin: branchEditGstin.trim() || editTenant.gstin,
-            fssai: branchEditFssai.trim() || editTenant.fssai,
-          }
-        : {}),
     };
 
     setEditTenant(updatedTenant);
