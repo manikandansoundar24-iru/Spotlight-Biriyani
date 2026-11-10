@@ -95,6 +95,11 @@ function LoginPage() {
     if (typeof window !== "undefined") {
       const urlParams = new URLSearchParams(window.location.search);
       const tenantParam = urlParams.get("tenant");
+      const roleParam = urlParams.get("role");
+      if (roleParam === "developer") {
+        setPortalType("staff");
+        setRole("developer");
+      }
       const targetId = tenantParam || "spotlight-biriyani";
       setSelectedTenantId(targetId);
       if (tenantParam) {
@@ -517,7 +522,6 @@ function LoginPage() {
                   { id: "cashier", label: "Cashier & POS", icon: KeyRound },
                   { id: "waiter", label: "Captain / Waiter", icon: Smartphone },
                   { id: "kitchen", label: "Kitchen & Stock", icon: Flame },
-                  { id: "developer", label: "Developer Tools", icon: Code2 },
                 ].map((t) => (
                   <button
                     key={t.id}
@@ -737,9 +741,18 @@ function LoginPage() {
 
                     {role === "developer" && (
                       <>
-                        <div className="flex items-center gap-2 pb-2 border-b border-border/60">
-                          <Code2 className="size-4 text-primary" />
-                          <h3 className="font-bold text-sm">Developer Master Console</h3>
+                        <div className="flex items-center justify-between pb-2 border-b border-border/60">
+                          <div className="flex items-center gap-2">
+                            <Code2 className="size-4 text-primary" />
+                            <h3 className="font-bold text-sm">Super-Admin Master Access</h3>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setRole("owner")}
+                            className="text-[11px] font-bold text-primary hover:underline"
+                          >
+                            Return to Staff Login
+                          </button>
                         </div>
                         <div>
                           <label className="text-xs font-semibold text-muted-foreground">Developer Security Key</label>
@@ -877,6 +890,20 @@ function LoginPage() {
             <Link to="/" className="hover:underline">
               Spot Light Biriyani
             </Link>
+            <span>&middot;</span>
+            <button
+              type="button"
+              onClick={() => {
+                setPortalType("staff");
+                setRole("developer");
+                window.scrollTo({ top: 300, behavior: "smooth" });
+              }}
+              className="text-muted-foreground/30 hover:text-primary flex items-center gap-1 transition-colors text-[10px]"
+              title="Restricted Super-Admin Gateway"
+            >
+              <Lock className="size-3" />
+              <span>Super-Admin</span>
+            </button>
           </div>
         </div>
       </footer>

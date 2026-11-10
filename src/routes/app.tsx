@@ -158,14 +158,20 @@ function AppLayout() {
   const activeModules = getActiveBranchModules(activeTenant, activeBranchId);
 
   const visibleLinks = LINKS.filter((l) => {
-    // 1. Role permission
+    // DEVELOPERS: Developer Super-Admin has full access to inspect and test all tools
+    // without having their console or header restricted by client tenant configurations.
+    if (currentRole === "developer") {
+      return true;
+    }
+
+    // CLIENT RESTAURANT STAFF (owner, cashier, waiter, kitchen):
+    // 1. NEVER show Dev Console to client tenants
+    if (l.to === "/app/developer") return false;
+
+    // 2. Check role permissions
     if (!l.roles.includes(currentRole)) return false;
 
-    // 2. Developer Super-Admin Console link is always visible to developer
-    if (l.to === "/app/developer") return true;
-
-    // 3. For any module-bound link (Billing, Captain POS, Reports, Stock, Menu),
-    // strictly respect activeModules! If module is disabled for this tenant or branch, HIDE IT!
+    // 3. Check client tenant feature entitlement modules
     if (l.module && activeModules[l.module] === false) {
       return false;
     }

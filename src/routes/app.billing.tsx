@@ -64,6 +64,7 @@ import {
   getLiveBatchStatus,
   getTenantItems,
   inr,
+  isDegBatchActiveForTenant,
   isSameDay,
   normalizeCategory,
   recordShiftClose,
@@ -463,6 +464,7 @@ function Billing() {
       : activeTenant.branches?.[0]?.id;
   const activeBranch = activeTenant.branches?.find((b) => b.id === activeBranchId);
   const activeModules = getActiveBranchModules(activeTenant, activeBranchId);
+  const isDegBatchActive = isDegBatchActiveForTenant(activeTenant, activeBranchId);
   const [cat, setCat] = useState<Category | "all">("biryani");
   const [lines, setLines] = useState<SaleLine[]>([]);
   const [channel, setChannel] = useState<ChannelId>("counter");
@@ -769,7 +771,7 @@ function Billing() {
   }, [db, activeTenant]);
 
   const isDegItem = (itemOrLine: { name?: string; category?: string } | null | undefined) => {
-    if (activeTenant.degBatchEnabled === false) return false;
+    if (!isDegBatchActive) return false;
     if (!itemOrLine) return false;
     const n = (itemOrLine.name || "").toLowerCase();
     const c = (itemOrLine.category || "").toLowerCase();
@@ -1315,23 +1317,17 @@ function Billing() {
           Counter POS Billing Disabled
         </h2>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          The POS Billing Terminal module has been disabled for{" "}
+          The POS Billing Terminal module is not enabled on your plan for{" "}
           <span className="font-bold text-foreground">{activeTenant.businessName}</span>
           {activeBranch?.name ? ` (${activeBranch.name})` : ""}.
-          You can enable it anytime from the Master Developer Console.
+          Please contact your system administrator to update your subscription or feature plan.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
           <Link
             to="/app"
-            className="rounded-xl bg-primary text-white px-4 py-2 text-xs font-bold shadow-xs hover:bg-primary/90 transition-all"
+            className="rounded-xl bg-primary text-white px-5 py-2.5 text-xs font-bold shadow-xs hover:bg-primary/90 transition-all"
           >
-            Go to Dashboard
-          </Link>
-          <Link
-            to="/app/developer"
-            className="rounded-xl border border-border bg-card px-4 py-2 text-xs font-bold hover:bg-muted transition-all"
-          >
-            Open Developer Console
+            Return to Dashboard
           </Link>
         </div>
       </div>
@@ -1436,7 +1432,7 @@ function Billing() {
       <div className="grid gap-4 sm:gap-5 md:grid-cols-[minmax(0,1fr)_330px] lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_390px] w-full min-w-0 max-w-full items-start pb-24 md:pb-6">
         <div className="min-w-0 max-w-full">
           {/* Live Kitchen Deg Batch Availability Bar */}
-          {(activeTenant.degBatchEnabled !== false) && (
+          {isDegBatchActive && (
             <div className="overflow-hidden rounded-2xl border border-primary/30 bg-card p-3.5 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-3 pb-2.5 border-b border-border/60">
                 <div className="flex items-center gap-2.5">
@@ -1606,7 +1602,7 @@ function Billing() {
                       price={priceFor(i.id)}
                       inCartLine={inCart}
                       liveBatch={liveBatch}
-                      degBatchEnabled={activeTenant.degBatchEnabled !== false}
+                      degBatchEnabled={isDegBatchActive}
                       canIncreaseDeg={!isDegItem(i) || currentCartDegPlates < liveBatch.platesLeft}
                       onAdd={() => add(i.id)}
                       onStep={(d) => step(i.id, d)}
@@ -1663,7 +1659,7 @@ function Billing() {
                       price={priceFor(i.id)}
                       inCartLine={inCart}
                       liveBatch={liveBatch}
-                      degBatchEnabled={activeTenant.degBatchEnabled !== false}
+                      degBatchEnabled={isDegBatchActive}
                       canIncreaseDeg={!isDegItem(i) || currentCartDegPlates < liveBatch.platesLeft}
                       onAdd={() => add(i.id)}
                       onStep={(d) => step(i.id, d)}

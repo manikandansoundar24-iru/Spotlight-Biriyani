@@ -1716,6 +1716,20 @@ export function getActiveBranchModules(tenant?: TenantConfig | null, branchId?: 
 }
 
 /**
+ * Resolves whether the Deg Stock Cap / Live Batch Tracking is enabled for a tenant and optional branch.
+ */
+export function isDegBatchActiveForTenant(tenant?: TenantConfig | null, branchId?: string): boolean {
+  if (!tenant) return true;
+  if (branchId && tenant.branches && tenant.branches.length > 0) {
+    const br = tenant.branches.find((b) => b.id === branchId);
+    if (br && br.degBatchEnabled !== undefined) {
+      return br.degBatchEnabled;
+    }
+  }
+  return tenant.degBatchEnabled !== false;
+}
+
+/**
  * Get items strictly for the active tenant.
  * Guarantees that each client restaurant's unique menu is isolated per tab.
  */

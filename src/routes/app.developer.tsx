@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
 import {
   AlertCircle,
   Building2,
@@ -48,6 +48,15 @@ import {
 import { performFullSync } from "@/lib/neon-sync";
 
 export const Route = createFileRoute("/app/developer")({
+  beforeLoad: () => {
+    if (typeof window !== "undefined") {
+      const sessionActive = sessionStorage.getItem("spotlight_session_active") === "true";
+      const role = localStorage.getItem("spotlight_auth_role");
+      if (!sessionActive || role !== "developer") {
+        throw redirect({ to: "/app" });
+      }
+    }
+  },
   head: () => ({
     meta: [
       { title: "Developer Super-Admin Console — Multi-Tenant Configurator" },
