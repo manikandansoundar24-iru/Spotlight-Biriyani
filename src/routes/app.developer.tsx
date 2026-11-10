@@ -208,23 +208,33 @@ export function DeveloperSuperAdminPage() {
     if (!editTenant) return;
 
     if (selectedBranchScope === "all") {
+      const currentVal = activeScopedModules[moduleKey] ?? true;
+      const nextVal = !currentVal;
+      const updatedBranches = (editTenant.branches || []).map((b) => ({
+        ...b,
+        enabledModules: {
+          ...(b.enabledModules || {}),
+          [moduleKey]: nextVal,
+        },
+      }));
       const updated: TenantConfig = {
         ...editTenant,
         enabledModules: {
-          ...editTenant.enabledModules,
-          [moduleKey]: !editTenant.enabledModules[moduleKey],
+          ...(editTenant.enabledModules || {}),
+          [moduleKey]: nextVal,
         },
+        branches: updatedBranches,
       };
       setEditTenant(updated);
       updateTenant(updated);
-      toast.info(`Updated module "${moduleKey}" for all branches of ${updated.businessName}`);
+      toast.info(`Updated module "${moduleKey}" to ${nextVal ? "ENABLED" : "DISABLED"} for all branches of ${updated.businessName}`);
     } else {
       const currentBranches = editTenant.branches || [];
       const branch = currentBranches.find((b) => b.id === selectedBranchScope);
       if (!branch) return;
 
       const currentBranchModules: Partial<TenantModules> = branch.enabledModules || { ...editTenant.enabledModules };
-      const currentVal = currentBranchModules[moduleKey] ?? editTenant.enabledModules[moduleKey];
+      const currentVal = currentBranchModules[moduleKey] ?? activeScopedModules[moduleKey] ?? true;
       const nextVal = !currentVal;
 
       const updatedBranches = currentBranches.map((b) =>
@@ -245,19 +255,27 @@ export function DeveloperSuperAdminPage() {
       };
       setEditTenant(updated);
       updateTenant(updated);
-      toast.info(`Updated module "${moduleKey}" for branch ${branch.name}`);
+      toast.info(`Updated module "${moduleKey}" to ${nextVal ? "ENABLED" : "DISABLED"} for branch ${branch.name}`);
     }
   };
 
   const handleToggleDegBatch = () => {
     if (!editTenant) return;
     if (selectedBranchScope === "all") {
-      const isCurrentlyEnabled = editTenant.degBatchEnabled !== false;
-      const nextVal = !isCurrentlyEnabled;
-      const updated = { ...editTenant, degBatchEnabled: nextVal };
+      const currentVal = activeScopedDegBatch;
+      const nextVal = !currentVal;
+      const updatedBranches = (editTenant.branches || []).map((b) => ({
+        ...b,
+        degBatchEnabled: nextVal,
+      }));
+      const updated = {
+        ...editTenant,
+        degBatchEnabled: nextVal,
+        branches: updatedBranches,
+      };
       setEditTenant(updated);
       updateTenant(updated);
-      toast.info(`Deg Batch Tracking set to ${nextVal ? "ON" : "OFF"} for all branches`);
+      toast.info(`Deg Batch Tracking set to ${nextVal ? "ON" : "OFF"} for all branches of ${updated.businessName}`);
     } else {
       const currentBranches = editTenant.branches || [];
       const branch = currentBranches.find((b) => b.id === selectedBranchScope);

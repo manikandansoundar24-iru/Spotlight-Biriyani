@@ -47,6 +47,7 @@ import {
   UserCheck,
   Maximize2,
   Lock,
+  Smartphone,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -786,8 +787,15 @@ function Billing() {
   const degDishesStats = useMemo(() => {
     const sales = (db?.sales || []).filter((s) => {
       if (!s || typeof s.date !== "string") return false;
-      const matchTenant = s.tenantId ? s.tenantId === activeTenant.id : activeTenant.id === "spotlight-biriyani";
-      return matchTenant && isSameDay(s.date);
+      const matchTenant = s.tenantId
+        ? (s.tenantId === activeTenant.id ||
+           (activeTenant.id.startsWith("manam") && s.tenantId.startsWith("manam")) ||
+           (activeTenant.id.startsWith("spotlight") && s.tenantId.startsWith("spotlight")))
+        : (activeTenant.id === "spotlight-biriyani" || activeTenant.id.startsWith("spotlight"));
+      if (!matchTenant) return false;
+      if (isSameDay(s.date)) return true;
+      const diffHours = (Date.now() - new Date(s.date).getTime()) / 36e5;
+      return diffHours >= 0 && diffHours < 24;
     });
     const soldMap: Record<string, number> = {};
     sales.forEach((s) => {
@@ -1080,15 +1088,19 @@ function Billing() {
     toast.success(`Sent Bill to ${p.paperWidth} thermal printer`);
   };
 
-  const saveOrUpdate = () => {
+  const saveOrUpdate = (forcedPayment?: Sale["payment"]) => {
     if (!preview || !db) return;
     if (isCartOverDeg) {
       toast.error(`❌ Cannot place order: ${currentCartDegPlates} Deg plates in cart exceeds ${liveBatch.platesLeft} available plates!`);
       return;
     }
-    const currentPreview = preview;
-    const tender = cashTendered;
-    const change = changeDue;
+    const chosenPayment = forcedPayment || payment || "cash";
+    const currentPreview: Sale = {
+      ...preview,
+      payment: chosenPayment,
+    };
+    const tender = chosenPayment === "cash" ? cashTendered : currentPreview.net;
+    const change = chosenPayment === "cash" ? changeDue : 0;
     const note = orderNote;
 
     if (editingSaleId) {
@@ -1101,6 +1113,7 @@ function Billing() {
           if (!old) return;
           const updatedSale: Sale = {
             ...currentPreview,
+            payment: chosenPayment,
             id: editingSaleId,
             date: old.date,
             isEdited: true,
@@ -1127,7 +1140,7 @@ function Billing() {
 
       const p = db.settings.printerSettings ?? DEFAULT_PRINTER_SETTINGS;
       printBill(savedSaleForWa || currentPreview, db.settings.businessName, todayToken - 1, note ? `${note} (CORRECTED)` : "(CORRECTED BILL)", tender, change, p);
-      toast.success(`Bill updated & reprinted! ${inr(currentPreview.net)} · Profit ${inr(currentPreview.profit)}`);
+      toast.success(`Bill updated & reprinted! ${inr(currentPreview.net)} (${chosenPayment.toUpperCase()}) · Profit ${inr(currentPreview.profit)}`);
       return savedSaleForWa || currentPreview;
     } else {
       // Normal new bill with service order type
@@ -1141,6 +1154,7 @@ function Billing() {
       const cleanCustomerPhone = (quickPhone.trim() || customerPhone.trim()).replace(/\D/g, "").slice(-10);
       const newSale: Sale = {
         ...currentPreview,
+        payment: chosenPayment,
         id: currentPreview.id || Math.random().toString(36).slice(2, 10),
         tenantId: activeTenant.id || "spotlight-biriyani",
         date: new Date().toISOString(),
@@ -1357,7 +1371,7 @@ function Billing() {
               <span>Past Bills ({todaySales.length})</span>
             </button>
 
-            {activeTenant.enabledModules.kds && (
+            {activeModules.kds && (
               <button
                 onClick={() => setKdsModalOpen(true)}
                 className="flex-1 sm:flex-none h-10 sm:h-11 flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 sm:px-4 text-xs sm:text-sm font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-all shadow-2xs active:scale-98"
@@ -1368,7 +1382,7 @@ function Billing() {
               </button>
             )}
 
-            {activeTenant.enabledModules.zReport && (
+            {activeModules.zReport && (
               <button
                 onClick={() => setZReportModalOpen(true)}
                 className="flex-1 sm:flex-none h-10 sm:h-11 flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 sm:px-4 text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-all shadow-2xs active:scale-98"
@@ -1696,7 +1710,7 @@ function Billing() {
           </div>
 
           {/* Dine-in Interactive Floor Plan & Table Bar */}
-          {orderType === "dinein" && activeTenant.enabledModules.tables && (
+          {orderType === "dinein" && activeModules.tables && (
             <div className="mb-2.5">
               {selectedTableId ? (
                 (() => {
@@ -2040,7 +2054,7 @@ function Billing() {
                 VPA: {db.settings.upiId || "spotlightbiriyani@oksbi"}
               </p>
 
-              {activeTenant.enabledModules.dynamicUpi && (
+              {activeModules.dynamicUpi && (
                 <button
                   type="button"
                   onClick={() => setUpiQrModalOpen(true)}
@@ -2080,7 +2094,7 @@ function Billing() {
                 type="button"
                 onClick={() => {
                   const tblToVacate = selectedTableId;
-                  const target = saveOrUpdate();
+                  const target = saveOrUpdate("cash");
                   if (target) {
                     if (tblToVacate) vacateTable(tblToVacate);
                     toast.success(`Table ${tblToVacate} settled & marked VACANT! Ready for next guests.`);
@@ -2096,24 +2110,43 @@ function Billing() {
             )}
 
 
-            {/* Phase 2: Instant Dynamic UPI QR Generator Button */}
-            {activeTenant.enabledModules.dynamicUpi && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (!preview || preview.net <= 0) {
-                    toast.info("Add dishes to the bill first, then click Dynamic UPI QR!");
-                    return;
-                  }
-                  setPayment("upi");
-                  setUpiQrModalOpen(true);
-                }}
-                className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 px-4 font-bold text-xs sm:text-sm bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 hover:from-blue-700 hover:to-violet-700 text-white shadow-md transition-all active:scale-[0.98]"
-                title="Generate instant customer-facing Dynamic UPI QR code with exact amount"
-              >
-                <QrCode className="size-4 shrink-0" />
-                <span>DYNAMIC UPI QR {preview && preview.net > 0 ? `(₹${preview.net})` : "(GPay / PhonePe / Paytm)"}</span>
-              </button>
+            {/* Phase 2: Instant Dynamic UPI QR Buttons */}
+            {activeModules.dynamicUpi && (
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!preview || preview.net <= 0) {
+                      toast.info("Add dishes to the bill first, then click Show UPI QR!");
+                      return;
+                    }
+                    setPayment("upi");
+                    setUpiQrModalOpen(true);
+                  }}
+                  className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-3 font-bold text-xs sm:text-sm bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md transition-all active:scale-[0.98]"
+                  title="Generate instant customer-facing Dynamic UPI QR code popup"
+                >
+                  <QrCode className="size-4 shrink-0" />
+                  <span>SHOW UPI QR</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!preview || preview.net <= 0) {
+                      toast.info("Add dishes to the bill first!");
+                      return;
+                    }
+                    setPayment("upi");
+                    saveOrUpdate("upi");
+                  }}
+                  disabled={!preview || isCartOverDeg}
+                  className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-3 font-bold text-xs sm:text-sm bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-md transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Complete payment via UPI (GPay/PhonePe/Paytm), decrement Deg batch, and print bill immediately"
+                >
+                  <Smartphone className="size-4 shrink-0" />
+                  <span>UPI PAID &amp; PRINT</span>
+                </button>
+              </div>
             )}
 
             {isCartOverDeg && (
@@ -2122,14 +2155,14 @@ function Billing() {
               </div>
             )}
             <button
-              onClick={saveOrUpdate}
+              onClick={() => saveOrUpdate("cash")}
               disabled={!preview || isCartOverDeg}
               className={`w-full flex items-center justify-center gap-2 rounded-xl py-3.5 px-4 font-display font-black text-sm sm:text-base tracking-wider text-white shadow-ember transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 ${editingSaleId ? "bg-amber-600 hover:bg-amber-700" : "bg-gradient-ember"
                 }`}
-              title={isCartOverDeg ? "Cannot place bill: stock limit exceeded" : "Save order and print thermal paper receipt (Shortcut: Press F2)"}
+              title={isCartOverDeg ? "Cannot place bill: stock limit exceeded" : "Save order as Cash and print thermal paper receipt (Shortcut: Press F2)"}
             >
               <Printer className="size-4 sm:size-5 shrink-0" />
-              <span>{editingSaleId ? "UPDATE & RE-PRINT BILL" : "SAVE BILL & PRINT"}</span>
+              <span>{editingSaleId ? "UPDATE & RE-PRINT BILL" : "SAVE BILL & PRINT (CASH)"}</span>
             </button>
 
             {/* Inline Quick WhatsApp Row (Non-intrusive for counter rush) */}
@@ -3008,55 +3041,56 @@ function Billing() {
                   </div>
 
                   {/* Visual Table Grid */}
-                  <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3.5 auto-rows-fr">
-                    {filteredTables.map((tbl) => {
-                      const isOccupied = tbl.status === "occupied";
-                      const isSelected = selectedTableId === tbl.id;
-                      const runningAmount = (tbl.lines || []).reduce((sum, l) => sum + (l.price * l.qty), 0);
-                      const openedTime = tbl.openedAt ? new Date(tbl.openedAt) : null;
-                      const elapsedMin = openedTime ? Math.max(1, Math.round((Date.now() - openedTime.getTime()) / 60000)) : null;
-                      const formattedElapsed = (() => {
-                        if (elapsedMin === null) return null;
-                        if (elapsedMin < 60) return `${elapsedMin}m`;
-                        const hrs = Math.floor(elapsedMin / 60);
-                        const mins = elapsedMin % 60;
-                        return `${hrs}h ${mins}m`;
-                      })();
+                  <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-auto">
+                      {filteredTables.map((tbl) => {
+                        const isOccupied = tbl.status === "occupied";
+                        const isSelected = selectedTableId === tbl.id;
+                        const runningAmount = (tbl.lines || []).reduce((sum, l) => sum + (l.price * l.qty), 0);
+                        const openedTime = tbl.openedAt ? new Date(tbl.openedAt) : null;
+                        const elapsedMin = openedTime ? Math.max(1, Math.round((Date.now() - openedTime.getTime()) / 60000)) : null;
+                        const formattedElapsed = (() => {
+                          if (elapsedMin === null) return null;
+                          if (elapsedMin < 60) return `${elapsedMin}m`;
+                          const hrs = Math.floor(elapsedMin / 60);
+                          const mins = elapsedMin % 60;
+                          return `${hrs}h ${mins}m`;
+                        })();
 
-                      return (
-                        <div
-                          key={tbl.id}
-                          onClick={() => {
-                            if (isOccupied) {
-                              setSelectedTableId(tbl.id);
-                              if (tbl.lines && tbl.lines.length > 0) {
-                                setLines([...tbl.lines]);
-                                setQuickPhone(tbl.customerPhone || "");
-                                setOrderNote(tbl.notes || "");
-                                toast.info(`Loaded active tab for ${tbl.name}`);
+                        return (
+                          <div
+                            key={tbl.id}
+                            onClick={() => {
+                              if (isOccupied) {
+                                setSelectedTableId(tbl.id);
+                                if (tbl.lines && tbl.lines.length > 0) {
+                                  setLines([...tbl.lines]);
+                                  setQuickPhone(tbl.customerPhone || "");
+                                  setOrderNote(tbl.notes || "");
+                                  toast.info(`Loaded active tab for ${tbl.name}`);
+                                } else {
+                                  setSelectedTableId(tbl.id);
+                                  setLines([]);
+                                  toast.info(`Table ${tbl.id} selected`);
+                                }
+                                setTableFloorModalOpen(false);
                               } else {
                                 setSelectedTableId(tbl.id);
                                 setLines([]);
-                                toast.info(`Table ${tbl.id} selected`);
+                                setQuickPhone("");
+                                setOrderNote("");
+                                setTableFloorModalOpen(false);
+                                toast.success(`Table ${tbl.id} assigned to active bill!`);
                               }
-                              setTableFloorModalOpen(false);
-                            } else {
-                              setSelectedTableId(tbl.id);
-                              setLines([]);
-                              setQuickPhone("");
-                              setOrderNote("");
-                              setTableFloorModalOpen(false);
-                              toast.success(`Table ${tbl.id} assigned to active bill!`);
-                            }
-                          }}
-                          className={`flex flex-col justify-between rounded-2xl border-2 p-3 sm:p-3.5 transition-all shadow-xs min-w-0 min-h-[175px] cursor-pointer hover:shadow-md ${
-                            isSelected
-                              ? "border-primary bg-gradient-to-br from-primary/20 via-amber-500/10 to-card ring-2 ring-primary shadow-lg shadow-primary/20"
-                              : isOccupied
-                              ? "border-rose-500/60 bg-gradient-to-br from-rose-500/15 via-red-500/10 to-card shadow-md ring-1 ring-rose-500/30 hover:border-rose-600"
-                              : "border-emerald-500/40 bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-card hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/10"
-                          }`}
-                        >
+                            }}
+                            className={`flex flex-col justify-between rounded-2xl border-2 p-3 sm:p-3.5 transition-all shadow-xs min-w-0 min-h-[160px] h-full cursor-pointer hover:shadow-md ${
+                              isSelected
+                                ? "border-primary bg-gradient-to-br from-primary/20 via-amber-500/10 to-card ring-2 ring-primary shadow-lg shadow-primary/20"
+                                : isOccupied
+                                ? "border-rose-500/60 bg-gradient-to-br from-rose-500/15 via-red-500/10 to-card shadow-md ring-1 ring-rose-500/30 hover:border-rose-600"
+                                : "border-emerald-500/40 bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-card hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/10"
+                            }`}
+                          >
                           <div>
                             {/* Line 1: Table ID + Status Badge */}
                             <div className="flex items-center justify-between gap-1.5 pb-1">
@@ -3212,6 +3246,7 @@ function Billing() {
                         </div>
                       );
                     })}
+                    </div>
                   </div>
 
                   {/* Modal Footer */}
@@ -3371,9 +3406,13 @@ function Billing() {
 
             {/* Action & Filter Bar */}
             {(() => {
-              const tenantKdsList = (db?.kdsOrders || []).filter(
-                (o) => !o.tenantId || o.tenantId === activeTenant.id
-              );
+              const tenantKdsList = (db?.kdsOrders || []).filter((o) => {
+                if (!o.tenantId) return true;
+                if (o.tenantId === activeTenant.id) return true;
+                if (activeTenant.id.startsWith("manam") && o.tenantId.startsWith("manam")) return true;
+                if (activeTenant.id.startsWith("spotlight") && o.tenantId.startsWith("spotlight")) return true;
+                return false;
+              });
               return (
                 <div className="flex flex-wrap items-center justify-between gap-3 pt-3 pb-3 border-b border-border/60">
                   <div className="flex flex-wrap items-center gap-2">
@@ -3428,9 +3467,13 @@ function Billing() {
             {/* KDS Order Cards Grid */}
             <div className="mt-4 flex-1 overflow-y-auto grid gap-3 sm:grid-cols-2 lg:grid-cols-3 pr-1">
               {(() => {
-                const tenantKdsList = (db?.kdsOrders || []).filter(
-                  (o) => !o.tenantId || o.tenantId === activeTenant.id
-                );
+                const tenantKdsList = (db?.kdsOrders || []).filter((o) => {
+                  if (!o.tenantId) return true;
+                  if (o.tenantId === activeTenant.id) return true;
+                  if (activeTenant.id.startsWith("manam") && o.tenantId.startsWith("manam")) return true;
+                  if (activeTenant.id.startsWith("spotlight") && o.tenantId.startsWith("spotlight")) return true;
+                  return false;
+                });
                 const filteredList = tenantKdsList.filter(
                   (o) => (kdsFilter === "all" ? o.status !== "completed" : o.status === kdsFilter)
                 );
@@ -3528,7 +3571,7 @@ function Billing() {
                               <button
                                 key={idx}
                                 type="button"
-                                onClick={() => toggleKdsLineDone(order.id, idx)}
+                                onClick={() => toggleKdsLineDone(order.id, idx, order.tableId)}
                                 className={`w-full flex items-center justify-between text-left p-1.5 rounded-lg border transition-all ${line.done
                                     ? "border-emerald-500/30 bg-emerald-500/10 line-through text-muted-foreground opacity-60"
                                     : "border-border/60 bg-muted/40 text-foreground"
@@ -3559,21 +3602,21 @@ function Billing() {
                               <button
                                 type="button"
                                 onClick={() => {
-                                  updateKdsStatus(order.id, "preparing");
+                                  updateKdsStatus(order.id, "preparing", order.tableId);
                                   toast.info(`Started cooking Order ${order.orderNumber || order.tableId || order.id}! Moved to Preparing.`);
                                 }}
-                                className="flex-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-black font-black py-2 text-xs shadow-xs transition-all flex items-center justify-center gap-1"
+                                className="flex-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-black font-black py-2 text-xs shadow-xs transition-all flex items-center justify-center gap-1 active:scale-98"
                               >
                                 <Flame className="size-3.5" /> Start Cooking (Preparing)
                               </button>
                               <button
                                 type="button"
                                 onClick={() => {
-                                  updateKdsStatus(order.id, "ready");
+                                  updateKdsStatus(order.id, "ready", order.tableId);
                                   playChime("cash", soundStyle);
                                   toast.success(`Order ${order.orderNumber || order.tableId || order.id} marked Ready!`);
                                 }}
-                                className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 text-xs shadow-xs transition-all flex items-center justify-center gap-1"
+                                className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-3 text-xs shadow-xs transition-all flex items-center justify-center gap-1 active:scale-98"
                               >
                                 <CheckCircle2 className="size-3.5" /> Ready
                               </button>
@@ -3584,11 +3627,11 @@ function Billing() {
                             <button
                               type="button"
                               onClick={() => {
-                                updateKdsStatus(order.id, "ready");
+                                updateKdsStatus(order.id, "ready", order.tableId);
                                 playChime("cash", soundStyle);
                                 toast.success(`Order ${order.orderNumber || order.tableId || order.id} marked Ready for Pickup!`);
                               }}
-                              className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 text-xs shadow-md transition-all flex items-center justify-center gap-1.5"
+                              className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 text-xs shadow-md transition-all flex items-center justify-center gap-1.5 active:scale-98"
                             >
                               <CheckCircle2 className="size-3.5" /> Mark All Ready (Ding Bell)
                             </button>
@@ -3598,10 +3641,10 @@ function Billing() {
                             <button
                               type="button"
                               onClick={() => {
-                                updateKdsStatus(order.id, "completed");
+                                updateKdsStatus(order.id, "completed", order.tableId);
                                 toast.info(`Order ${order.orderNumber || order.tableId || order.id} completed & cleared from kitchen`);
                               }}
-                              className="w-full rounded-xl bg-muted hover:bg-muted/80 text-foreground font-bold py-2 text-xs border border-border transition-all"
+                              className="w-full rounded-xl bg-muted hover:bg-muted/80 text-foreground font-bold py-2 text-xs border border-border transition-all active:scale-98"
                             >
                               ✨ Handover &amp; Clear
                             </button>
@@ -3800,11 +3843,11 @@ function Billing() {
                 type="button"
                 onClick={() => {
                   setUpiQrModalOpen(false);
-                  saveOrUpdate();
+                  saveOrUpdate("upi");
                 }}
-                className="flex-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 text-xs shadow-md transition-all flex items-center justify-center gap-1.5"
+                className="flex-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-1.5"
               >
-                <CheckCircle2 className="size-3.5" /> Payment Received
+                <CheckCircle2 className="size-4" /> Confirm UPI Paid &amp; Print Bill
               </button>
             </div>
           </div>

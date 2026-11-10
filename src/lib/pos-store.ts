@@ -1072,6 +1072,7 @@ if (typeof window !== "undefined") {
   });
 
   window.addEventListener("slb_store_updated", () => {
+    cache = null;
     listeners.forEach((l) => l());
   });
 }
@@ -1320,16 +1321,19 @@ export function useDB(): DB | null {
       }
     };
     const onCustom = () => {
+      cache = null;
       sync();
     };
 
     window.addEventListener("storage", onStorage);
     window.addEventListener("slb_store_updated", onCustom);
+    window.addEventListener("focus", onCustom);
 
     return () => {
       listeners.delete(sync);
       window.removeEventListener("storage", onStorage);
       window.removeEventListener("slb_store_updated", onCustom);
+      window.removeEventListener("focus", onCustom);
     };
   }, []);
   return db;
@@ -1542,16 +1546,22 @@ export function addKdsOrder(order: Omit<KdsOrder, "createdAt" | "status">) {
  * Update KDS order status (pending -> preparing -> ready -> completed).
  * Uses immutable mapping and fuzzy matching on ID, order number, table, or token.
  */
-export function updateKdsStatus(orderId: string, status: KdsStatus) {
+export function updateKdsStatus(orderId: string, status: KdsStatus, tableId?: string) {
   setDB((d) => {
-    if (!d.kdsOrders) return;
-    const cleanTarget = String(orderId).replace("#", "").trim();
+    if (!d.kdsOrders) d.kdsOrders = [];
+    const cleanTarget = String(orderId || "").replace("#", "").trim().toLowerCase();
+    const cleanTable = String(tableId || "").trim().toLowerCase();
     d.kdsOrders = d.kdsOrders.map((o) => {
+      const oId = String(o.id || "").trim().toLowerCase();
+      const oNum = String(o.orderNumber || "").replace("#", "").trim().toLowerCase();
+      const oTok = o.tokenNum !== undefined ? String(o.tokenNum).trim().toLowerCase() : "";
+      const oTbl = String(o.tableId || "").trim().toLowerCase();
+
       const matches =
-        o.id === orderId ||
-        (o.orderNumber && (o.orderNumber === orderId || o.orderNumber.replace("#", "").trim() === cleanTarget)) ||
-        (o.tokenNum !== undefined && String(o.tokenNum) === cleanTarget) ||
-        (o.tableId && o.tableId === orderId);
+        (orderId && o.id === orderId) ||
+        (cleanTarget && (oId === cleanTarget || oNum === cleanTarget || oTok === cleanTarget || oTbl === cleanTarget)) ||
+        (cleanTable && oTbl === cleanTable);
+
       return matches ? { ...o, status, updatedAt: new Date().toISOString() } : { ...o };
     });
   });
@@ -1560,16 +1570,22 @@ export function updateKdsStatus(orderId: string, status: KdsStatus) {
 /**
  * Toggle checkmark for an item on the kitchen tablet screen.
  */
-export function toggleKdsLineDone(orderId: string, lineIndex: number) {
+export function toggleKdsLineDone(orderId: string, lineIndex: number, tableId?: string) {
   setDB((d) => {
-    if (!d.kdsOrders) return;
-    const cleanTarget = String(orderId).replace("#", "").trim();
+    if (!d.kdsOrders) d.kdsOrders = [];
+    const cleanTarget = String(orderId || "").replace("#", "").trim().toLowerCase();
+    const cleanTable = String(tableId || "").trim().toLowerCase();
     d.kdsOrders = d.kdsOrders.map((o) => {
+      const oId = String(o.id || "").trim().toLowerCase();
+      const oNum = String(o.orderNumber || "").replace("#", "").trim().toLowerCase();
+      const oTok = o.tokenNum !== undefined ? String(o.tokenNum).trim().toLowerCase() : "";
+      const oTbl = String(o.tableId || "").trim().toLowerCase();
+
       const matches =
-        o.id === orderId ||
-        (o.orderNumber && (o.orderNumber === orderId || o.orderNumber.replace("#", "").trim() === cleanTarget)) ||
-        (o.tokenNum !== undefined && String(o.tokenNum) === cleanTarget) ||
-        (o.tableId && o.tableId === orderId);
+        (orderId && o.id === orderId) ||
+        (cleanTarget && (oId === cleanTarget || oNum === cleanTarget || oTok === cleanTarget || oTbl === cleanTarget)) ||
+        (cleanTable && oTbl === cleanTable);
+
       if (!matches) return { ...o };
 
       const updatedLines = o.lines.map((l, idx) => (idx === lineIndex ? { ...l, done: !l.done } : { ...l }));
@@ -1779,17 +1795,31 @@ export function switchClientTenant(tenantId: string) {
 export function updateTenant(updated: TenantConfig) {
   setDB((d) => {
     if (!d.tenants) d.tenants = [...DEFAULT_TENANTS];
-    const idx = d.tenants.findIndex((t) => t.id === updated.id);
+    const idx = d.tenants.findIndex(
+      (t) =>
+        t.id === updated.id ||
+        (updated.id.startsWith("manam") && t.id.startsWith("manam")) ||
+        (updated.id.startsWith("spotlight") && t.id.startsWith("spotlight"))
+    );
     if (idx >= 0) {
       d.tenants[idx] = { ...updated };
     } else {
       d.tenants.push({ ...updated });
     }
     // If updating active tenant, update active settings as well
-    if (d.activeTenantId === updated.id) {
+    const isActive =
+      d.activeTenantId === updated.id ||
+      (updated.id.startsWith("manam") && (d.activeTenantId?.startsWith("manam") || false)) ||
+      (updated.id.startsWith("spotlight") && (!d.activeTenantId || d.activeTenantId.startsWith("spotlight")));
+
+    if (isActive) {
+      d.activeTenantId = updated.id;
       d.settings.businessName = updated.businessName;
       d.settings.gstPct = updated.gstPct;
       if (updated.upiId) d.settings.upiId = updated.upiId;
+      if (updated.branches && updated.branches.length > 0) {
+        d.branches = [...updated.branches];
+      }
       if (d.branches && d.branches[0]) {
         d.branches[0].name = updated.activeBranchName;
         d.branches[0].phone = updated.phone;
