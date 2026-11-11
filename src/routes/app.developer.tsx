@@ -45,7 +45,7 @@ import {
   useDB,
   type Branch,
 } from "@/lib/pos-store";
-import { performFullSync } from "@/lib/neon-sync";
+import { performFullSync, pushTenantToCloud, pushPlatformConfigToCloud } from "@/lib/neon-sync";
 
 export const Route = createFileRoute("/app/developer")({
   beforeLoad: () => {
@@ -208,6 +208,7 @@ export function DeveloperSuperAdminPage() {
 
   const handleBrandChange = (brand: string) => {
     setSaasBrand(brand);
+    pushPlatformConfigToCloud("saasPlatformName", brand).catch(() => {});
     toast.success(`SaaS Platform Brand set to "${brand}" across all client screens!`, {
       icon: <Sparkles className="size-4 text-amber-500" />,
     });
@@ -236,6 +237,7 @@ export function DeveloperSuperAdminPage() {
       };
       setEditTenant(updated);
       updateTenant(updated);
+      pushTenantToCloud(updated).catch(() => {});
       toast.info(`Updated module "${moduleKey}" to ${nextVal ? "ENABLED" : "DISABLED"} for all branches of ${updated.businessName}`);
     } else {
       const currentBranches = editTenant.branches || [];
@@ -264,6 +266,7 @@ export function DeveloperSuperAdminPage() {
       };
       setEditTenant(updated);
       updateTenant(updated);
+      pushTenantToCloud(updated).catch(() => {});
       toast.info(`Updated module "${moduleKey}" to ${nextVal ? "ENABLED" : "DISABLED"} for branch ${branch.name}`);
     }
   };
@@ -284,6 +287,7 @@ export function DeveloperSuperAdminPage() {
       };
       setEditTenant(updated);
       updateTenant(updated);
+      pushTenantToCloud(updated).catch(() => {});
       toast.info(`Deg Batch Tracking set to ${nextVal ? "ON" : "OFF"} for all branches of ${updated.businessName}`);
     } else {
       const currentBranches = editTenant.branches || [];
@@ -299,6 +303,7 @@ export function DeveloperSuperAdminPage() {
       const updated = { ...editTenant, branches: updatedBranches };
       setEditTenant(updated);
       updateTenant(updated);
+      pushTenantToCloud(updated).catch(() => {});
       toast.info(`Deg Batch Tracking set to ${nextVal ? "ON" : "OFF"} for branch ${branch.name}`);
     }
   };
@@ -321,6 +326,7 @@ export function DeveloperSuperAdminPage() {
     const updated = { ...editTenant, branches: updatedBranches };
     setEditTenant(updated);
     updateTenant(updated);
+    pushTenantToCloud(updated).catch(() => {});
     toast.success(`Reset ${branch.name} to inherit default restaurant plan.`);
   };
 
@@ -328,7 +334,8 @@ export function DeveloperSuperAdminPage() {
     e.preventDefault();
     if (!editTenant) return;
     updateTenant(editTenant);
-    toast.success(`Saved configuration and credentials for ${editTenant.businessName}!`, {
+    pushTenantToCloud(editTenant).catch(() => {});
+    toast.success(`Saved & Cloud Synced credentials for ${editTenant.businessName}!`, {
       icon: <CheckCircle2 className="size-4 text-emerald-600" />,
     });
   };
@@ -369,6 +376,7 @@ export function DeveloperSuperAdminPage() {
 
     setEditTenant(updatedTenant);
     updateTenant(updatedTenant);
+    pushTenantToCloud(updatedTenant).catch(() => {});
     setNewBranchLabel("");
     setNewBranchLoc("");
     setNewBranchPhone("");
@@ -398,6 +406,7 @@ export function DeveloperSuperAdminPage() {
       };
       setEditTenant(updatedTenant);
       updateTenant(updatedTenant);
+      pushTenantToCloud(updatedTenant).catch(() => {});
       toast.success("Branch removed successfully.");
     }
   };
@@ -449,6 +458,7 @@ export function DeveloperSuperAdminPage() {
     };
     setEditTenant(updatedTenant);
     updateTenant(updatedTenant);
+    pushTenantToCloud(updatedTenant).catch(() => {});
     setEditingBranchId(null);
     toast.success(`Branch "${branchEditName.trim()}" details updated successfully!`);
   };
@@ -528,6 +538,7 @@ export function DeveloperSuperAdminPage() {
       };
       setEditTenant(updated);
       updateTenant(updated);
+      pushTenantToCloud(updated).catch(() => {});
       toast.success(`Applied ${plan.replace("_", " ").toUpperCase()} preset plan to all branches of ${updated.businessName}!`);
     } else {
       const currentBranches = editTenant.branches || [];
@@ -548,6 +559,7 @@ export function DeveloperSuperAdminPage() {
       };
       setEditTenant(updated);
       updateTenant(updated);
+      pushTenantToCloud(updated).catch(() => {});
       toast.success(`Applied ${plan.replace("_", " ").toUpperCase()} preset plan to branch ${branch.name}!`);
     }
   };
@@ -620,6 +632,7 @@ export function DeveloperSuperAdminPage() {
     };
 
     addTenant(newTenant);
+    pushTenantToCloud(newTenant).catch(() => {});
     switchClientTenant(newTenant.id);
     setSelectedTenantId(newTenant.id);
     setShowProvisionModal(false);

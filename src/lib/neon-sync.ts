@@ -6,7 +6,7 @@
  */
 
 import { createServerFn } from "@tanstack/react-start";
-import { getDB, setDB, DB, Sale, Item, sanitizeAndDeduplicateItems, getActiveTenant } from "./pos-store";
+import { getDB, setDB, DB, Sale, Item, sanitizeAndDeduplicateItems, getActiveTenant, TenantConfig, DEFAULT_TENANTS } from "./pos-store";
 
 const NEON_SQL_ENDPOINT = "https://ep-small-frog-aorujp14.c-2.ap-southeast-1.aws.neon.tech/sql";
 const NEON_CONN_STRING = "postgresql://neondb_owner:npg_7NjC6EYaLsgW@ep-small-frog-aorujp14.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require";
@@ -254,16 +254,137 @@ export async function pullDishesFromCloud(): Promise<Item[]> {
 }
 
 /**
+ * Push an updated TenantConfig (entitlements, branches, passwords) to Neon Cloud PostgreSQL
+ */
+export async function pushTenantToCloud(tenant: TenantConfig): Promise<boolean> {
+  if (typeof window !== "undefined" && !navigator.onLine) {
+    return false;
+  }
+  if (!tenant || !tenant.id) return false;
+
+  try {
+    const id = tenant.id.replace(/'/g, "''");
+    const bName = (tenant.businessName || "Restaurant").replace(/'/g, "''");
+    const jsonStr = JSON.stringify(tenant).replace(/'/g, "''");
+
+    const sql = `
+      INSERT INTO "TenantConfig" ("id", "businessName", "data", "updatedAt")
+      VALUES ('${id}', '${bName}', '${jsonStr}'::jsonb, CURRENT_TIMESTAMP)
+      ON CONFLICT ("id") DO UPDATE SET
+        "businessName" = EXCLUDED."businessName",
+        "data" = EXCLUDED."data",
+        "updatedAt" = CURRENT_TIMESTAMP;
+    `;
+    await executeNeonQuery({ data: { query: sql } });
+    return true;
+  } catch (err) {
+    console.warn("Failed to push tenant to Neon Cloud:", err);
+    return false;
+  }
+}
+
+/**
+ * Push all local tenants to Neon Cloud
+ */
+export async function pushAllTenantsToCloud(tenants: TenantConfig[]): Promise<number> {
+  if (!tenants || tenants.length === 0) return 0;
+  let successCount = 0;
+  for (const t of tenants) {
+    const ok = await pushTenantToCloud(t);
+    if (ok) successCount++;
+  }
+  return successCount;
+}
+
+/**
+ * Save SaaS platform brand name to Neon Cloud
+ */
+export async function pushPlatformConfigToCloud(key: string, value: string): Promise<boolean> {
+  if (typeof window !== "undefined" && !navigator.onLine) return false;
+  try {
+    const safeKey = key.replace(/'/g, "''");
+    const safeVal = value.replace(/'/g, "''");
+    const sql = `
+      INSERT INTO "PlatformConfig" ("key", "value", "updatedAt")
+      VALUES ('${safeKey}', '${safeVal}', CURRENT_TIMESTAMP)
+      ON CONFLICT ("key") DO UPDATE SET
+        "value" = EXCLUDED."value",
+        "updatedAt" = CURRENT_TIMESTAMP;
+    `;
+    await executeNeonQuery({ data: { query: sql } });
+    return true;
+  } catch (err) {
+    console.warn("Failed to push platform config to Neon:", err);
+    return false;
+  }
+}
+
+/**
+ * Pull all TenantConfigs and Platform Brand from Neon Cloud PostgreSQL
+ */
+export async function pullTenantsFromCloud(): Promise<{ tenants: TenantConfig[]; platformName?: string | undefined }> {
+  if (typeof window !== "undefined" && !navigator.onLine) {
+    return { tenants: [] };
+  }
+  try {
+    const res = await executeNeonQuery({
+      data: {
+        query: `
+          SELECT "id", "businessName", "data"
+          FROM "TenantConfig"
+          ORDER BY "updatedAt" DESC;
+        `,
+      },
+    });
+
+    let tenants: TenantConfig[] = [];
+    if (res && Array.isArray(res.rows)) {
+      tenants = res.rows.map((r: any) => {
+        const parsed = typeof r.data === "string" ? JSON.parse(r.data) : r.data;
+        return {
+          ...parsed,
+          id: r.id,
+          businessName: r.businessName || parsed.businessName,
+        };
+      });
+    }
+
+    let platformName: string | undefined = undefined;
+    try {
+      const brandRes = await executeNeonQuery({
+        data: {
+          query: `
+            SELECT "value" FROM "PlatformConfig" WHERE "key" = 'saasPlatformName' LIMIT 1;
+          `,
+        },
+      });
+      if (brandRes && Array.isArray(brandRes.rows) && brandRes.rows.length > 0) {
+        platformName = brandRes.rows[0].value;
+      }
+    } catch {
+      // ignore
+    }
+
+    return { tenants, platformName };
+  } catch (err) {
+    console.warn("Failed to pull tenants from Neon:", err);
+    return { tenants: [] };
+  }
+}
+
+/**
  * Complete two-way sync:
- * 1. Cleans duplicate dishes and pulls dishes from Neon Cloud
- * 2. Pulls all orders from Neon Cloud so any device shows current sales immediately
- * 3. Pushes today's local bills to Neon Cloud
+ * 1. Pulls global restaurant tenant configurations and feature entitlements from Neon Cloud
+ * 2. Cleans duplicate dishes and pulls dishes from Neon Cloud
+ * 3. Pulls all orders from Neon Cloud so any device shows current sales immediately
+ * 4. Pushes today's local bills to Neon Cloud
  */
 export async function performFullSync(): Promise<{
   success: boolean;
   salesPushed: number;
   salesPulled: number;
   dishesSynced: number;
+  tenantsSynced: number;
   message: string;
 }> {
   if (typeof window !== "undefined" && !navigator.onLine) {
@@ -272,10 +393,38 @@ export async function performFullSync(): Promise<{
       salesPushed: 0,
       salesPulled: 0,
       dishesSynced: 0,
+      tenantsSynced: 0,
       message: "Offline mode active. All bills and changes are securely saved on this device.",
     };
   }
   try {
+    // 0. Pull all cloud tenants & feature entitlements down into local store so client restaurants get developer changes instantly!
+    const cloudTenantData = await pullTenantsFromCloud();
+    let tenantsSynced = 0;
+    if (cloudTenantData.tenants && cloudTenantData.tenants.length > 0) {
+      setDB((draft) => {
+        if (!draft.tenants) draft.tenants = [...DEFAULT_TENANTS];
+        const tenantList = draft.tenants;
+        cloudTenantData.tenants.forEach((ct) => {
+          const idx = tenantList.findIndex((t) => t.id === ct.id);
+          if (idx >= 0) {
+            tenantList[idx] = { ...tenantList[idx], ...ct };
+          } else {
+            tenantList.push(ct);
+          }
+        });
+        if (cloudTenantData.platformName) {
+          draft.saasPlatformName = cloudTenantData.platformName;
+        }
+      });
+      tenantsSynced = cloudTenantData.tenants.length;
+    } else {
+      // Seed initial tenants to Neon Cloud if empty
+      const currentDB = getDB();
+      const localTenants = currentDB.tenants && currentDB.tenants.length > 0 ? currentDB.tenants : DEFAULT_TENANTS;
+      pushAllTenantsToCloud(localTenants).catch(() => {});
+    }
+
     // 1. Clean duplicates & pull dishes from Neon Cloud
     try {
       await executeNeonQuery({
@@ -338,7 +487,8 @@ export async function performFullSync(): Promise<{
       salesPushed: pushRes.count,
       salesPulled,
       dishesSynced,
-      message: `Synchronized ${salesPulled} orders and ${dishesSynced} dishes with Neon Cloud PostgreSQL.`,
+      tenantsSynced,
+      message: `Synchronized ${salesPulled} orders, ${dishesSynced} dishes, and ${tenantsSynced} restaurant configurations with Neon Cloud PostgreSQL.`,
     };
   } catch (err: any) {
     return {
@@ -346,6 +496,7 @@ export async function performFullSync(): Promise<{
       salesPushed: 0,
       salesPulled: 0,
       dishesSynced: 0,
+      tenantsSynced: 0,
       message: err.message || "Sync failed",
     };
   }
