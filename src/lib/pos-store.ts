@@ -181,8 +181,10 @@ export type ShiftDayClose = {
 };
 
 export type TenantModules = {
+  dashboard: boolean;
   billing: boolean;
   tables: boolean;
+  captainPos: boolean;
   kds: boolean;
   stock: boolean;
   reports: boolean;
@@ -436,8 +438,10 @@ export const DEFAULT_TENANTS: TenantConfig[] = [
       },
     ],
     enabledModules: {
+      dashboard: true,
       billing: true,
       tables: true,
+      captainPos: true,
       kds: true,
       stock: true,
       reports: true,
@@ -479,8 +483,10 @@ export const DEFAULT_TENANTS: TenantConfig[] = [
       { id: "velachery", name: "Velachery", address: "100 Feet Road, Velachery, Chennai", phone: "+91 90000 00003" },
     ],
     enabledModules: {
+      dashboard: true,
       billing: true,
       tables: true,
+      captainPos: true,
       kds: true,
       stock: true,
       reports: true,
@@ -519,8 +525,10 @@ export const DEFAULT_TENANTS: TenantConfig[] = [
       },
     ],
     enabledModules: {
+      dashboard: true,
       billing: true,
       tables: true,
+      captainPos: true,
       kds: true,
       stock: true,
       reports: true,
@@ -551,8 +559,10 @@ export const DEFAULT_TENANTS: TenantConfig[] = [
     cashierPin: "2001",
     kitchenPin: "5555",
     enabledModules: {
+      dashboard: true,
       billing: true,
       tables: true,
+      captainPos: true,
       kds: true,
       stock: false,
       reports: true,
@@ -583,8 +593,10 @@ export const DEFAULT_TENANTS: TenantConfig[] = [
     cashierPin: "3001",
     kitchenPin: "5555",
     enabledModules: {
+      dashboard: true,
       billing: true,
       tables: true,
+      captainPos: true,
       kds: true,
       stock: true,
       reports: true,
@@ -1190,8 +1202,10 @@ export function getDB(): DB {
     tenantsList.forEach((t) => {
       if (!t.enabledModules) {
         t.enabledModules = {
+          dashboard: true,
           billing: true,
           tables: true,
+          captainPos: true,
           kds: true,
           stock: true,
           reports: true,
@@ -1202,6 +1216,14 @@ export function getDB(): DB {
           multiBranch: true,
           aggregators: true,
         };
+        needsPersist = true;
+      }
+      if (t.enabledModules.dashboard === undefined) {
+        t.enabledModules.dashboard = true;
+        needsPersist = true;
+      }
+      if (t.enabledModules.captainPos === undefined) {
+        t.enabledModules.captainPos = true;
         needsPersist = true;
       }
       if (t.enabledModules.multiBranch === undefined) {
@@ -1685,8 +1707,10 @@ export function getActiveTenant(db?: DB | null): TenantConfig {
  */
 export function getActiveBranchModules(tenant?: TenantConfig | null, branchId?: string): TenantModules {
   const defaultModules: TenantModules = {
+    dashboard: true,
     billing: true,
     tables: true,
+    captainPos: true,
     kds: true,
     stock: true,
     reports: true,
@@ -1820,14 +1844,10 @@ export function updateTenant(updated: TenantConfig) {
     } else {
       d.tenants.push({ ...updated });
     }
-    // If updating active tenant, update active settings as well
-    const isActive =
-      d.activeTenantId === updated.id ||
-      (updated.id.startsWith("manam") && (d.activeTenantId?.startsWith("manam") || false)) ||
-      (updated.id.startsWith("spotlight") && (!d.activeTenantId || d.activeTenantId.startsWith("spotlight")));
+    // If updating currently active tenant, sync top-level settings
+    const isActive = d.activeTenantId === updated.id;
 
     if (isActive) {
-      d.activeTenantId = updated.id;
       d.settings.businessName = updated.businessName;
       d.settings.gstPct = updated.gstPct;
       if (updated.upiId) d.settings.upiId = updated.upiId;

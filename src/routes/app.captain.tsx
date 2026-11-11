@@ -12,6 +12,7 @@ import {
   Flame,
   Layers,
   LayoutGrid,
+  Lock,
   MapPin,
   Minus,
   Package,
@@ -36,6 +37,7 @@ import {
   addKdsOrder,
   CATEGORIES,
   DEFAULT_TABLES,
+  getActiveBranchModules,
   getActiveTenant,
   getTenantItems,
   inr,
@@ -115,6 +117,32 @@ function CaptainTerminalPage() {
   const db = useDB();
   const navigate = useNavigate();
   const activeTenant = getActiveTenant(db);
+  const activeBranchId = db?.settings.activeBranchId;
+  const activeModules = getActiveBranchModules(activeTenant, activeBranchId);
+
+  if (activeModules.captainPos === false) {
+    return (
+      <div className="surface-card p-8 sm:p-12 text-center max-w-lg mx-auto my-12 space-y-4 rounded-3xl border border-border shadow-lg">
+        <div className="size-14 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto">
+          <Lock className="size-7" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-black text-foreground">Captain POS Module Disabled</h2>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            The Captain / Waiter Mobile POS module is not enabled on your plan for{" "}
+            <span className="font-bold text-foreground">{activeTenant.businessName}</span>. Please contact your system administrator to update your subscription or feature plan.
+          </p>
+        </div>
+        <Link
+          to="/app/billing"
+          className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-primary/90 transition-all"
+        >
+          Return to Billing Terminal
+        </Link>
+      </div>
+    );
+  }
+
   const items = useMemo(() => getTenantItems(db, activeTenant), [db, activeTenant]);
 
   const [selectedTableId, setSelectedTableId] = useState<string>("T1");

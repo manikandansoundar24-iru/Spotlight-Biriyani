@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AlertTriangle, IndianRupee, Percent, Receipt, TrendingUp } from "lucide-react";
+import { AlertTriangle, IndianRupee, Lock, Percent, Receipt, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import {
   Bar,
@@ -16,6 +16,7 @@ import {
 import {
   dailySeries,
   filterSales,
+  getActiveBranchModules,
   getActiveTenant,
   getTenantStock,
   inr,
@@ -44,6 +45,32 @@ function Dashboard() {
   if (!db) return <p className="text-sm text-muted-foreground">Loading your shop data…</p>;
 
   const activeTenant = getActiveTenant(db);
+  const activeBranchId = branch !== "all" ? branch : db.settings.activeBranchId;
+  const activeModules = getActiveBranchModules(activeTenant, activeBranchId);
+
+  if (activeModules.dashboard === false) {
+    return (
+      <div className="surface-card p-8 sm:p-12 text-center max-w-lg mx-auto my-12 space-y-4 rounded-3xl border border-border shadow-lg">
+        <div className="size-14 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto">
+          <Lock className="size-7" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-black text-foreground">Executive Dashboard Disabled</h2>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            The Executive Analytics Dashboard module is not enabled on your plan for{" "}
+            <span className="font-bold text-foreground">{activeTenant.businessName}</span>. Please contact your system administrator to update your subscription or feature plan.
+          </p>
+        </div>
+        <Link
+          to="/app/billing"
+          className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-primary/90 transition-all"
+        >
+          Go to Billing Terminal
+        </Link>
+      </div>
+    );
+  }
+
   const sales = filterSales(db, { days, branchId: branch, channel, tenantId: activeTenant.id });
   const t = totals(sales);
   const series = dailySeries(sales, Math.max(days, 7));

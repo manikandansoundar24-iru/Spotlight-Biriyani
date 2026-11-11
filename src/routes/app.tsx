@@ -7,8 +7,12 @@ import { getActiveBranchModules, getActiveTenant, getDB, setDB, TenantModules, u
 import { performFullSync } from "@/lib/neon-sync";
 
 export const Route = createFileRoute("/app")({
-  beforeLoad: () => {
+  beforeLoad: ({ location }) => {
     if (typeof window !== "undefined") {
+      // Allow developer console to load directly so it can render its own Master Security Key unlock card
+      if (location.pathname.startsWith("/app/developer")) {
+        return;
+      }
       const sessionActive = sessionStorage.getItem("spotlight_session_active") === "true";
       const role = localStorage.getItem("spotlight_auth_role");
       if (!sessionActive || !role) {
@@ -42,9 +46,9 @@ type NavLinkItem = {
 };
 
 const LINKS: readonly NavLinkItem[] = [
-  { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true, roles: ["owner"] },
+  { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true, roles: ["owner"], module: "dashboard" },
   { to: "/app/billing", label: "Billing & Floor POS", icon: Receipt, roles: ["owner", "cashier", "waiter"], module: "billing" },
-  { to: "/app/captain", label: "Captain POS", icon: Smartphone, roles: ["owner", "cashier", "waiter"], module: "tables" },
+  { to: "/app/captain", label: "Captain POS", icon: Smartphone, roles: ["owner", "cashier", "waiter"], module: "captainPos" },
   { to: "/app/reports", label: "Reports & Forecast", icon: BarChart3, roles: ["owner"], module: "reports" },
   { to: "/app/stock", label: "Stock & Deg", icon: Boxes, roles: ["owner", "kitchen"], module: "stock" },
   { to: "/app/items", label: "Menu & Costs", icon: UtensilsCrossed, roles: ["owner"], module: "menu" },
@@ -110,6 +114,13 @@ function AppLayout() {
     if (typeof window !== "undefined") {
       if (localStorage.getItem("spotlight_pos_theme") === "dark") {
         setIsDarkMode(true);
+      }
+      // Allow developer console to handle its own master PIN authentication in-page
+      if (window.location.pathname.startsWith("/app/developer")) {
+        const role = localStorage.getItem("spotlight_auth_role") || "developer";
+        setCurrentRole(role);
+        setIsAuthenticated(true);
+        return;
       }
       const sessionActive = sessionStorage.getItem("spotlight_session_active") === "true";
       const role = localStorage.getItem("spotlight_auth_role");

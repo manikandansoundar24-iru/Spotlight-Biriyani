@@ -48,15 +48,6 @@ import {
 import { performFullSync, pushTenantToCloud, pushPlatformConfigToCloud } from "@/lib/neon-sync";
 
 export const Route = createFileRoute("/app/developer")({
-  beforeLoad: () => {
-    if (typeof window !== "undefined") {
-      const sessionActive = sessionStorage.getItem("spotlight_session_active") === "true";
-      const role = localStorage.getItem("spotlight_auth_role");
-      if (!sessionActive || role !== "developer") {
-        throw redirect({ to: "/app" });
-      }
-    }
-  },
   head: () => ({
     meta: [
       { title: "Developer Super-Admin Console — Multi-Tenant Configurator" },
@@ -78,7 +69,15 @@ const BRAND_PRESETS = [
 export function DeveloperSuperAdminPage() {
   const db = useDB();
   const navigate = useNavigate();
-  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [isUnlocked, setIsUnlocked] = useState(() => {
+    if (typeof window !== "undefined") {
+      return (
+        sessionStorage.getItem("spotlight_auth_role") === "developer" ||
+        localStorage.getItem("spotlight_auth_role") === "developer"
+      );
+    }
+    return false;
+  });
   const [pinInput, setPinInput] = useState("");
   const [selectedTenantId, setSelectedTenantId] = useState<string>("");
   const [isSyncing, setIsSyncing] = useState(false);
@@ -129,8 +128,19 @@ export function DeveloperSuperAdminPage() {
 
   const activeScopedModules: TenantModules = useMemo(() => {
     const defaultModules: TenantModules = {
-      billing: true, tables: true, kds: true, stock: true, reports: true,
-      menu: true, loyalty: true, dynamicUpi: true, zReport: true, multiBranch: true, aggregators: true,
+      dashboard: true,
+      billing: true,
+      tables: true,
+      captainPos: true,
+      kds: true,
+      stock: true,
+      reports: true,
+      menu: true,
+      loyalty: true,
+      dynamicUpi: true,
+      zReport: true,
+      multiBranch: true,
+      aggregators: true,
     };
     if (!editTenant) {
       return defaultModules;
@@ -158,15 +168,13 @@ export function DeveloperSuperAdminPage() {
       : editTenant.degBatchEnabled !== false;
   }, [editTenant, selectedBranchScope, targetBranch]);
 
-  // Security Verification
+  // Security Verification: Auto-unlock if already developer in this tab session
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedRole = localStorage.getItem("spotlight_auth_role");
-      if (storedRole === "developer") {
+      const sessionRole = sessionStorage.getItem("spotlight_auth_role");
+      if (storedRole === "developer" || sessionRole === "developer") {
         setIsUnlocked(true);
-      } else if (storedRole) {
-        toast.error("Super-Admin Developer Privileges Required.");
-        window.location.replace("/app");
       }
     }
   }, []);
@@ -187,23 +195,28 @@ export function DeveloperSuperAdminPage() {
 
   const handleUnlock = (e: React.FormEvent) => {
     e.preventDefault();
-    if (pinInput === "dev@spotlight2026" || pinInput === "admin" || pinInput === "9999") {
+    const cleanPin = pinInput.trim();
+    if (cleanPin === "dev@spotlight2026" || cleanPin === "admin" || cleanPin === "9999") {
       setIsUnlocked(true);
-      sessionStorage.setItem("spotlight_session_active", "true");
-      localStorage.setItem("spotlight_auth_role", "developer");
-      localStorage.setItem("spotlight_auth_user", "System Architect & Super-Admin");
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("spotlight_session_active", "true");
+        sessionStorage.setItem("spotlight_auth_role", "developer");
+        localStorage.setItem("spotlight_auth_role", "developer");
+        localStorage.setItem("spotlight_auth_user", "System Architect & Super-Admin");
+      }
       toast.success("Super-Admin Console Unlocked!");
     } else {
       toast.error("Invalid Developer Security Key.");
     }
   };
 
-  const handleSwitchTenant = (tenantId: string) => {
-    switchClientTenant(tenantId);
+  const handleSelectClient = (tenantId: string) => {
     setSelectedTenantId(tenantId);
-    toast.success(`Active store switched to ${(tenants.find((t) => t.id === tenantId)?.businessName || tenantId).toUpperCase()}!`, {
-      icon: <Store className="size-4 text-primary" />,
-    });
+    setSelectedBranchScope("all");
+    const target = tenants.find((t) => t.id === tenantId);
+    if (target) {
+      setEditTenant({ ...target });
+    }
   };
 
   const handleBrandChange = (brand: string) => {
@@ -470,8 +483,10 @@ export function DeveloperSuperAdminPage() {
 
     if (plan === "starter") {
       newModules = {
+        dashboard: false,
         billing: true,
         tables: false,
+        captainPos: false,
         kds: false,
         stock: false,
         reports: false,
@@ -485,8 +500,10 @@ export function DeveloperSuperAdminPage() {
       degEnabled = false;
     } else if (plan === "standard") {
       newModules = {
+        dashboard: true,
         billing: true,
         tables: true,
+        captainPos: false,
         kds: false,
         stock: true,
         reports: true,
@@ -499,8 +516,10 @@ export function DeveloperSuperAdminPage() {
       };
     } else if (plan === "biriyani_pro") {
       newModules = {
+        dashboard: true,
         billing: true,
         tables: true,
+        captainPos: true,
         kds: true,
         stock: true,
         reports: true,
@@ -515,8 +534,10 @@ export function DeveloperSuperAdminPage() {
     } else {
       // Enterprise
       newModules = {
+        dashboard: true,
         billing: true,
         tables: true,
+        captainPos: true,
         kds: true,
         stock: true,
         reports: true,
@@ -578,8 +599,10 @@ export function DeveloperSuperAdminPage() {
       .replace(/-+/g, "-");
 
     let modules: TenantModules = {
+      dashboard: true,
       billing: true,
       tables: true,
+      captainPos: true,
       kds: true,
       stock: true,
       reports: true,
@@ -593,8 +616,10 @@ export function DeveloperSuperAdminPage() {
 
     if (newPlanPreset === "starter") {
       modules = {
+        dashboard: false,
         billing: true,
         tables: false,
+        captainPos: false,
         kds: false,
         stock: false,
         reports: false,
@@ -607,6 +632,7 @@ export function DeveloperSuperAdminPage() {
       };
     } else if (newPlanPreset === "standard") {
       modules.kds = false;
+      modules.captainPos = false;
       modules.multiBranch = false;
     }
 
@@ -633,7 +659,6 @@ export function DeveloperSuperAdminPage() {
 
     addTenant(newTenant);
     pushTenantToCloud(newTenant).catch(() => {});
-    switchClientTenant(newTenant.id);
     setSelectedTenantId(newTenant.id);
     setShowProvisionModal(false);
 
@@ -872,12 +897,11 @@ export function DeveloperSuperAdminPage() {
         {/* Client Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {tenants.map((t) => {
-            const isActive = activeTenant.id === t.id;
             const isSelected = selectedTenantId === t.id;
             return (
               <div
                 key={t.id}
-                onClick={() => setSelectedTenantId(t.id)}
+                onClick={() => handleSelectClient(t.id)}
                 className={`relative flex flex-col justify-between p-4 sm:p-5 rounded-2xl border transition-all cursor-pointer ${
                   isSelected
                     ? "border-primary bg-primary/5 shadow-md ring-2 ring-primary/40"
@@ -890,9 +914,9 @@ export function DeveloperSuperAdminPage() {
                       <h3 className="font-black text-base text-foreground">{t.businessName}</h3>
                       <p className="text-[11px] text-muted-foreground line-clamp-1">{t.tagline}</p>
                     </div>
-                    {isActive ? (
-                      <span className="shrink-0 rounded-full bg-emerald-500/20 border border-emerald-500/40 px-2.5 py-0.5 text-[10px] font-black text-emerald-600">
-                        ACTIVE LIVE
+                    {isSelected ? (
+                      <span className="shrink-0 rounded-full bg-primary/20 border border-primary/40 px-2.5 py-0.5 text-[10px] font-black text-primary">
+                        CONFIGURING
                       </span>
                     ) : (
                       <span className="shrink-0 rounded-full bg-muted border border-border px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
@@ -931,37 +955,35 @@ export function DeveloperSuperAdminPage() {
 
                 <div className="mt-4 pt-3 border-t border-border/50 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    {!isActive ? (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSwitchTenant(t.id);
-                        }}
-                        className="rounded-xl bg-primary/10 border border-primary/30 px-3 py-1.5 text-xs font-bold text-primary hover:bg-primary hover:text-white transition-all shadow-2xs"
-                      >
-                        ⚡ Switch Live
-                      </button>
-                    ) : (
-                      <span className="text-xs font-black text-emerald-600 flex items-center gap-1.5 bg-emerald-500/10 px-2.5 py-1 rounded-xl border border-emerald-500/20">
-                        <Check className="size-3.5" /> Live Active
-                      </span>
-                    )}
-
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setSelectedTenantId(t.id);
+                        handleSelectClient(t.id);
                         const el = document.getElementById("feature-entitlements-matrix");
                         if (el) el.scrollIntoView({ behavior: "smooth" });
-                        toast.info(`Configuring entitlements for ${t.businessName}`);
+                        toast.info(`Configuring features for ${t.businessName}`);
                       }}
-                      className="rounded-xl border border-primary/30 bg-primary/5 px-2.5 py-1.5 text-xs font-bold text-primary hover:bg-primary/20 transition-colors flex items-center gap-1"
-                      title="Edit Features & Configuration"
+                      className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs ${
+                        isSelected
+                          ? "bg-primary text-white shadow-md ring-1 ring-primary/40"
+                          : "border border-primary/30 bg-primary/10 text-primary hover:bg-primary hover:text-white"
+                      }`}
                     >
-                      ⚙️ Configure Entitlements ➔
+                      <Sliders className="size-3.5" />
+                      {isSelected ? "Editing Features" : "Configure Features ➔"}
                     </button>
+
+                    <a
+                      href={`/app/billing?tenant=${t.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="rounded-xl border border-border bg-muted/40 px-2.5 py-1.5 text-[11px] font-bold text-muted-foreground hover:text-foreground hover:bg-muted transition-all flex items-center gap-1"
+                      title="Open live POS Terminal for this client in a new tab"
+                    >
+                      Open POS ↗
+                    </a>
                   </div>
 
                   {tenants.length > 1 && (
@@ -1097,6 +1119,40 @@ export function DeveloperSuperAdminPage() {
 
             {/* Feature Modules Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Executive Dashboard */}
+              <div className="flex items-center justify-between p-3 rounded-2xl border border-border bg-muted/10">
+                <div>
+                  <span className="font-bold text-xs text-foreground block">📊 Executive Dashboard</span>
+                  <span className="text-[10px] text-muted-foreground">Revenue graphs, profit &amp; top dishes</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleToggleModule("dashboard")}
+                  className={`size-6 rounded-lg flex items-center justify-center font-bold text-xs transition-colors ${
+                    activeScopedModules.dashboard ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground border border-border"
+                  }`}
+                >
+                  {activeScopedModules.dashboard ? "✓" : "✕"}
+                </button>
+              </div>
+
+              {/* Captain POS */}
+              <div className="flex items-center justify-between p-3 rounded-2xl border border-border bg-muted/10">
+                <div>
+                  <span className="font-bold text-xs text-foreground block">📱 Captain POS (Waiters)</span>
+                  <span className="text-[10px] text-muted-foreground">Mobile tableside ordering terminal</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleToggleModule("captainPos")}
+                  className={`size-6 rounded-lg flex items-center justify-center font-bold text-xs transition-colors ${
+                    activeScopedModules.captainPos ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground border border-border"
+                  }`}
+                >
+                  {activeScopedModules.captainPos ? "✓" : "✕"}
+                </button>
+              </div>
+
               {/* Billing */}
               <div className="flex items-center justify-between p-3 rounded-2xl border border-border bg-muted/10">
                 <div>
