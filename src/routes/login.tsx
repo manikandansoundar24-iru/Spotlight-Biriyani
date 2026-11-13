@@ -186,10 +186,11 @@ function LoginPage() {
         sessionStorage.setItem("restopulse_session_tenant", currentTenant.id);
         sessionStorage.setItem("spotlight_auth_tenant", currentTenant.id);
         sessionStorage.setItem("spotlight_auth_role", "owner");
+        sessionStorage.setItem("restopulse_auth_role", "owner");
         sessionStorage.setItem("spotlight_auth_user", `${currentTenant.businessName} Owner`);
-        localStorage.setItem("spotlight_auth_role", "owner");
-        localStorage.setItem("spotlight_auth_tenant", currentTenant.id);
-        localStorage.setItem("spotlight_auth_user", `${currentTenant.businessName} Owner`);
+        // Clean any legacy shared localStorage to prevent cross-tab pollution
+        localStorage.removeItem("spotlight_auth_role");
+        localStorage.removeItem("restopulse_auth_role");
         toast.success(`Authenticated as Owner — ${currentTenant.businessName}`);
         navigate({ to: "/app", search: { tenant: currentTenant.id }, replace: true });
       } else {
@@ -213,12 +214,12 @@ function LoginPage() {
         sessionStorage.setItem("restopulse_session_tenant", currentTenant.id);
         sessionStorage.setItem("spotlight_auth_tenant", currentTenant.id);
         sessionStorage.setItem("spotlight_auth_role", "cashier");
+        sessionStorage.setItem("restopulse_auth_role", "cashier");
         sessionStorage.setItem("spotlight_auth_branch", cashierBranch);
         sessionStorage.setItem("spotlight_auth_user", `${currentTenant.businessName} Cashier`);
-        localStorage.setItem("spotlight_auth_role", "cashier");
-        localStorage.setItem("spotlight_auth_tenant", currentTenant.id);
-        localStorage.setItem("spotlight_auth_branch", cashierBranch);
-        localStorage.setItem("spotlight_auth_user", `${currentTenant.businessName} Cashier`);
+        // Clean any legacy shared localStorage to prevent cross-tab pollution
+        localStorage.removeItem("spotlight_auth_role");
+        localStorage.removeItem("restopulse_auth_role");
         toast.success(`Billing Terminal Unlocked — ${currentTenant.businessName}`);
         navigate({ to: "/app/billing", search: { tenant: currentTenant.id }, replace: true });
       } else {
@@ -240,10 +241,10 @@ function LoginPage() {
         sessionStorage.setItem("restopulse_session_tenant", currentTenant.id);
         sessionStorage.setItem("spotlight_auth_tenant", currentTenant.id);
         sessionStorage.setItem("spotlight_auth_role", "waiter");
+        sessionStorage.setItem("restopulse_auth_role", "waiter");
         sessionStorage.setItem("spotlight_auth_user", `${currentTenant.businessName} Captain`);
-        localStorage.setItem("spotlight_auth_role", "waiter");
-        localStorage.setItem("spotlight_auth_tenant", currentTenant.id);
-        localStorage.setItem("spotlight_auth_user", `${currentTenant.businessName} Captain`);
+        localStorage.removeItem("spotlight_auth_role");
+        localStorage.removeItem("restopulse_auth_role");
         toast.success(`Captain Tableside POS Unlocked — ${currentTenant.businessName}`);
         navigate({ to: "/app/captain", search: { tenant: currentTenant.id }, replace: true });
       } else {
@@ -257,10 +258,10 @@ function LoginPage() {
         sessionStorage.setItem("restopulse_session_tenant", currentTenant.id);
         sessionStorage.setItem("spotlight_auth_tenant", currentTenant.id);
         sessionStorage.setItem("spotlight_auth_role", "kitchen");
+        sessionStorage.setItem("restopulse_auth_role", "kitchen");
         sessionStorage.setItem("spotlight_auth_user", `${currentTenant.businessName} Kitchen Chef`);
-        localStorage.setItem("spotlight_auth_role", "kitchen");
-        localStorage.setItem("spotlight_auth_tenant", currentTenant.id);
-        localStorage.setItem("spotlight_auth_user", `${currentTenant.businessName} Kitchen Chef`);
+        localStorage.removeItem("spotlight_auth_role");
+        localStorage.removeItem("restopulse_auth_role");
         toast.success(`Kitchen Terminal Unlocked — ${currentTenant.businessName}`);
         navigate({ to: "/app/stock", search: { tenant: currentTenant.id }, replace: true });
       } else {
@@ -863,10 +864,10 @@ function LoginPage() {
                     sessionStorage.setItem("restopulse_session_tenant", currentTenant.id);
                     sessionStorage.setItem("spotlight_auth_tenant", currentTenant.id);
                     sessionStorage.setItem("spotlight_auth_role", "waiter");
+                    sessionStorage.setItem("restopulse_auth_role", "waiter");
                     sessionStorage.setItem("spotlight_auth_user", `${currentTenant.businessName} Captain`);
-                    localStorage.setItem("spotlight_auth_role", "waiter");
-                    localStorage.setItem("spotlight_auth_tenant", currentTenant.id);
-                    localStorage.setItem("spotlight_auth_user", `${currentTenant.businessName} Captain`);
+                    localStorage.removeItem("spotlight_auth_role");
+                    localStorage.removeItem("restopulse_auth_role");
                     navigate({ to: "/app/captain", search: { tenant: currentTenant.id } });
                   }}
                   className="rounded-lg bg-primary px-3 py-1.5 font-black text-primary-foreground text-xs shadow-xs hover:opacity-95 shrink-0"

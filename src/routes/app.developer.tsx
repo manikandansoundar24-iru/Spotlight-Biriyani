@@ -72,6 +72,7 @@ export function DeveloperSuperAdminPage() {
   const [isUnlocked, setIsUnlocked] = useState(() => {
     if (typeof window !== "undefined") {
       return (
+        sessionStorage.getItem("restopulse_auth_role") === "developer" ||
         sessionStorage.getItem("spotlight_auth_role") === "developer" ||
         localStorage.getItem("spotlight_auth_role") === "developer"
       );
@@ -201,8 +202,10 @@ export function DeveloperSuperAdminPage() {
       if (typeof window !== "undefined") {
         sessionStorage.setItem("spotlight_session_active", "true");
         sessionStorage.setItem("spotlight_auth_role", "developer");
+        sessionStorage.setItem("restopulse_auth_role", "developer");
         sessionStorage.setItem("spotlight_auth_user", "System Architect & Super-Admin");
         localStorage.removeItem("spotlight_auth_role");
+        localStorage.removeItem("restopulse_auth_role");
       }
       toast.success("Super-Admin Console Unlocked!");
     } else {

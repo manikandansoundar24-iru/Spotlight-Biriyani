@@ -14,7 +14,7 @@ export const Route = createFileRoute("/app")({
         return;
       }
       const sessionActive = sessionStorage.getItem("spotlight_session_active") === "true";
-      const role = sessionStorage.getItem("spotlight_auth_role") || localStorage.getItem("spotlight_auth_role");
+      const role = sessionStorage.getItem("restopulse_auth_role") || sessionStorage.getItem("spotlight_auth_role") || localStorage.getItem("spotlight_auth_role");
       if (!sessionActive || !role) {
         throw redirect({ to: "/login" });
       }
@@ -123,13 +123,13 @@ function AppLayout() {
       }
       // Allow developer console to handle its own master PIN authentication in-page
       if (window.location.pathname.startsWith("/app/developer")) {
-        const role = sessionStorage.getItem("spotlight_auth_role") || localStorage.getItem("spotlight_auth_role") || "developer";
+        const role = sessionStorage.getItem("restopulse_auth_role") || sessionStorage.getItem("spotlight_auth_role") || "developer";
         setCurrentRole(role);
         setIsAuthenticated(true);
         return;
       }
       const sessionActive = sessionStorage.getItem("spotlight_session_active") === "true";
-      const role = sessionStorage.getItem("spotlight_auth_role") || localStorage.getItem("spotlight_auth_role");
+      const role = sessionStorage.getItem("restopulse_auth_role") || sessionStorage.getItem("spotlight_auth_role") || localStorage.getItem("spotlight_auth_role");
       if (!sessionActive || !role) {
         // Strict Auth Guard: redirect unauthenticated access directly to /login
         window.location.replace("/login");
@@ -157,9 +157,12 @@ function AppLayout() {
     if (typeof window !== "undefined") {
       sessionStorage.removeItem("spotlight_session_active");
       sessionStorage.removeItem("spotlight_auth_role");
+      sessionStorage.removeItem("restopulse_auth_role");
       sessionStorage.removeItem("spotlight_auth_user");
       sessionStorage.removeItem("restopulse_session_tenant");
       sessionStorage.removeItem("spotlight_auth_tenant");
+      localStorage.removeItem("spotlight_auth_role");
+      localStorage.removeItem("restopulse_auth_role");
       window.location.href = "/login";
     }
   };
