@@ -353,7 +353,7 @@ function DishCard({
 
   return (
     <div
-      className={`surface-card group relative p-2.5 sm:p-3 text-left transition-all min-w-0 max-w-full overflow-hidden ${isSoldOut
+      className={`surface-card group relative p-2 sm:p-2.5 text-left transition-all min-w-0 max-w-full overflow-hidden flex flex-col justify-between ${isSoldOut
         ? "opacity-60 bg-muted/20 border-border/40"
         : isInCart
           ? "border-primary/90 bg-primary/5 shadow-ember"
@@ -361,53 +361,51 @@ function DishCard({
         }`}
     >
       <div
-        className={isSoldOut ? "cursor-not-allowed" : "cursor-pointer"}
+        className={`flex-1 flex flex-col justify-between ${isSoldOut ? "cursor-not-allowed" : "cursor-pointer"}`}
         onClick={() => !isSoldOut && onAdd()}
         title={isSoldOut ? (!item.active ? "Item marked Off Menu" : "Batch Sold Out") : "Click to add to bill"}
       >
-        <div className="flex items-start justify-between gap-1.5">
-          <div className="min-w-0 flex-1">
-            <p className="text-xs sm:text-sm font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-snug">
-              {item.name}
-            </p>
-            {isDeg && (
-              <span
-                className={`mt-0.5 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${liveBatch.platesLeft > 30
-                  ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                  : liveBatch.platesLeft > 10
-                    ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-                    : "bg-rose-500/15 text-rose-600 dark:text-rose-400 font-black animate-pulse"
-                  }`}
-              >
-                <Flame className="size-2.5" />
-                {degStockLabel}
-              </span>
-            )}
-          </div>
+        <div>
+          <p className="text-xs sm:text-sm font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-tight">
+            {item.name}
+          </p>
+          {isDeg && (
+            <span
+              className={`mt-1 inline-flex items-center gap-1 rounded-full px-1.5 py-0.2 text-[9px] font-bold ${liveBatch.platesLeft > 30
+                ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                : liveBatch.platesLeft > 10
+                  ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                  : "bg-rose-500/15 text-rose-600 dark:text-rose-400 font-black animate-pulse"
+                }`}
+            >
+              <Flame className="size-2.5" />
+              {degStockLabel}
+            </span>
+          )}
         </div>
         <div className="mt-1 flex items-baseline justify-between">
-          <p className="font-display text-lg sm:text-xl font-black text-primary">{inr(price)}</p>
+          <p className="font-display text-base sm:text-lg font-black text-primary">{inr(price)}</p>
         </div>
       </div>
 
       {/* Direct Card Quantity Indicator & Step / Direct Type Controls */}
-      <div className="mt-2 flex items-center justify-between border-t border-border/40 pt-1.5">
+      <div className="mt-1.5 flex items-center justify-between border-t border-border/40 pt-1">
         {isInCart ? (
-          <div className="flex w-full items-center justify-between">
-            <span className="text-xs font-bold text-primary">
-              {inCartQty > 0 ? `${inCartQty} in cart (${inr(price * inCartQty)})` : "Typing qty..."}
+          <div className="flex w-full items-center justify-between gap-1">
+            <span className="text-[10px] font-bold text-primary truncate">
+              {inCartQty > 0 ? `${inCartQty} in cart` : "Qty..."}
             </span>
-            <div className="flex items-center gap-1 rounded-lg border border-border bg-card px-1 py-0.5">
+            <div className="flex items-center rounded-md border border-border bg-card px-0.5 py-0.5">
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   onStep(-1);
                 }}
-                className="rounded p-1 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                className="rounded p-0.5 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                 title="Decrease"
               >
-                <Minus className="size-3" />
+                <Minus className="size-2.5" />
               </button>
               <input
                 type="number"
@@ -421,8 +419,8 @@ function DishCard({
                   onUpdateQty(e.target.value);
                 }}
                 onBlur={onBlurQty}
-                className="w-12 text-center text-xs font-black bg-muted/40 rounded border border-border/80 focus:border-primary focus:bg-background focus:outline-none py-0.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                title="Type quantity directly (e.g. 2, 5, 10, 25)"
+                className="w-8 text-center text-xs font-black bg-muted/40 rounded border border-border/80 focus:border-primary focus:bg-background focus:outline-none py-0.2 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                title="Type quantity directly"
               />
               <button
                 type="button"
@@ -431,24 +429,24 @@ function DishCard({
                   onStep(1);
                 }}
                 disabled={!canIncreaseDeg}
-                className="rounded p-1 hover:bg-muted text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className="rounded p-0.5 hover:bg-muted text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 title="Increase"
               >
-                <Plus className="size-3" />
+                <Plus className="size-2.5" />
               </button>
             </div>
           </div>
         ) : isSoldOut ? (
-          <div className="flex w-full items-center justify-center gap-1 text-xs font-bold text-rose-500 py-1">
-            <AlertCircle className="size-3.5" /> {!item.active ? "Menu Sold Out" : "Batch Sold Out"}
+          <div className="flex w-full items-center justify-center gap-1 text-[11px] font-bold text-rose-500 py-0.5">
+            <AlertCircle className="size-3" /> Sold Out
           </div>
         ) : (
           <button
             type="button"
             onClick={onAdd}
-            className="flex w-full items-center justify-center gap-1 text-xs font-bold text-muted-foreground hover:text-primary transition-colors py-1"
+            className="flex w-full items-center justify-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-primary transition-colors py-0.5"
           >
-            <Plus className="size-3" /> Tap to Add
+            <Plus className="size-3" /> Add
           </button>
         )}
       </div>
@@ -1343,90 +1341,94 @@ function Billing() {
 
   return (
     <div className="space-y-4 w-full min-w-0 max-w-full">
-      {/* Top Header Bar — Guaranteed Single Line, No Stair-Step Wrapping */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-1">
-        {/* Left: Terminal Brand & Actions */}
-        <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-4 flex-wrap w-full sm:w-auto">
-          <div className="flex flex-col justify-center">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-primary leading-none">
-              {activeTenant.businessName || db?.settings?.businessName || "Restaurant"} · Billing Terminal
-            </p>
-            <h1 className="text-xl sm:text-3xl font-display font-black tracking-tight leading-none mt-1">COUNTER POS</h1>
+      {/* Top Header Bar — Compact Unified Single-Line POS Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-2">
+        {/* Left: Terminal Badge + Next Token + Core Shortcuts */}
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+          <div className="flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-xl px-2.5 py-1 shadow-2xs">
+            <span className="size-2 rounded-full bg-primary animate-pulse" />
+            <span className="text-xs font-black tracking-tight text-primary uppercase">COUNTER POS</span>
+            <span className="text-[11px] text-foreground font-black border-l border-primary/30 pl-2">
+              Token #{todayToken}
+            </span>
           </div>
 
-          <div className="h-9 w-px bg-border/60 hidden sm:block" />
-
-          {/* Next Token on Mobile appears right next to COUNTER POS */}
-          <div
-            className="sm:hidden h-9 flex items-center gap-1.5 rounded-xl border border-primary/40 bg-primary/10 px-3 text-xs font-black text-primary shadow-2xs tracking-wide shrink-0"
+          <button
+            onClick={() => setOrderHistoryOpen(true)}
+            className="h-8 flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-xs font-bold text-foreground hover:border-primary hover:text-primary transition-all shadow-2xs active:scale-98"
+            title="View today's past bills, reprint receipts, re-send WhatsApp, or correct wrong bills"
           >
-            <Ticket className="size-3.5 text-primary shrink-0" />
-            <span>Next Token #{todayToken}</span>
-          </div>
+            <History className="size-3.5 text-primary shrink-0" />
+            <span>Past Bills ({todaySales.length})</span>
+          </button>
 
-          <div className="flex items-center gap-2 sm:gap-2.5 w-full sm:w-auto mt-1 sm:mt-0 flex-wrap">
+          {activeModules.kds && (
             <button
-              onClick={() => setOrderHistoryOpen(true)}
-              className="flex-1 sm:flex-none h-10 sm:h-11 flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 sm:px-4 text-xs sm:text-sm font-bold text-foreground hover:border-primary hover:text-primary transition-all shadow-2xs active:scale-98"
-              title="View today's past bills, reprint receipts, re-send WhatsApp, or correct wrong bills"
+              onClick={() => setKdsModalOpen(true)}
+              className="h-8 flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 text-xs font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-all shadow-2xs active:scale-98"
+              title="Open Kitchen Display System (KDS) for kitchen chefs and tablet display"
             >
-              <History className="size-4 text-primary shrink-0" />
-              <span>Past Bills ({todaySales.length})</span>
+              <ChefHat className="size-3.5 text-amber-600 shrink-0" />
+              <span>KDS Screen {((db?.kdsOrders || []).filter((o) => o.status !== "completed")).length > 0 && `(${((db?.kdsOrders || []).filter((o) => o.status !== "completed")).length})`}</span>
             </button>
+          )}
 
-            {activeModules.kds && (
-              <button
-                onClick={() => setKdsModalOpen(true)}
-                className="flex-1 sm:flex-none h-10 sm:h-11 flex items-center justify-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3 sm:px-4 text-xs sm:text-sm font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-all shadow-2xs active:scale-98"
-                title="Open Kitchen Display System (KDS) for kitchen chefs and tablet display"
-              >
-                <ChefHat className="size-4 text-amber-600 shrink-0" />
-                <span>KDS Screen {((db?.kdsOrders || []).filter((o) => o.status !== "completed")).length > 0 && `(${((db?.kdsOrders || []).filter((o) => o.status !== "completed")).length})`}</span>
-              </button>
-            )}
-
-            {activeModules.zReport && (
-              <button
-                onClick={() => setZReportModalOpen(true)}
-                className="flex-1 sm:flex-none h-10 sm:h-11 flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 sm:px-4 text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-all shadow-2xs active:scale-98"
-                title="Perform Day-End Cashier Z-Close & Cash Drawer Reconciliation"
-              >
-                <FileText className="size-4 text-emerald-600 shrink-0" />
-                <span>Z-Report Day Close</span>
-              </button>
-            )}
-
+          {activeModules.zReport && (
             <button
-              onClick={() => setCustomModalOpen(true)}
-              className="flex-1 sm:flex-none h-10 sm:h-11 flex items-center justify-center gap-2 rounded-xl border border-primary/40 bg-card px-3 sm:px-4 text-xs sm:text-sm font-bold text-foreground hover:border-primary hover:text-primary transition-all shadow-2xs active:scale-98"
-              title="Add an unlisted custom item or special order to the bill"
+              onClick={() => setZReportModalOpen(true)}
+              className="h-8 flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-all shadow-2xs active:scale-98"
+              title="Perform Day-End Cashier Z-Close & Cash Drawer Reconciliation"
             >
-              <PlusCircle className="size-4 text-primary shrink-0" />
-              <span>+ Custom Item</span>
+              <FileText className="size-3.5 text-emerald-600 shrink-0" />
+              <span>Z-Report Day Close</span>
             </button>
-          </div>
+          )}
+
+          <button
+            onClick={() => setCustomModalOpen(true)}
+            className="h-8 flex items-center gap-1.5 rounded-lg border border-primary/40 bg-card px-2.5 text-xs font-bold text-foreground hover:border-primary hover:text-primary transition-all shadow-2xs active:scale-98"
+            title="Add an unlisted custom item or special order to the bill"
+          >
+            <PlusCircle className="size-3.5 text-primary shrink-0" />
+            <span>+ Custom Item</span>
+          </button>
         </div>
 
-        {/* Right: Next Token Dispatcher & Sound Control (on desktop) */}
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Right: Sound Control & Layout Switcher */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center rounded-lg border border-border bg-card p-0.5 text-xs font-bold shadow-2xs">
+            <button
+              type="button"
+              onClick={() => setCategoryLayout("rail")}
+              className={`inline-flex items-center gap-1 px-2 py-1 rounded-md transition-all ${categoryLayout === "rail" ? "bg-primary text-white shadow-2xs" : "text-muted-foreground hover:text-foreground"
+                }`}
+              title="Left Touch Rail (Vertical category sidebar)"
+            >
+              <PanelLeft className="size-3" />
+              <span className="hidden sm:inline">Rail</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setCategoryLayout("top")}
+              className={`inline-flex items-center gap-1 px-2 py-1 rounded-md transition-all ${categoryLayout === "top" ? "bg-primary text-white shadow-2xs" : "text-muted-foreground hover:text-foreground"
+                }`}
+              title="Top Tabs (Horizontal category ribbon)"
+            >
+              <LayoutGrid className="size-3" />
+              <span className="hidden sm:inline">Tabs</span>
+            </button>
+          </div>
+
           <button
             type="button"
             onClick={cycleSound}
-            className="h-10 sm:h-11 flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 text-xs font-bold text-foreground hover:border-primary transition-all shadow-2xs"
+            className="h-8 flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-xs font-bold text-foreground hover:border-primary transition-all shadow-2xs"
             title="Click to cycle POS chime sound (Ka-Ching / Chime / Click / Mute)"
           >
-            <Volume2 className="size-4 text-primary shrink-0" />
-            <span className="hidden sm:inline text-muted-foreground text-[11px]">Sound:</span>
+            <Volume2 className="size-3.5 text-primary shrink-0" />
+            <span className="text-muted-foreground text-[11px] hidden sm:inline">Sound:</span>
             <span className="capitalize">{soundStyle === "kaching" ? "Ka-Ching" : soundStyle}</span>
           </button>
-
-          <div
-            className="hidden sm:flex h-10 sm:h-11 items-center gap-2.5 rounded-xl border-2 border-primary/40 bg-gradient-to-r from-primary/10 via-primary/15 to-primary/10 px-4 sm:px-5 text-xs sm:text-sm font-black text-primary shadow-xs tracking-wide shrink-0"
-            title="Next live token ticket number to be printed"
-          >
-            <Ticket className="size-4 sm:size-4.5 text-primary shrink-0" />
-            <span>Next Token #{todayToken}</span>
-          </div>
         </div>
       </div>
 
@@ -1551,42 +1553,12 @@ function Billing() {
             </div>
           )}
 
-          {/* Action Header & Category Layout Switcher */}
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-            <p className="text-xs text-muted-foreground">
-              Tap items to add. Tap multiple times or use the +/- buttons directly on each card.
-            </p>
-
-            <div className="flex items-center gap-1 rounded-lg border border-border bg-card p-0.5 text-[11px] font-bold shadow-2xs">
-              <button
-                type="button"
-                onClick={() => setCategoryLayout("rail")}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all ${categoryLayout === "rail" ? "bg-primary text-white shadow-2xs" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                title="Left vertical touch rail (Fast counter layout)"
-              >
-                <PanelLeft className="size-3.5" />
-                <span>Left Touch Rail</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setCategoryLayout("top")}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md transition-all ${categoryLayout === "top" ? "bg-primary text-white shadow-2xs" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                title="Horizontal category tab strip"
-              >
-                <LayoutGrid className="size-3.5" />
-                <span>Top Tabs</span>
-              </button>
-            </div>
-          </div>
-
           {/* Category Switcher & Dishes Layout (Top Ribbon vs Left Thumb Rail) */}
           {categoryLayout === "top" ? (
-            <>
+            <div className="mt-2">
               {/* Top Ribbon Categories (Horizontal Scroll Strip) */}
-              <div className="mt-3 w-full max-w-full min-w-0 overflow-hidden">
-                <div className="flex gap-2 overflow-x-auto pb-1.5 no-scrollbar max-w-full">
+              <div className="w-full max-w-full min-w-0 overflow-hidden">
+                <div className="flex gap-1.5 overflow-x-auto pb-1.5 no-scrollbar max-w-full">
                   {allCategories.map((c) => {
                     const count = categoryItemCounts[c.id] || 0;
                     const isSelected = cat === c.id;
@@ -1594,7 +1566,7 @@ function Billing() {
                       <button
                         key={c.id}
                         onClick={() => setCat(c.id)}
-                        className={`shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-bold transition-all ${isSelected
+                        className={`shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold transition-all ${isSelected
                           ? "border-primary bg-primary text-primary-foreground shadow-ember scale-[1.02]"
                           : "border-border bg-card/70 text-muted-foreground hover:border-border hover:bg-card hover:text-foreground"
                           }`}
@@ -1611,8 +1583,8 @@ function Billing() {
                 </div>
               </div>
 
-              {/* Dishes Grid (3 Columns) */}
-              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {/* Dishes Grid (Top Tabs Mode: 3 to 6 Columns) */}
+              <div className="mt-2.5 grid gap-2 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
                 {items.map((i) => {
                   const inCart = lines.find((l) => l.itemId === i.id);
                   return (
@@ -1632,12 +1604,12 @@ function Billing() {
                   );
                 })}
               </div>
-            </>
+            </div>
           ) : (
             /* Left Touch Rail Layout (Ergonomic Counter POS Style) */
-            <div className="mt-3 flex flex-col sm:flex-row gap-3">
-              {/* Left Touch Rail (Horizontal scrollable chips on mobile, vertical sidebar on desktop) */}
-              <div className="w-full sm:w-36 lg:w-40 shrink-0 flex flex-row sm:flex-col gap-1.5 overflow-x-auto sm:overflow-y-auto sm:max-h-[640px] pb-2 sm:pb-0 sm:pr-1.5 border-b sm:border-b-0 sm:border-r border-border/60">
+            <div className="mt-2 flex flex-col sm:flex-row gap-2.5">
+              {/* Left Touch Rail (Compact category sidebar) */}
+              <div className="w-full sm:w-32 lg:w-36 shrink-0 flex flex-row sm:flex-col gap-1 overflow-x-auto sm:overflow-y-auto sm:max-h-[660px] pb-1 sm:pb-0 sm:pr-1.5 border-b sm:border-b-0 sm:border-r border-border/60">
                 <span className="hidden sm:block text-[10px] font-black uppercase tracking-wider text-muted-foreground mb-0.5">
                   Categories
                 </span>
@@ -1648,9 +1620,9 @@ function Billing() {
                     <button
                       key={c.id}
                       onClick={() => setCat(c.id)}
-                      className={`shrink-0 sm:w-full flex items-center justify-between gap-2 rounded-xl border p-2 text-left text-[11px] font-bold transition-all ${isSelected
-                          ? "border-primary bg-primary text-primary-foreground shadow-ember scale-[1.01]"
-                          : "border-border bg-card text-muted-foreground hover:border-primary/50 hover:bg-muted/60 hover:text-foreground"
+                      className={`shrink-0 sm:w-full flex items-center justify-between gap-1.5 rounded-xl border p-1.5 sm:p-2 text-left text-[11px] font-bold transition-all ${isSelected
+                        ? "border-primary bg-primary text-primary-foreground shadow-ember scale-[1.01]"
+                        : "border-border bg-card text-muted-foreground hover:border-primary/50 hover:bg-muted/60 hover:text-foreground"
                         }`}
                     >
                       <div className="flex items-center gap-1.5 min-w-0">
@@ -1668,8 +1640,8 @@ function Billing() {
                 })}
               </div>
 
-              {/* Dishes Grid (2 Columns in Rail Mode) */}
-              <div className="flex-1 min-w-0 grid gap-2.5 grid-cols-1 sm:grid-cols-2 self-start">
+              {/* Dishes Grid (Rail Mode: 2 to 5 Columns for compact touch tiles) */}
+              <div className="flex-1 min-w-0 grid gap-2 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 self-start">
                 {items.map((i) => {
                   const inCart = lines.find((l) => l.itemId === i.id);
                   return (
