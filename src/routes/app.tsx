@@ -64,16 +64,22 @@ function AppLayout() {
   const [currentUser, setCurrentUser] = useState<string>("Staff");
   const [currentRole, setCurrentRole] = useState<string>("");
 
-  // Automatic background sync on initial load, on tab focus, and every 45s
+  // Automatic background sync: throttled to 5 minutes + debounced tab focus to protect Vercel Origin Transfer
   useEffect(() => {
     performFullSync().catch(() => {});
 
+    // Periodic sync: 5 minutes (300,000 ms) instead of 45 seconds
     const interval = setInterval(() => {
       performFullSync().catch(() => {});
-    }, 45000);
+    }, 300000);
 
+    // Debounce focus so switching tabs doesn't spam Vercel Origin Transfer (max once per 3 minutes)
+    let lastFocusSync = Date.now();
     const onFocus = () => {
-      performFullSync().catch(() => {});
+      if (Date.now() - lastFocusSync > 180000) {
+        lastFocusSync = Date.now();
+        performFullSync().catch(() => {});
+      }
     };
     window.addEventListener("focus", onFocus);
 

@@ -599,6 +599,12 @@ function Billing() {
     }
   };
 
+  const cycleSound = () => {
+    const list: Array<"kaching" | "triad" | "click" | "mute"> = ["kaching", "triad", "click", "mute"];
+    const nextIdx = (list.indexOf(soundStyle) + 1) % list.length;
+    changeSound(list[nextIdx]!);
+  };
+
   const preview = useMemo(() => {
     if (!db || !lines.length) return null;
     const activeLines = lines.filter((l) => l.qty > 0);
@@ -1400,13 +1406,26 @@ function Billing() {
           </div>
         </div>
 
-        {/* Right: Next Token Dispatcher (on desktop) */}
-        <div
-          className="hidden sm:flex h-10 sm:h-11 items-center gap-2.5 rounded-xl border-2 border-primary/40 bg-gradient-to-r from-primary/10 via-primary/15 to-primary/10 px-4 sm:px-5 text-xs sm:text-sm font-black text-primary shadow-xs tracking-wide shrink-0"
-          title="Next live token ticket number to be printed"
-        >
-          <Ticket className="size-4 sm:size-4.5 text-primary shrink-0" />
-          <span>Next Token #{todayToken}</span>
+        {/* Right: Next Token Dispatcher & Sound Control (on desktop) */}
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={cycleSound}
+            className="h-10 sm:h-11 flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 text-xs font-bold text-foreground hover:border-primary transition-all shadow-2xs"
+            title="Click to cycle POS chime sound (Ka-Ching / Chime / Click / Mute)"
+          >
+            <Volume2 className="size-4 text-primary shrink-0" />
+            <span className="hidden sm:inline text-muted-foreground text-[11px]">Sound:</span>
+            <span className="capitalize">{soundStyle === "kaching" ? "Ka-Ching" : soundStyle}</span>
+          </button>
+
+          <div
+            className="hidden sm:flex h-10 sm:h-11 items-center gap-2.5 rounded-xl border-2 border-primary/40 bg-gradient-to-r from-primary/10 via-primary/15 to-primary/10 px-4 sm:px-5 text-xs sm:text-sm font-black text-primary shadow-xs tracking-wide shrink-0"
+            title="Next live token ticket number to be printed"
+          >
+            <Ticket className="size-4 sm:size-4.5 text-primary shrink-0" />
+            <span>Next Token #{todayToken}</span>
+          </div>
         </div>
       </div>
 
@@ -1813,34 +1832,6 @@ function Billing() {
             ))}
           </div>
 
-          {/* POS Sound Selector Bar */}
-          <div className="mt-2.5 flex items-center justify-between rounded-xl border border-border/70 bg-card px-2.5 py-1.5 text-xs">
-            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <Volume2 className="size-3.5 text-primary" />
-              <span className="text-[11px] font-semibold">Sound:</span>
-            </div>
-            <div className="flex items-center gap-1">
-              {[
-                { id: "kaching", label: "🔔 Ka-Ching" },
-                { id: "triad", label: "✨ Chime" },
-                { id: "click", label: "🔘 Click" },
-                { id: "mute", label: "🔇 Mute" },
-              ].map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => changeSound(s.id as "kaching" | "triad" | "click" | "mute")}
-                  className={`rounded px-1.5 py-0.5 text-[10px] font-semibold transition-all ${soundStyle === s.id
-                    ? "bg-primary text-primary-foreground font-bold shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  title={`Select ${s.label} sound on billing`}
-                >
-                  {s.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Active Bill Correction Banner */}
           {editingSaleId && (
             <div className="mt-3 rounded-xl border border-amber-500/50 bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200 animate-in fade-in flex items-center justify-between gap-2 shadow-xs">
@@ -1882,7 +1873,7 @@ function Billing() {
                   Clear all
                 </button>
               </div>
-              <ul className="max-h-[30vh] divide-y divide-border/60 overflow-y-auto pr-1">
+              <ul className="max-h-[36vh] divide-y divide-border/60 overflow-y-auto pr-1">
                 {lines.map((l) => (
                   <li key={l.itemId} className="flex items-center gap-2 py-2.5">
                     <div className="min-w-0 flex-1">
@@ -2222,105 +2213,39 @@ function Billing() {
             )}
           </div>
 
-          {/* Quick Recent Bills Panel (Last 3 Bills) with instant Print, WhatsApp, and Edit actions */}
+          {/* Streamlined Last Bill Action Strip (Clean & Non-Intrusive) */}
           {todaySales.length > 0 && (
-            <div className="mt-4 rounded-xl border border-border bg-card p-3.5 text-xs shadow-xs">
-              <div className="flex items-center justify-between border-b border-border/60 pb-2">
-                <span className="font-bold uppercase tracking-wider text-[11px] text-muted-foreground flex items-center gap-1.5">
-                  <Clock className="size-3.5 text-primary" /> Today's Recent Bills
+            <div className="mt-3 flex items-center justify-between rounded-xl border border-border/70 bg-card/80 px-3 py-2 text-xs shadow-2xs">
+              <div className="flex items-center gap-2 min-w-0 pr-2">
+                <Clock className="size-3.5 text-primary shrink-0" />
+                <span className="text-[11px] text-muted-foreground truncate">
+                  Last: <strong className="text-foreground">#{todaySales[0].id.slice(0, 5).toUpperCase()}</strong> ({inr(todaySales[0].net)})
                 </span>
-                <button
-                  onClick={() => setOrderHistoryOpen(true)}
-                  className="text-[11px] font-bold text-primary hover:underline flex items-center gap-1"
-                >
-                  <span>View All ({todaySales.length})</span>
-                  <span>→</span>
-                </button>
               </div>
-
-              <div className="mt-2.5 divide-y divide-border/60">
-                {todaySales.slice(0, 3).map((sale, idx) => {
-                  const isSelectedForEdit = editingSaleId === sale.id;
-                  const itemsSummary = Array.isArray(sale.lines)
-                    ? sale.lines.map((l) => `${l?.qty || 1}x ${l?.name || "Dish"}`).join(", ")
-                    : "Items";
-                  const timeStr = sale.date
-                    ? new Date(sale.date).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
-                    : "--:--";
-                  const saleIdStr = typeof sale.id === "string" ? sale.id.slice(0, 5).toUpperCase() : "BILL";
-
-                  return (
-                    <div key={sale.id || idx} className="py-2.5 flex items-center justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="font-mono font-bold text-foreground">
-                            #{saleIdStr}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground">{timeStr}</span>
-                          <span className="rounded bg-muted px-1 py-0.2 text-[9px] font-bold uppercase text-muted-foreground">
-                            {sale.channel}
-                          </span>
-                          {sale.isEdited && (
-                            <span className="rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 px-1 py-0.2 text-[9px] font-bold">
-                              ✏️ Edit
-                            </span>
-                          )}
-                          {sale.orderType && (
-                            <span className="rounded bg-muted px-1 py-0.2 text-[9px] font-bold uppercase text-muted-foreground">
-                              {sale.orderType === "takeaway" ? "Parcel" : "Dine"}
-                            </span>
-                          )}
-                        </div>
-                        <p className="truncate text-[11px] text-muted-foreground mt-0.5" title={itemsSummary}>
-                          {itemsSummary}
-                        </p>
-                        <p className="font-semibold text-foreground text-xs font-mono mt-0.5">
-                          {inr(sale.net)}{" "}
-                          <span className="text-[10px] font-normal text-muted-foreground">
-                            ({sale.payment ? sale.payment.toUpperCase() : "CASH"})
-                          </span>
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          onClick={() => triggerPrintForBill(sale, todaySales.length - idx)}
-                          className="rounded-lg border border-border bg-background p-1.5 text-foreground hover:bg-muted hover:border-primary transition-colors"
-                          title="Re-print thermal bill"
-                        >
-                          <Printer className="size-3.5 text-primary" />
-                        </button>
-
-                        <button
-                          onClick={() => triggerWhatsAppForBill(sale)}
-                          className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-1.5 text-emerald-600 hover:bg-emerald-500/20 transition-colors"
-                          title="Send bill on WhatsApp"
-                        >
-                          <MessageSquare className="size-3.5" />
-                        </button>
-
-                        <button
-                          onClick={() => startEditPastBill(sale)}
-                          className={`rounded-lg border p-1.5 transition-colors ${isSelectedForEdit
-                            ? "border-amber-500 bg-amber-500 text-white font-bold"
-                            : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20"
-                            }`}
-                          title="Load into cart to correct wrong quantities or items"
-                        >
-                          <Pencil className="size-3.5" />
-                        </button>
-
-                        <button
-                          onClick={() => voidBill(sale.id)}
-                          className="rounded-lg border border-destructive/30 bg-destructive/5 p-1.5 text-destructive hover:bg-destructive/20 transition-colors"
-                          title="Void / cancel bill"
-                        >
-                          <Trash2 className="size-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => triggerPrintForBill(todaySales[0], todaySales.length)}
+                  className="flex items-center gap-1 rounded-lg border border-border bg-background px-2 py-1 text-[11px] font-bold text-foreground hover:border-primary transition-colors"
+                  title="Re-print last bill"
+                >
+                  <Printer className="size-3 text-primary" /> Print
+                </button>
+                <button
+                  type="button"
+                  onClick={() => triggerWhatsAppForBill(todaySales[0])}
+                  className="flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[11px] font-bold text-emerald-600 hover:bg-emerald-500/20 transition-colors"
+                  title="WhatsApp last bill"
+                >
+                  <MessageSquare className="size-3" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOrderHistoryOpen(true)}
+                  className="text-[11px] font-bold text-primary hover:underline ml-1"
+                >
+                  All ({todaySales.length}) →
+                </button>
               </div>
             </div>
           )}
