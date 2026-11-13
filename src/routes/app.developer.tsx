@@ -201,8 +201,8 @@ export function DeveloperSuperAdminPage() {
       if (typeof window !== "undefined") {
         sessionStorage.setItem("spotlight_session_active", "true");
         sessionStorage.setItem("spotlight_auth_role", "developer");
-        localStorage.setItem("spotlight_auth_role", "developer");
-        localStorage.setItem("spotlight_auth_user", "System Architect & Super-Admin");
+        sessionStorage.setItem("spotlight_auth_user", "System Architect & Super-Admin");
+        localStorage.removeItem("spotlight_auth_role");
       }
       toast.success("Super-Admin Console Unlocked!");
     } else {

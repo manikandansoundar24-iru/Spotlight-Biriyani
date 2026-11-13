@@ -18,7 +18,7 @@ function Settings() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const storedRole = localStorage.getItem("spotlight_auth_role") || "owner";
+      const storedRole = sessionStorage.getItem("spotlight_auth_role") || localStorage.getItem("spotlight_auth_role") || "owner";
       setRole(storedRole);
     }
   }, []);

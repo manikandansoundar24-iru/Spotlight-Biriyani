@@ -269,8 +269,9 @@ function LoginPage() {
     } else if (role === "developer") {
       if (devKey === "dev@spotlight2026" || devKey === "admin" || devKey === "9999" || devKey === "restrostack2026" || devKey === "restopulse2026") {
         sessionStorage.setItem("spotlight_session_active", "true");
-        localStorage.setItem("spotlight_auth_role", "developer");
-        localStorage.setItem("spotlight_auth_user", "System Architect & Super-Admin");
+        sessionStorage.setItem("spotlight_auth_role", "developer");
+        sessionStorage.setItem("spotlight_auth_user", "System Architect & Super-Admin");
+        localStorage.removeItem("spotlight_auth_role");
         toast.success("Super-Admin Developer Console Unlocked");
         navigate({ to: "/app/developer", replace: true });
       } else {

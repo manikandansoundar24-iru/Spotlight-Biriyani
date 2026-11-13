@@ -9,7 +9,7 @@ function DeveloperRedirect() {
   const navigate = useNavigate();
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const role = localStorage.getItem("spotlight_auth_role");
+      const role = sessionStorage.getItem("spotlight_auth_role") || localStorage.getItem("spotlight_auth_role");
       const sessionActive = sessionStorage.getItem("spotlight_session_active") === "true";
       if (sessionActive && role === "developer") {
         navigate({ to: "/app/developer", replace: true });

@@ -568,9 +568,6 @@ function Billing() {
     setShowAddTableModal(false);
   };
 
-  // Category UI Layout Toggle ('top' | 'rail') — Default to Left Touch Rail for ergonomic counter billing
-  const [categoryLayout, setCategoryLayout] = useState<"top" | "rail">("rail");
-
   // WhatsApp Receipt Modal State
   const [whatsappModalOpen, setWhatsappModalOpen] = useState(false);
   const [customerPhone, setCustomerPhone] = useState("");
@@ -1343,15 +1340,18 @@ function Billing() {
     <div className="space-y-4 w-full min-w-0 max-w-full">
       {/* Top Header Bar — Compact Unified Single-Line POS Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 pb-2">
-        {/* Left: Terminal Badge + Next Token + Core Shortcuts */}
+        {/* Left: Terminal Badge + Next Token + Gap/Divider + Core Shortcuts */}
         <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-          <div className="flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-xl px-2.5 py-1 shadow-2xs">
+          <div className="flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-xl px-3 py-1 shadow-2xs">
             <span className="size-2 rounded-full bg-primary animate-pulse" />
             <span className="text-xs font-black tracking-tight text-primary uppercase">COUNTER POS</span>
             <span className="text-[11px] text-foreground font-black border-l border-primary/30 pl-2">
               Token #{todayToken}
             </span>
           </div>
+
+          {/* Clean spacer / divider between Counter Status and Actions */}
+          <div className="h-6 w-px bg-border/80 hidden sm:block mx-1.5" />
 
           <button
             onClick={() => setOrderHistoryOpen(true)}
@@ -1394,31 +1394,8 @@ function Billing() {
           </button>
         </div>
 
-        {/* Right: Sound Control & Layout Switcher */}
+        {/* Right: Sound Control */}
         <div className="flex items-center gap-1.5 shrink-0">
-          <div className="flex items-center rounded-lg border border-border bg-card p-0.5 text-xs font-bold shadow-2xs">
-            <button
-              type="button"
-              onClick={() => setCategoryLayout("rail")}
-              className={`inline-flex items-center gap-1 px-2 py-1 rounded-md transition-all ${categoryLayout === "rail" ? "bg-primary text-white shadow-2xs" : "text-muted-foreground hover:text-foreground"
-                }`}
-              title="Left Touch Rail (Vertical category sidebar)"
-            >
-              <PanelLeft className="size-3" />
-              <span className="hidden sm:inline">Rail</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setCategoryLayout("top")}
-              className={`inline-flex items-center gap-1 px-2 py-1 rounded-md transition-all ${categoryLayout === "top" ? "bg-primary text-white shadow-2xs" : "text-muted-foreground hover:text-foreground"
-                }`}
-              title="Top Tabs (Horizontal category ribbon)"
-            >
-              <LayoutGrid className="size-3" />
-              <span className="hidden sm:inline">Tabs</span>
-            </button>
-          </div>
-
           <button
             type="button"
             onClick={cycleSound}
@@ -1553,66 +1530,11 @@ function Billing() {
             </div>
           )}
 
-          {/* Category Switcher & Dishes Layout (Top Ribbon vs Left Thumb Rail) */}
-          {categoryLayout === "top" ? (
-            <div className="mt-2">
-              {/* Top Ribbon Categories (Horizontal Scroll Strip) */}
-              <div className="w-full max-w-full min-w-0 overflow-hidden">
-                <div className="flex gap-1.5 overflow-x-auto pb-1.5 no-scrollbar max-w-full">
-                  {allCategories.map((c) => {
-                    const count = categoryItemCounts[c.id] || 0;
-                    const isSelected = cat === c.id;
-                    return (
-                      <button
-                        key={c.id}
-                        onClick={() => setCat(c.id)}
-                        className={`shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold transition-all ${isSelected
-                          ? "border-primary bg-primary text-primary-foreground shadow-ember scale-[1.02]"
-                          : "border-border bg-card/70 text-muted-foreground hover:border-border hover:bg-card hover:text-foreground"
-                          }`}
-                      >
-                        <span className="shrink-0">{renderCategoryIcon(c.id, "size-3.5")}</span>
-                        <span>{c.label}</span>
-                        <span className={`ml-0.5 rounded-full px-1.5 py-0.2 text-[10px] font-bold ${isSelected ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
-                          }`}>
-                          {count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Dishes Grid (Top Tabs Mode: 3 to 6 Columns) */}
-              <div className="mt-2.5 grid gap-2 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-                {items.map((i) => {
-                  const inCart = lines.find((l) => l.itemId === i.id);
-                  return (
-                    <DishCard
-                      key={i.id}
-                      item={i}
-                      price={priceFor(i.id)}
-                      inCartLine={inCart}
-                      liveBatch={liveBatch}
-                      degBatchEnabled={isDegBatchActive}
-                      canIncreaseDeg={!isDegItem(i) || currentCartDegPlates < liveBatch.platesLeft}
-                      onAdd={() => add(i.id)}
-                      onStep={(d) => step(i.id, d)}
-                      onUpdateQty={(val) => updateQty(i.id, val)}
-                      onBlurQty={() => handleQtyBlur(i.id)}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          ) : (
-            /* Left Touch Rail Layout (Ergonomic Counter POS Style) */
-            <div className="mt-2 flex flex-col sm:flex-row gap-2.5">
-              {/* Left Touch Rail (Compact category sidebar) */}
-              <div className="w-full sm:w-32 lg:w-36 shrink-0 flex flex-row sm:flex-col gap-1 overflow-x-auto sm:overflow-y-auto sm:max-h-[660px] pb-1 sm:pb-0 sm:pr-1.5 border-b sm:border-b-0 sm:border-r border-border/60">
-                <span className="hidden sm:block text-[10px] font-black uppercase tracking-wider text-muted-foreground mb-0.5">
-                  Categories
-                </span>
+          {/* Top Categories Ribbon Strip & Dishes Grid (Top Tabs Only) */}
+          <div className="mt-2.5">
+            {/* Top Ribbon Categories (Horizontal Scroll Strip) */}
+            <div className="w-full max-w-full min-w-0 overflow-hidden">
+              <div className="flex gap-1.5 overflow-x-auto pb-1.5 no-scrollbar max-w-full">
                 {allCategories.map((c) => {
                   const count = categoryItemCounts[c.id] || 0;
                   const isSelected = cat === c.id;
@@ -1620,49 +1542,45 @@ function Billing() {
                     <button
                       key={c.id}
                       onClick={() => setCat(c.id)}
-                      className={`shrink-0 sm:w-full flex items-center justify-between gap-1.5 rounded-xl border p-1.5 sm:p-2 text-left text-[11px] font-bold transition-all ${isSelected
-                        ? "border-primary bg-primary text-primary-foreground shadow-ember scale-[1.01]"
-                        : "border-border bg-card text-muted-foreground hover:border-primary/50 hover:bg-muted/60 hover:text-foreground"
+                      className={`shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold transition-all ${isSelected
+                        ? "border-primary bg-primary text-primary-foreground shadow-ember scale-[1.02]"
+                        : "border-border bg-card/70 text-muted-foreground hover:border-border hover:bg-card hover:text-foreground"
                         }`}
                     >
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="shrink-0 text-primary">{renderCategoryIcon(c.id, "size-3.5")}</span>
-                        <span className="truncate whitespace-nowrap">{c.label}</span>
-                      </div>
-                      <span
-                        className={`shrink-0 rounded-full px-1.5 py-0.2 text-[9px] font-bold ${isSelected ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
-                          }`}
-                      >
+                      <span className="shrink-0">{renderCategoryIcon(c.id, "size-3.5")}</span>
+                      <span>{c.label}</span>
+                      <span className={`ml-0.5 rounded-full px-1.5 py-0.2 text-[10px] font-bold ${isSelected ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
+                        }`}>
                         {count}
                       </span>
                     </button>
                   );
                 })}
               </div>
-
-              {/* Dishes Grid (Rail Mode: 2 to 5 Columns for compact touch tiles) */}
-              <div className="flex-1 min-w-0 grid gap-2 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 self-start">
-                {items.map((i) => {
-                  const inCart = lines.find((l) => l.itemId === i.id);
-                  return (
-                    <DishCard
-                      key={i.id}
-                      item={i}
-                      price={priceFor(i.id)}
-                      inCartLine={inCart}
-                      liveBatch={liveBatch}
-                      degBatchEnabled={isDegBatchActive}
-                      canIncreaseDeg={!isDegItem(i) || currentCartDegPlates < liveBatch.platesLeft}
-                      onAdd={() => add(i.id)}
-                      onStep={(d) => step(i.id, d)}
-                      onUpdateQty={(val) => updateQty(i.id, val)}
-                      onBlurQty={() => handleQtyBlur(i.id)}
-                    />
-                  );
-                })}
-              </div>
             </div>
-          )}
+
+            {/* Dishes Grid (Top Tabs Mode: 3 to 6 Columns for compact touch tiles) */}
+            <div className="mt-2.5 grid gap-2 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+              {items.map((i) => {
+                const inCart = lines.find((l) => l.itemId === i.id);
+                return (
+                  <DishCard
+                    key={i.id}
+                    item={i}
+                    price={priceFor(i.id)}
+                    inCartLine={inCart}
+                    liveBatch={liveBatch}
+                    degBatchEnabled={isDegBatchActive}
+                    canIncreaseDeg={!isDegItem(i) || currentCartDegPlates < liveBatch.platesLeft}
+                    onAdd={() => add(i.id)}
+                    onStep={(d) => step(i.id, d)}
+                    onUpdateQty={(val) => updateQty(i.id, val)}
+                    onBlurQty={() => handleQtyBlur(i.id)}
+                  />
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         {/* Cart / Order Summary (Sticky on Tablet & Desktop) */}
@@ -3685,7 +3603,7 @@ function Billing() {
                     const counted = Number(countedPhysicalCash) || expectedCashInDrawer;
                     const closeRec = recordShiftClose({
                       date: new Date().toISOString().slice(0, 10),
-                      cashierName: localStorage.getItem("spotlight_auth_user") || "Counter Cashier",
+                      cashierName: sessionStorage.getItem("spotlight_auth_user") || localStorage.getItem("spotlight_auth_user") || "Counter Cashier",
                       openingFloat,
                       cashBilled: todayCashTotal,
                       upiBilled: todayUpiTotal,
