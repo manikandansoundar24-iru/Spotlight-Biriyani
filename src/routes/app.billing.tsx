@@ -1,16 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   AlertCircle,
+  Banknote,
   Calendar,
   CheckCircle2,
   Clock,
   Coffee,
   Coins,
   Copy,
+  CreditCard,
   Edit3,
   ExternalLink,
   FileText,
   Flame,
+  Globe,
   History,
   IceCream,
   Layers,
@@ -350,7 +353,7 @@ function DishCard({
 
   return (
     <div
-      className={`surface-card group relative p-3.5 text-left transition-all min-w-0 max-w-full overflow-hidden ${isSoldOut
+      className={`surface-card group relative p-2.5 sm:p-3 text-left transition-all min-w-0 max-w-full overflow-hidden ${isSoldOut
         ? "opacity-60 bg-muted/20 border-border/40"
         : isInCart
           ? "border-primary/90 bg-primary/5 shadow-ember"
@@ -362,14 +365,14 @@ function DishCard({
         onClick={() => !isSoldOut && onAdd()}
         title={isSoldOut ? (!item.active ? "Item marked Off Menu" : "Batch Sold Out") : "Click to add to bill"}
       >
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+        <div className="flex items-start justify-between gap-1.5">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs sm:text-sm font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-snug">
               {item.name}
             </p>
             {isDeg && (
               <span
-                className={`mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${liveBatch.platesLeft > 30
+                className={`mt-0.5 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${liveBatch.platesLeft > 30
                   ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
                   : liveBatch.platesLeft > 10
                     ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
@@ -382,15 +385,13 @@ function DishCard({
             )}
           </div>
         </div>
-        <p className="mt-1 font-display text-2xl text-primary">{inr(price)}</p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Food cost {inr(item.cost)} ·{" "}
-          <span className="text-success font-medium">Margin {inr(price - item.cost)}</span>
-        </p>
+        <div className="mt-1 flex items-baseline justify-between">
+          <p className="font-display text-lg sm:text-xl font-black text-primary">{inr(price)}</p>
+        </div>
       </div>
 
       {/* Direct Card Quantity Indicator & Step / Direct Type Controls */}
-      <div className="mt-3 flex items-center justify-between border-t border-border/40 pt-2.5">
+      <div className="mt-2 flex items-center justify-between border-t border-border/40 pt-1.5">
         {isInCart ? (
           <div className="flex w-full items-center justify-between">
             <span className="text-xs font-bold text-primary">
@@ -1942,32 +1943,72 @@ function Billing() {
             />
           </div>
 
-          {/* Discount & Payment Controls */}
-          <div className="mt-3 grid grid-cols-2 gap-3 border-t border-border/60 pt-3">
-            <label className="text-xs text-muted-foreground">
-              Discount (₹)
-              <input
-                type="number"
-                min={0}
-                value={discount || ""}
-                placeholder="0"
-                onChange={(e) => setDiscount(Math.max(0, Number(e.target.value) || 0))}
-                className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-1.5 text-sm font-semibold text-foreground focus:border-primary focus:outline-none"
-              />
-            </label>
-            <label className="text-xs text-muted-foreground">
-              Payment Mode
-              <select
-                value={payment}
-                onChange={(e) => setPayment(e.target.value as Sale["payment"])}
-                className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-1.5 text-sm font-semibold text-foreground focus:border-primary focus:outline-none"
-              >
-                <option value="cash">Cash (Counter)</option>
-                <option value="upi">UPI / GPay / PhonePe</option>
-                <option value="card">Card POS</option>
-                <option value="online">Online (Swiggy/Zomato)</option>
-              </select>
-            </label>
+          {/* Discount & 1-Tap Payment Selector */}
+          <div className="mt-3 border-t border-border/60 pt-3">
+            <div className="flex items-center justify-between gap-2">
+              <label className="text-xs text-muted-foreground flex items-center gap-1">
+                <Ticket className="size-3.5 text-primary" />
+                <span>Discount (₹):</span>
+              </label>
+              <div className="flex items-center gap-1.5">
+                {[0, 20, 50, 100].map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setDiscount(d)}
+                    className={`rounded-md px-2 py-0.5 text-[11px] font-semibold border transition-all ${discount === d
+                      ? "border-primary bg-primary/15 text-primary"
+                      : "border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted"
+                      }`}
+                  >
+                    {d === 0 ? "None" : `₹${d}`}
+                  </button>
+                ))}
+                <input
+                  type="number"
+                  min={0}
+                  value={discount || ""}
+                  placeholder="₹ custom"
+                  onChange={(e) => setDiscount(Math.max(0, Number(e.target.value) || 0))}
+                  className="w-20 rounded-md border border-input bg-card px-2 py-0.5 text-xs font-bold text-foreground focus:border-primary focus:outline-none text-right"
+                />
+              </div>
+            </div>
+
+            {/* 1-Tap Instant Payment Mode Tabs */}
+            <div className="mt-2.5">
+              <div className="grid grid-cols-4 gap-1.5">
+                {[
+                  { id: "cash", label: "Cash", icon: Banknote },
+                  { id: "upi", label: "UPI QR", icon: QrCode },
+                  { id: "card", label: "Card", icon: CreditCard },
+                  { id: "online", label: "Online", icon: Globe },
+                ].map((mode) => {
+                  const Icon = mode.icon;
+                  const isSelected = payment === mode.id;
+                  return (
+                    <button
+                      key={mode.id}
+                      type="button"
+                      onClick={() => setPayment(mode.id as Sale["payment"])}
+                      className={`flex items-center justify-center gap-1 rounded-lg py-2 px-1 text-xs font-bold transition-all ${isSelected
+                        ? mode.id === "cash"
+                          ? "bg-amber-600 text-white shadow-sm ring-2 ring-amber-400/50"
+                          : mode.id === "upi"
+                            ? "bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-400/50"
+                            : mode.id === "card"
+                              ? "bg-blue-600 text-white shadow-sm ring-2 ring-blue-400/50"
+                              : "bg-purple-600 text-white shadow-sm ring-2 ring-purple-400/50"
+                        : "bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground border border-border/60"
+                        }`}
+                    >
+                      <Icon className="size-3.5" />
+                      <span>{mode.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
           {/* Quick Cash Tender & Change Calculator */}
@@ -2012,30 +2053,30 @@ function Billing() {
 
           {/* Dynamic Counter UPI Payment QR */}
           {payment === "upi" && preview && preview.net > 0 && (
-            <div className="mt-3 rounded-xl border border-primary/40 bg-card p-3.5 text-center shadow-xs">
+            <div className="mt-3 rounded-xl border border-indigo-500/40 bg-card p-3 text-center shadow-xs">
               <div className="flex items-center justify-between text-xs font-bold text-foreground">
-                <span className="flex items-center gap-1.5 text-primary uppercase tracking-wider text-[11px]">
-                  <QrCode className="size-3.5" /> Counter UPI Payment QR
+                <span className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 uppercase tracking-wider text-[11px]">
+                  <QrCode className="size-3.5" /> Scan UPI QR to Pay
                 </span>
-                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-600">
+                <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-black text-emerald-600 dark:text-emerald-400">
                   ₹{preview.net}
                 </span>
               </div>
 
               {/* Authentic machine-scannable UPI QR */}
-              <div className="mt-2.5 mx-auto p-2 bg-white rounded-xl border border-slate-200 inline-block shadow-inner">
+              <div className="mt-2 mx-auto p-1.5 bg-white rounded-lg border border-slate-200 inline-block shadow-inner">
                 <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=6&data=${encodeURIComponent(
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&margin=6&data=${encodeURIComponent(
                     `upi://pay?pa=${db.settings.upiId || "spotlightbiriyani@oksbi"}&pn=${encodeURIComponent(db.settings.businessName || "Spot Light Biriyani")}&am=${preview.net}&cu=INR`
                   )}`}
                   alt={`UPI Payment QR ₹${preview.net}`}
-                  className="size-36 mx-auto"
+                  className="size-32 mx-auto"
                   loading="eager"
                 />
               </div>
 
-              <p className="mt-1.5 text-[11px] font-semibold text-foreground">
-                Scan with GPay · PhonePe · Paytm · BHIM · Cred
+              <p className="mt-1 text-[11px] font-semibold text-foreground">
+                GPay · PhonePe · Paytm · Cred · Any UPI App
               </p>
               <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
                 VPA: {db.settings.upiId || "spotlightbiriyani@oksbi"}
@@ -2045,7 +2086,7 @@ function Billing() {
                 <button
                   type="button"
                   onClick={() => setUpiQrModalOpen(true)}
-                  className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
+                  className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline"
                 >
                   <Maximize2 className="size-3" /> Show Customer Full Screen QR
                 </button>
@@ -2053,27 +2094,18 @@ function Billing() {
             </div>
           )}
 
-          {/* Live Profit & Cost Breakdown */}
+          {/* Cart Bill Summary */}
           {preview && (
-            <dl className="mt-4 space-y-1.5 border-t border-border/60 pt-3 text-xs sm:text-sm">
+            <dl className="mt-3 space-y-1.5 border-t border-border/60 pt-2.5 text-xs sm:text-sm">
               <Row label="Item Total" value={inr(preview.gross)} />
               {preview.discount > 0 && <Row label="Discount" value={`- ${inr(preview.discount)}`} />}
-              <Row label="Customer Pays" value={inr(preview.net)} strong />
-              <Row label="Food Cost (COGS)" value={`- ${inr(preview.cogs)}`} muted />
-              {preview.commission > 0 && <Row label="Platform Commission" value={`- ${inr(preview.commission)}`} muted />}
-              {preview.packaging > 0 && <Row label="Packaging Fee" value={`- ${inr(preview.packaging)}`} muted />}
-              <div className="mt-2 rounded-lg bg-success/10 p-2 border border-success/30">
-                <Row
-                  label="Your Operating Profit"
-                  value={`${inr(preview.profit)} (${((preview.profit / (preview.net || 1)) * 100).toFixed(1)}%)`}
-                  profit
-                />
-              </div>
+              {preview.packaging > 0 && <Row label="Packaging Fee" value={`+ ${inr(preview.packaging)}`} muted />}
+              <Row label="Customer Pays (Total)" value={inr(preview.net)} strong />
             </dl>
           )}
 
           {/* Save or Update Bill Action Bar */}
-          <div className="mt-4 space-y-2 sticky bottom-0 bg-card/95 backdrop-blur-md p-2 rounded-xl border border-border shadow-lg z-20">
+          <div className="mt-3 space-y-2 sticky bottom-0 bg-card/95 backdrop-blur-md p-2 rounded-xl border border-border shadow-lg z-20">
 
             {/* If a Table is currently open, show dedicated Settle & Vacate Table Button */}
             {selectedTableId && (
@@ -2081,7 +2113,7 @@ function Billing() {
                 type="button"
                 onClick={() => {
                   const tblToVacate = selectedTableId;
-                  const target = saveOrUpdate("cash");
+                  const target = saveOrUpdate(payment);
                   if (target) {
                     if (tblToVacate) vacateTable(tblToVacate);
                     toast.success(`Table ${tblToVacate} settled & marked VACANT! Ready for next guests.`);
@@ -2096,60 +2128,48 @@ function Billing() {
               </button>
             )}
 
-
-            {/* Phase 2: Instant Dynamic UPI QR Buttons */}
-            {activeModules.dynamicUpi && (
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!preview || preview.net <= 0) {
-                      toast.info("Add dishes to the bill first, then click Show UPI QR!");
-                      return;
-                    }
-                    setPayment("upi");
-                    setUpiQrModalOpen(true);
-                  }}
-                  className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-3 font-bold text-xs sm:text-sm bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md transition-all active:scale-[0.98]"
-                  title="Generate instant customer-facing Dynamic UPI QR code popup"
-                >
-                  <QrCode className="size-4 shrink-0" />
-                  <span>SHOW UPI QR</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!preview || preview.net <= 0) {
-                      toast.info("Add dishes to the bill first!");
-                      return;
-                    }
-                    setPayment("upi");
-                    saveOrUpdate("upi");
-                  }}
-                  disabled={!preview || isCartOverDeg}
-                  className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 px-3 font-bold text-xs sm:text-sm bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-md transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
-                  title="Complete payment via UPI (GPay/PhonePe/Paytm), decrement Deg batch, and print bill immediately"
-                >
-                  <Smartphone className="size-4 shrink-0" />
-                  <span>UPI PAID &amp; PRINT</span>
-                </button>
-              </div>
-            )}
-
             {isCartOverDeg && (
-              <div className="rounded-xl border border-rose-500/40 bg-rose-500/10 p-2.5 text-center text-xs font-bold text-rose-600 dark:text-rose-400 animate-pulse">
+              <div className="rounded-xl border border-rose-500/40 bg-rose-500/10 p-2 text-center text-xs font-bold text-rose-600 dark:text-rose-400 animate-pulse">
                 ⚠️ Cannot place order: {currentCartDegPlates} Deg plates in cart exceeds {liveBatch.platesLeft} available plates!
               </div>
             )}
+
+            {/* Single Unified Primary Action Button — Context-Aware for Cash, UPI, Card, Online */}
             <button
-              onClick={() => saveOrUpdate("cash")}
+              onClick={() => saveOrUpdate(payment)}
               disabled={!preview || isCartOverDeg}
-              className={`w-full flex items-center justify-center gap-2 rounded-xl py-3.5 px-4 font-display font-black text-sm sm:text-base tracking-wider text-white shadow-ember transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 ${editingSaleId ? "bg-amber-600 hover:bg-amber-700" : "bg-gradient-ember"
+              className={`w-full flex items-center justify-center gap-2 rounded-xl py-3.5 px-4 font-display font-black text-sm sm:text-base tracking-wider text-white shadow-md transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 ${editingSaleId
+                ? "bg-amber-600 hover:bg-amber-700"
+                : payment === "upi"
+                  ? "bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 shadow-indigo-500/25"
+                  : payment === "card"
+                    ? "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 shadow-blue-500/25"
+                    : payment === "online"
+                      ? "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-purple-500/25"
+                      : "bg-gradient-ember shadow-ember"
                 }`}
-              title={isCartOverDeg ? "Cannot place bill: stock limit exceeded" : "Save order as Cash and print thermal paper receipt (Shortcut: Press F2)"}
+              title={`Save order (${payment.toUpperCase()}) and print thermal paper receipt (Shortcut: Press F2)`}
             >
-              <Printer className="size-4 sm:size-5 shrink-0" />
-              <span>{editingSaleId ? "UPDATE & RE-PRINT BILL" : "SAVE BILL & PRINT (CASH)"}</span>
+              {payment === "upi" ? (
+                <Smartphone className="size-4 sm:size-5 shrink-0" />
+              ) : payment === "card" ? (
+                <CreditCard className="size-4 sm:size-5 shrink-0" />
+              ) : payment === "online" ? (
+                <Globe className="size-4 sm:size-5 shrink-0" />
+              ) : (
+                <Printer className="size-4 sm:size-5 shrink-0" />
+              )}
+              <span>
+                {editingSaleId
+                  ? "UPDATE & RE-PRINT BILL"
+                  : payment === "upi"
+                    ? "UPI RECEIVED & PRINT (F2)"
+                    : payment === "card"
+                      ? "CARD CHARGED & PRINT (F2)"
+                      : payment === "online"
+                        ? "ONLINE ORDER & PRINT (F2)"
+                        : "SAVE BILL & PRINT (CASH) - F2"}
+              </span>
             </button>
 
             {/* Inline Quick WhatsApp Row (Non-intrusive for counter rush) */}
